@@ -175,7 +175,11 @@ main {
       rgba(63, 169, 219, 0.18),
       transparent 20%
     ),
-    radial-gradient(circle at 75% 15%, rgba(31, 174, 140, 0.16), transparent 18%),
+    radial-gradient(
+      circle at 75% 15%,
+      rgba(31, 174, 140, 0.16),
+      transparent 18%
+    ),
     radial-gradient(
       circle at 50% 80%,
       rgba(243, 123, 79, 0.18),
