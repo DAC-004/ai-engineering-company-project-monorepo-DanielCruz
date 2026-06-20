@@ -46,6 +46,29 @@ This command is compatible with GitHub Codespaces and local development.
 
 The HealthCore landing page and application form deploy as a static site from the repository root.
 
+### Vercel CLI (recommended)
+
+From the repository root:
+
+```bash
+npx vercel login
+npx vercel link
+npx vercel deploy --prod
+```
+
+- `vercel login` opens a browser/device flow for your [Vercel account](https://vercel.com/danielcruz-glitchs).
+- `vercel link` connects this folder to a Vercel project (framework preset: **Other**, root directory: `.`).
+- `vercel deploy --prod` publishes the static site using `vercel.json`.
+
+For CI or Cloud Agents, create a token at https://vercel.com/account/tokens and run:
+
+```bash
+export VERCEL_TOKEN=your_token_here
+npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+```
+
+### Vercel dashboard (alternative)
+
 1. Import this repository in [Vercel](https://vercel.com/danielcruz-glitchs).
 2. Use the default settings (framework preset: **Other**, output: static files at root).
 3. Deploy the `main` branch (or your Milestone 1 feature branch for preview).
