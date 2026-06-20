@@ -4,7 +4,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ -n "${VERCEL_TOKEN:-}" ]; then
-  npx --yes vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+  npx --yes vercel deploy --prod --yes \
+    --scope "${VERCEL_SCOPE:-danielcruz-glitchs-projects}" \
+    --token "$VERCEL_TOKEN"
   exit 0
 fi
 

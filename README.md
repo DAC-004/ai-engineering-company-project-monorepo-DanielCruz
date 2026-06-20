@@ -75,6 +75,8 @@ npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
 
 After deployment, run [PageSpeed Insights](https://pagespeed.web.dev/) against your public Vercel URL. Milestone 1 requires a performance score of at least **80**.
 
+**Production URL:** https://workspace-eosin-zeta.vercel.app
+
 ---
 
 ## How to think about this monorepo
