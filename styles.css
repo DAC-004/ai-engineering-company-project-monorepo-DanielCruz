@@ -1,22 +1,16 @@
 :root {
   color-scheme: light;
-  --bg: #f4f8fa;
-  --surface: rgba(255, 255, 255, 0.92);
-  --surface-strong: rgba(255, 255, 255, 0.96);
-  --text: #0f2f3a;
-  --muted: #4f6f7d;
-  --accent: #0f766e;
-  --accent-strong: #115e59;
-  --border: rgba(15, 118, 110, 0.18);
-  --shadow: 0 24px 60px rgba(15, 47, 58, 0.18);
-  --overlay: linear-gradient(
-    115deg,
-    rgba(8, 28, 36, 0.72) 0%,
-    rgba(8, 28, 36, 0.42) 48%,
-    rgba(8, 28, 36, 0.18) 100%
-  );
+  --bg: #d8eff5;
+  --bg-alt: #f5e1c3;
+  --surface: rgba(255, 255, 255, 0.95);
+  --surface-strong: rgba(255, 255, 255, 0.98);
+  --text: #12354f;
+  --muted: #3f9fa6;
+  --accent: #f37b4f;
+  --accent-strong: #db5d0f;
+  --border: rgba(63, 169, 219, 0.12);
+  --shadow: 0 20px 50px rgba(63, 169, 219, 0.12);
   font-family:
-    "Public Sans",
     Inter,
     system-ui,
     -apple-system,
@@ -36,7 +30,18 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(63, 169, 219, 0.18),
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(243, 123, 79, 0.14),
+      transparent 22%
+    ),
+    linear-gradient(180deg, #d8eff5 0%, #f5e1c3 100%);
   color: var(--text);
 }
 
@@ -57,7 +62,7 @@ a {
   left: -999px;
   top: 0;
   background: #111;
-  color: #fff;
+  color: var(--text);
   padding: 0.75rem 1rem;
   z-index: 100;
 }
@@ -93,7 +98,7 @@ a {
   font-size: 0.82rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .site-branding h1 {
@@ -136,75 +141,68 @@ main {
 
 .section-label {
   margin: 0 0 0.75rem;
-  color: #b7f0e7;
+  color: var(--accent);
   font-size: 0.9rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
-.image-section {
-  position: relative;
+.hero-section,
+.about-section,
+.career-section,
+.shows-section {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  background-image: var(--section-image);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
-.section-overlay {
+.hero-section {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(216, 236, 245, 0.92) 0%,
+      rgba(245, 225, 195, 0.94) 100%
+    ),
+    url("assets/backgrounds/hero-healthcare.png") center / cover no-repeat;
+  position: relative;
+}
+
+.hero-section::before {
+  content: "";
   position: absolute;
   inset: 0;
-  background: var(--overlay);
+  background: rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
 
-.image-section .section-content {
-  position: relative;
-  z-index: 1;
-  color: #f8fcfd;
-}
-
 .hero-content {
+  position: relative;
   max-width: 760px;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.hero-section h2,
-.about-section h2,
-.career-section h2,
-.shows-section h2 {
+.hero-section h2 {
   margin: 0;
   font-size: clamp(2.75rem, 5vw, 4.5rem);
-  line-height: 0.98;
-  letter-spacing: -0.04em;
-  color: #ffffff;
-  text-wrap: balance;
+  line-height: 0.95;
+  color: var(--text);
 }
 
-.hero-subtitle,
-.section-subtitle {
+.hero-subtitle {
   margin: 0;
-  font-size: clamp(1.2rem, 2vw, 1.45rem);
+  font-size: clamp(1.2rem, 2vw, 1.4rem);
   font-weight: 500;
-  color: #d7f5ef;
+  color: var(--accent);
 }
 
-.image-section p,
-.image-section li {
-  color: rgba(248, 252, 253, 0.88);
-}
-
-.hero-section p,
-.about-section article p,
-.career-section p {
+.hero-section p {
   margin: 0;
   max-width: 40rem;
   font-size: 1.05rem;
   line-height: 1.8;
+  color: var(--muted);
 }
 
 .button {
@@ -222,25 +220,69 @@ main {
 }
 
 .button-primary {
-  background: linear-gradient(135deg, #14b8a6, #0f766e);
-  color: #ffffff;
-  box-shadow: 0 20px 45px rgba(15, 118, 110, 0.35);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #111;
+  box-shadow: 0 20px 45px rgba(243, 123, 79, 0.22);
 }
 
 .button-primary:hover,
 .button-primary:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 24px 55px rgba(15, 118, 110, 0.42);
+  box-shadow: 0 24px 55px rgba(243, 123, 79, 0.28);
+}
+
+.about-section {
+  background:
+    linear-gradient(180deg, rgba(231, 242, 246, 0.88) 0%, rgba(247, 228, 208, 0.9) 100%),
+    url("assets/backgrounds/about-healthcare.png") center / cover no-repeat;
+}
+
+.about-section h2,
+.career-section h2,
+.shows-section h2 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 3vw, 3rem);
+  color: var(--text);
+}
+
+.section-subtitle {
+  margin: 0 0 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--accent-strong);
+}
+
+.section-intro {
+  margin: 0 0 1.5rem;
+  font-size: 1rem;
+  color: var(--muted);
 }
 
 .about-section article {
   max-width: 760px;
   font-size: 1.05rem;
   line-height: 1.85;
+  color: var(--muted);
 }
 
 .about-section article p + p {
   margin-top: 1rem;
+}
+
+.career-section {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(216, 67, 21, 0.15),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(0, 150, 255, 0.12),
+      transparent 25%
+    ),
+    linear-gradient(180deg, rgba(255, 249, 196, 0.85) 0%, rgba(255, 241, 118, 0.88) 100%),
+    url("assets/backgrounds/care-team-healthcare.png") center / cover no-repeat;
 }
 
 .split-grid {
@@ -252,10 +294,9 @@ main {
 
 .career-highlight {
   padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(216, 67, 21, 0.25);
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: var(--shadow);
 }
 
@@ -263,26 +304,28 @@ main {
   margin: 0 0 1rem;
   font-size: 1.45rem;
   line-height: 1.4;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .career-highlight p {
   margin: 0;
-  color: rgba(248, 252, 253, 0.82);
+  color: var(--muted);
 }
 
 .career-section ul {
   margin: 1.5rem 0 0;
   padding-left: 1.35rem;
+  color: var(--muted);
 }
 
 .career-section li {
   margin-bottom: 0.9rem;
 }
 
-.section-intro {
-  margin: 0 0 1.5rem;
-  font-size: 1rem;
+.shows-section {
+  background:
+    linear-gradient(180deg, rgba(255, 253, 231, 0.88) 0%, rgba(255, 249, 196, 0.9) 100%),
+    url("assets/backgrounds/services-healthcare.png") center / cover no-repeat;
 }
 
 .shows-grid {
@@ -291,12 +334,12 @@ main {
 }
 
 .show-card {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(216, 67, 21, 0.25);
   border-radius: 28px;
   padding: 1.75rem;
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 50px rgba(216, 67, 21, 0.15);
 }
 
 .show-date {
@@ -304,23 +347,29 @@ main {
   font-size: 0.95rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #b7f0e7;
+  color: var(--accent);
 }
 
 .show-card h3 {
   margin: 0 0 0.75rem;
   font-size: 1.5rem;
-  color: #ffffff;
 }
 
 .show-card p {
   margin: 0;
+  color: var(--muted);
   line-height: 1.7;
 }
 
 .site-footer {
   background: rgba(255, 255, 255, 0.98);
   border-top: 1px solid var(--border);
+}
+
+.footer-content {
+  padding: 2rem 0 3rem;
+  text-align: center;
+  color: var(--muted);
 }
 
 .footer-content {
