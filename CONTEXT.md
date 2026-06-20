@@ -94,3 +94,49 @@ Cross-border healthcare operations — two countries, two regulatory frameworks,
 High-stakes AI applications — clinical documentation assistance, claims denial prediction, and appointment no-show forecasting are not optional enhancements; they directly impact patient care and company viability.
 Systems that serve real patients — every dashboard, API, and automation you build exists to help people get the healthcare they need, when they need it, without unnecessary friction.
 The AI challenges at HealthCore include natural language processing of clinical notes for billing code suggestions, predictive models for appointment no-shows trained on multi-location data, RAG systems over compliance documentation in two jurisdictions, and intelligent scheduling that balances patient preferences with clinic capacity. If you want to build systems where technical excellence directly translates to better healthcare delivery, HealthCore is your company.
+
+---
+
+## Milestone 1 — Care Request Application Form
+
+All Milestone 1 form field names, types, allowed values, and validation rules below must match the implementation in `application.html` and `validation.js` exactly.
+
+### Required fields
+
+| Field name | Label | Input type | Required | Validation rules |
+| --- | --- | --- | --- | --- |
+| `full_name` | Full Name | text | Yes | 2–80 characters; letters, spaces, apostrophes, periods, and hyphens only |
+| `date_of_birth` | Date of Birth | date | Yes | Patient must be at least 18 years old |
+| `email` | Email Address | email | Yes | Valid email format |
+| `phone` | Phone Number | tel | Yes | US (`market_country = US`): `+1` followed by 10 digits; UK (`market_country = UK`): `+44` followed by 10 digits |
+| `market_country` | Country of Care | select | Yes | Allowed values: `US`, `UK` |
+| `clinic_location` | Preferred Clinic Location | select | Yes | Must match selected country: US → Austin TX, Houston TX, Miami FL, Orlando FL, Atlanta GA; UK → London, Manchester |
+| `service_line` | Service Needed | select | Yes | Primary Care, Specialist Consultation, Chronic Disease Management, Preventive Health Programme |
+| `preferred_date` | Preferred Appointment Date | date | Yes | Today or a future date |
+| `preferred_time_window` | Preferred Appointment Window | select | Yes | Morning (08:00-12:00), Afternoon (12:00-17:00), Evening (17:00-20:00) |
+| `communication_channel` | Preferred Reminder Method | select | Yes | SMS, Email, Phone Call |
+| `payment_model` | Payment Model | select | Yes | Must match selected country: US → Private Insurance (US), Medicare (US), Medicaid (US); UK → Private Pay (UK), NHS Contract (UK) |
+| `member_identifier` | Insurance or NHS Member Identifier | text | Yes | NHS Contract (UK): exactly 10 digits; all other payment models: 6–20 letters, numbers, or hyphens |
+| `consent_data_processing` | Data processing consent | checkbox | Yes | Must be checked; confirms HIPAA (US) and UK GDPR processing terms |
+| `consent_contact` | Appointment reminder consent | checkbox | Yes | Must be checked; confirms permission to send reminders via selected channel |
+
+### Optional fields
+
+| Field name | Label | Input type | Required | Validation rules |
+| --- | --- | --- | --- | --- |
+| `patient_notes` | Additional Notes | textarea | No | Optional free text; no validation required |
+
+### Cross-field business rules
+
+- `clinic_location` must belong to the clinic list for the selected `market_country`.
+- `payment_model` must belong to the payment list for the selected `market_country`.
+- `phone` format must match the selected `market_country`.
+- `member_identifier` format depends on the selected `payment_model`.
+
+### Contact information (public-facing)
+
+- Headquarters: Austin, Texas, United States
+- Network coverage: Texas, Florida, Georgia, London, Manchester
+- Email: care@healthcore.com
+- Phone (US): +1 (512) 555-0142
+- Phone (UK): +44 20 7946 0958

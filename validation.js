@@ -82,6 +82,23 @@
     };
   }
 
+  const errorClassNames = ['border-red-600', 'ring-2', 'ring-red-600/20'];
+  const successClassNames = ['border-emerald-600', 'ring-2', 'ring-emerald-600/20'];
+
+  function setFieldVisualState(field, state) {
+    if (!field) {
+      return;
+    }
+
+    field.classList.remove(...errorClassNames, ...successClassNames);
+
+    if (state === 'error') {
+      field.classList.add(...errorClassNames);
+    } else if (state === 'success') {
+      field.classList.add(...successClassNames);
+    }
+  }
+
   function setError(fieldName, message) {
     const field = fields[fieldName];
     const errorElement = document.getElementById(errorIds[fieldName]);
@@ -93,6 +110,7 @@
     errorElement.textContent = message;
     field.setAttribute('aria-invalid', 'true');
     field.setAttribute('aria-describedby', errorIds[fieldName]);
+    setFieldVisualState(field, 'error');
   }
 
   function clearError(fieldName) {
@@ -106,6 +124,18 @@
     errorElement.textContent = '';
     field.removeAttribute('aria-invalid');
     field.removeAttribute('aria-describedby');
+    setFieldVisualState(field, null);
+  }
+
+  function markFieldSuccess(fieldName) {
+    const field = fields[fieldName];
+
+    if (!field) {
+      return;
+    }
+
+    field.removeAttribute('aria-invalid');
+    setFieldVisualState(field, 'success');
   }
 
   function clearAllErrors() {
@@ -145,9 +175,17 @@
     return selected >= today;
   }
 
-  function validateField(fieldName, values) {
+  function validateField(fieldName, values, options) {
+    const opts = options || {};
     const data = values || getValues();
     clearError(fieldName);
+
+    function succeed() {
+      if (opts.showSuccess) {
+        markFieldSuccess(fieldName);
+      }
+      return true;
+    }
 
     switch (fieldName) {
       case 'full_name':
@@ -159,7 +197,7 @@
           setError('full_name', 'Enter your full name using letters and standard punctuation only.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'date_of_birth':
         if (!data.date_of_birth) {
@@ -170,7 +208,7 @@
           setError('date_of_birth', 'You must be at least 18 years old to submit this form.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'email':
         if (!data.email) {
@@ -181,7 +219,7 @@
           setError('email', 'Enter a valid email address so we can contact you.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'phone':
         if (!data.phone) {
@@ -195,14 +233,14 @@
           setError('phone', phoneMessage);
           return false;
         }
-        return true;
+        return succeed();
 
       case 'market_country':
         if (!data.market_country) {
           setError('market_country', 'Please choose the country where you want care.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'clinic_location':
         if (!data.clinic_location) {
@@ -213,14 +251,14 @@
           setError('clinic_location', 'Choose a clinic location that matches your selected country of care.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'service_line':
         if (!data.service_line) {
           setError('service_line', 'Please choose the service you need.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'preferred_date':
         if (!data.preferred_date) {
@@ -231,21 +269,21 @@
           setError('preferred_date', 'Choose today or a future date for your appointment request.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'preferred_time_window':
         if (!data.preferred_time_window) {
           setError('preferred_time_window', 'Please choose a preferred appointment window.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'communication_channel':
         if (!data.communication_channel) {
           setError('communication_channel', 'Please choose how you would like to receive reminders.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'payment_model':
         if (!data.payment_model) {
@@ -256,7 +294,7 @@
           setError('payment_model', 'Choose a payment model that matches your selected country of care.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'member_identifier':
         if (!data.member_identifier) {
@@ -271,24 +309,24 @@
           setError('member_identifier', 'Enter an insurance member identifier with 6 to 20 letters, numbers, or hyphens.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'consent_data_processing':
         if (!data.consent_data_processing) {
           setError('consent_data_processing', 'Please confirm that you understand the data processing terms.');
           return false;
         }
-        return true;
+        return succeed();
 
       case 'consent_contact':
         if (!data.consent_contact) {
           setError('consent_contact', 'Please confirm that HealthCore may send appointment reminders.');
           return false;
         }
-        return true;
+        return succeed();
 
       default:
-        return true;
+        return succeed();
     }
   }
 
@@ -315,7 +353,7 @@
     const eventName = field.type === 'checkbox' || field.tagName === 'SELECT' ? 'change' : 'input';
 
     field.addEventListener('blur', function () {
-      validateField(fieldName);
+      validateField(fieldName, undefined, { showSuccess: true });
     });
 
     field.addEventListener(eventName, function () {
