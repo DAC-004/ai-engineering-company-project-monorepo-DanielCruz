@@ -48,13 +48,29 @@ The HealthCore landing page and application form deploy as a static site from th
 
 ### Vercel CLI (recommended)
 
-From the repository root:
+Install the CLI once in Cursor (integrated terminal at repo root):
+
+```bash
+npm install
+```
+
+This adds `vercel` to `node_modules` so you can run:
+
+```bash
+npm run vercel:login
+npm run vercel:link
+npm run vercel:deploy
+```
+
+Or use the local binary directly:
 
 ```bash
 npx vercel login
-npx vercel link
-npx vercel deploy --prod
+npx vercel link --scope danielcruz-glitchs-projects
+npx vercel deploy --prod --yes --scope danielcruz-glitchs-projects
 ```
+
+**In Cursor:** open the Command Palette → **Tasks: Run Task** → choose **Vercel: deploy production** (after `npm install`). Cursor may also prompt you to install the [Vercel extension](https://marketplace.visualstudio.com/items?itemName=vercel.vercel-vscode) from `.vscode/extensions.json`.
 
 - `vercel login` opens a browser/device flow for your [Vercel account](https://vercel.com/danielcruz-glitchs).
 - `vercel link` connects this folder to a Vercel project (framework preset: **Other**, root directory: `.`).
@@ -64,7 +80,7 @@ For CI or Cloud Agents, create a token at https://vercel.com/account/tokens and 
 
 ```bash
 export VERCEL_TOKEN=your_token_here
-npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+./scripts/deploy-vercel.sh
 ```
 
 ### Vercel dashboard (alternative)

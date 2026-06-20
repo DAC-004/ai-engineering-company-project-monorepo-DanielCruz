@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "HealthCore: run local site",
+      "type": "npm",
+      "script": "start",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Vercel: login",
+      "type": "npm",
+      "script": "vercel:login",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vercel: link project",
+      "type": "npm",
+      "script": "vercel:link",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vercel: deploy production",
+      "type": "npm",
+      "script": "vercel:deploy",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}
