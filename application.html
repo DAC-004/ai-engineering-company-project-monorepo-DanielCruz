@@ -67,25 +67,25 @@
 
             <div>
               <label for="full_name" class="mb-1 block text-sm font-medium">Full Name *</label>
-              <input id="full_name" name="full_name" type="text" autocomplete="name" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <input id="full_name" name="full_name" type="text" autocomplete="name" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="full_name_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
               <label for="date_of_birth" class="mb-1 block text-sm font-medium">Date of Birth *</label>
-              <input id="date_of_birth" name="date_of_birth" type="date" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <input id="date_of_birth" name="date_of_birth" type="date" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="date_of_birth_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
               <label for="email" class="mb-1 block text-sm font-medium">Email Address *</label>
-              <input id="email" name="email" type="email" autocomplete="email" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <input id="email" name="email" type="email" autocomplete="email" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="email_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
               <label for="phone" class="mb-1 block text-sm font-medium">Phone Number *</label>
-              <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="United States: +1XXXXXXXXXX | United Kingdom: +44XXXXXXXXXX" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <input id="phone" name="phone" type="tel" autocomplete="tel" required placeholder="United States: +1XXXXXXXXXX | United Kingdom: +44XXXXXXXXXX" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="phone_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
           </fieldset>
@@ -95,7 +95,7 @@
 
             <div>
               <label for="market_country" class="mb-1 block text-sm font-medium">Country of Care *</label>
-              <select id="market_country" name="market_country" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <select id="market_country" name="market_country" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a country</option>
                 <option value="US">United States</option>
                 <option value="UK">United Kingdom</option>
@@ -105,7 +105,7 @@
 
             <div>
               <label for="clinic_location" class="mb-1 block text-sm font-medium">Preferred Clinic Location *</label>
-              <select id="clinic_location" name="clinic_location" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <select id="clinic_location" name="clinic_location" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a clinic location</option>
                 <option value="Austin, Texas">Austin, Texas</option>
                 <option value="Houston, Texas">Houston, Texas</option>
@@ -120,7 +120,7 @@
 
             <div>
               <label for="service_line" class="mb-1 block text-sm font-medium">Service Needed *</label>
-              <select id="service_line" name="service_line" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <select id="service_line" name="service_line" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a service</option>
                 <option value="Primary Care">Primary Care</option>
                 <option value="Specialist Consultation">Specialist Consultation</option>
@@ -132,13 +132,13 @@
 
             <div>
               <label for="preferred_date" class="mb-1 block text-sm font-medium">Preferred Appointment Date *</label>
-              <input id="preferred_date" name="preferred_date" type="date" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <input id="preferred_date" name="preferred_date" type="date" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="preferred_date_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
               <label for="preferred_time_window" class="mb-1 block text-sm font-medium">Preferred Appointment Window *</label>
-              <select id="preferred_time_window" name="preferred_time_window" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <select id="preferred_time_window" name="preferred_time_window" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a time window</option>
                 <option value="Morning">Morning (08:00-12:00)</option>
                 <option value="Afternoon">Afternoon (12:00-17:00)</option>
@@ -149,7 +149,7 @@
 
             <div>
               <label for="communication_channel" class="mb-1 block text-sm font-medium">Preferred Reminder Method *</label>
-              <select id="communication_channel" name="communication_channel" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <select id="communication_channel" name="communication_channel" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a reminder method</option>
                 <option value="SMS">SMS</option>
                 <option value="Email">Email</option>
@@ -164,7 +164,7 @@
 
             <div>
               <label for="payment_model" class="mb-1 block text-sm font-medium">Payment Model *</label>
-              <select id="payment_model" name="payment_model" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <select id="payment_model" name="payment_model" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a payment model</option>
                 <option value="Private Insurance (US)">Private Insurance (US)</option>
                 <option value="Medicare (US)">Medicare (US)</option>
@@ -177,7 +177,7 @@
 
             <div>
               <label for="member_identifier" class="mb-1 block text-sm font-medium">Insurance or NHS Member Identifier *</label>
-              <input id="member_identifier" name="member_identifier" type="text" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <input id="member_identifier" name="member_identifier" type="text" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="member_identifier_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
@@ -190,13 +190,13 @@
             <div class="md:col-span-2">
               <div class="rounded-md border border-slate-300 p-4">
                 <div class="flex items-start gap-3">
-                  <input id="consent_data_processing" name="consent_data_processing" type="checkbox" class="mt-1 h-4 w-4 rounded border-slate-300 text-hcBlue focus:ring-hcBlue" />
+                  <input id="consent_data_processing" name="consent_data_processing" type="checkbox" required class="mt-1 h-4 w-4 rounded border-slate-300 text-hcBlue focus:ring-hcBlue" />
                   <label for="consent_data_processing" class="text-sm">I understand that HealthCore will process my personal health information in line with HIPAA in the US and UK GDPR in the UK. *</label>
                 </div>
                 <p id="consent_data_processing_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
 
                 <div class="mt-4 flex items-start gap-3">
-                  <input id="consent_contact" name="consent_contact" type="checkbox" class="mt-1 h-4 w-4 rounded border-slate-300 text-hcBlue focus:ring-hcBlue" />
+                  <input id="consent_contact" name="consent_contact" type="checkbox" required class="mt-1 h-4 w-4 rounded border-slate-300 text-hcBlue focus:ring-hcBlue" />
                   <label for="consent_contact" class="text-sm">I agree to receive appointment reminders using the contact method I selected above. *</label>
                 </div>
                 <p id="consent_contact_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>

@@ -63,6 +63,25 @@
     UK: /^\+44\d{10}$/
   };
 
+  function getValues() {
+    return {
+      full_name: fields.full_name.value.trim(),
+      date_of_birth: fields.date_of_birth.value,
+      email: fields.email.value.trim(),
+      phone: fields.phone.value.trim(),
+      market_country: fields.market_country.value,
+      clinic_location: fields.clinic_location.value,
+      service_line: fields.service_line.value,
+      preferred_date: fields.preferred_date.value,
+      preferred_time_window: fields.preferred_time_window.value,
+      communication_channel: fields.communication_channel.value,
+      payment_model: fields.payment_model.value,
+      member_identifier: fields.member_identifier.value.trim(),
+      consent_data_processing: fields.consent_data_processing.checked,
+      consent_contact: fields.consent_contact.checked
+    };
+  }
+
   function setError(fieldName, message) {
     const field = fields[fieldName];
     const errorElement = document.getElementById(errorIds[fieldName]);
@@ -126,142 +145,193 @@
     return selected >= today;
   }
 
-  function validate() {
-    clearAllErrors();
+  function validateField(fieldName, values) {
+    const data = values || getValues();
+    clearError(fieldName);
 
-    const errors = [];
-    const values = {
-      full_name: fields.full_name.value.trim(),
-      date_of_birth: fields.date_of_birth.value,
-      email: fields.email.value.trim(),
-      phone: fields.phone.value.trim(),
-      market_country: fields.market_country.value,
-      clinic_location: fields.clinic_location.value,
-      service_line: fields.service_line.value,
-      preferred_date: fields.preferred_date.value,
-      preferred_time_window: fields.preferred_time_window.value,
-      communication_channel: fields.communication_channel.value,
-      payment_model: fields.payment_model.value,
-      member_identifier: fields.member_identifier.value.trim(),
-      consent_data_processing: fields.consent_data_processing.checked,
-      consent_contact: fields.consent_contact.checked
-    };
+    switch (fieldName) {
+      case 'full_name':
+        if (!data.full_name) {
+          setError('full_name', 'Please enter your full name.');
+          return false;
+        }
+        if (!/^[A-Za-z\s'.-]{2,80}$/.test(data.full_name)) {
+          setError('full_name', 'Enter your full name using letters and standard punctuation only.');
+          return false;
+        }
+        return true;
 
-    if (!values.full_name) {
-      errors.push('full_name');
-      setError('full_name', 'Please enter your full name.');
-    } else if (!/^[A-Za-z\s'.-]{2,80}$/.test(values.full_name)) {
-      errors.push('full_name');
-      setError('full_name', 'Enter your full name using letters and standard punctuation only.');
+      case 'date_of_birth':
+        if (!data.date_of_birth) {
+          setError('date_of_birth', 'Please enter your date of birth.');
+          return false;
+        }
+        if (!isAdult(data.date_of_birth)) {
+          setError('date_of_birth', 'You must be at least 18 years old to submit this form.');
+          return false;
+        }
+        return true;
+
+      case 'email':
+        if (!data.email) {
+          setError('email', 'Please enter your email address.');
+          return false;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+          setError('email', 'Enter a valid email address so we can contact you.');
+          return false;
+        }
+        return true;
+
+      case 'phone':
+        if (!data.phone) {
+          setError('phone', 'Please enter your phone number.');
+          return false;
+        }
+        if (data.market_country && phonePatterns[data.market_country] && !phonePatterns[data.market_country].test(data.phone)) {
+          const phoneMessage = data.market_country === 'US'
+            ? 'For United States care requests, enter a phone number using +1 followed by 10 digits.'
+            : 'For United Kingdom care requests, enter a phone number using +44 followed by 10 digits.';
+          setError('phone', phoneMessage);
+          return false;
+        }
+        return true;
+
+      case 'market_country':
+        if (!data.market_country) {
+          setError('market_country', 'Please choose the country where you want care.');
+          return false;
+        }
+        return true;
+
+      case 'clinic_location':
+        if (!data.clinic_location) {
+          setError('clinic_location', 'Please choose your preferred clinic location.');
+          return false;
+        }
+        if (data.market_country && !countryLocations[data.market_country].includes(data.clinic_location)) {
+          setError('clinic_location', 'Choose a clinic location that matches your selected country of care.');
+          return false;
+        }
+        return true;
+
+      case 'service_line':
+        if (!data.service_line) {
+          setError('service_line', 'Please choose the service you need.');
+          return false;
+        }
+        return true;
+
+      case 'preferred_date':
+        if (!data.preferred_date) {
+          setError('preferred_date', 'Please select your preferred appointment date.');
+          return false;
+        }
+        if (!isFutureDate(data.preferred_date)) {
+          setError('preferred_date', 'Choose today or a future date for your appointment request.');
+          return false;
+        }
+        return true;
+
+      case 'preferred_time_window':
+        if (!data.preferred_time_window) {
+          setError('preferred_time_window', 'Please choose a preferred appointment window.');
+          return false;
+        }
+        return true;
+
+      case 'communication_channel':
+        if (!data.communication_channel) {
+          setError('communication_channel', 'Please choose how you would like to receive reminders.');
+          return false;
+        }
+        return true;
+
+      case 'payment_model':
+        if (!data.payment_model) {
+          setError('payment_model', 'Please choose your payment model.');
+          return false;
+        }
+        if (data.market_country && !countryPayments[data.market_country].includes(data.payment_model)) {
+          setError('payment_model', 'Choose a payment model that matches your selected country of care.');
+          return false;
+        }
+        return true;
+
+      case 'member_identifier':
+        if (!data.member_identifier) {
+          setError('member_identifier', 'Please enter your insurance or NHS member identifier.');
+          return false;
+        }
+        if (data.payment_model === 'NHS Contract (UK)' && !/^\d{10}$/.test(data.member_identifier)) {
+          setError('member_identifier', 'For NHS Contract (UK), enter a 10-digit member identifier.');
+          return false;
+        }
+        if (data.payment_model !== 'NHS Contract (UK)' && !/^[A-Za-z0-9-]{6,20}$/.test(data.member_identifier)) {
+          setError('member_identifier', 'Enter an insurance member identifier with 6 to 20 letters, numbers, or hyphens.');
+          return false;
+        }
+        return true;
+
+      case 'consent_data_processing':
+        if (!data.consent_data_processing) {
+          setError('consent_data_processing', 'Please confirm that you understand the data processing terms.');
+          return false;
+        }
+        return true;
+
+      case 'consent_contact':
+        if (!data.consent_contact) {
+          setError('consent_contact', 'Please confirm that HealthCore may send appointment reminders.');
+          return false;
+        }
+        return true;
+
+      default:
+        return true;
     }
-
-    if (!values.date_of_birth) {
-      errors.push('date_of_birth');
-      setError('date_of_birth', 'Please enter your date of birth.');
-    } else if (!isAdult(values.date_of_birth)) {
-      errors.push('date_of_birth');
-      setError('date_of_birth', 'You must be at least 18 years old to submit this form.');
-    }
-
-    if (!values.email) {
-      errors.push('email');
-      setError('email', 'Please enter your email address.');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-      errors.push('email');
-      setError('email', 'Enter a valid email address so we can contact you.');
-    }
-
-    if (!values.phone) {
-      errors.push('phone');
-      setError('phone', 'Please enter your phone number.');
-    }
-
-    if (!values.market_country) {
-      errors.push('market_country');
-      setError('market_country', 'Please choose the country where you want care.');
-    }
-
-    if (!values.clinic_location) {
-      errors.push('clinic_location');
-      setError('clinic_location', 'Please choose your preferred clinic location.');
-    }
-
-    if (!values.service_line) {
-      errors.push('service_line');
-      setError('service_line', 'Please choose the service you need.');
-    }
-
-    if (!values.preferred_date) {
-      errors.push('preferred_date');
-      setError('preferred_date', 'Please select your preferred appointment date.');
-    } else if (!isFutureDate(values.preferred_date)) {
-      errors.push('preferred_date');
-      setError('preferred_date', 'Choose today or a future date for your appointment request.');
-    }
-
-    if (!values.preferred_time_window) {
-      errors.push('preferred_time_window');
-      setError('preferred_time_window', 'Please choose a preferred appointment window.');
-    }
-
-    if (!values.communication_channel) {
-      errors.push('communication_channel');
-      setError('communication_channel', 'Please choose how you would like to receive reminders.');
-    }
-
-    if (!values.payment_model) {
-      errors.push('payment_model');
-      setError('payment_model', 'Please choose your payment model.');
-    }
-
-    if (!values.member_identifier) {
-      errors.push('member_identifier');
-      setError('member_identifier', 'Please enter your insurance or NHS member identifier.');
-    }
-
-    if (!values.consent_data_processing) {
-      errors.push('consent_data_processing');
-      setError('consent_data_processing', 'Please confirm that you understand the data processing terms.');
-    }
-
-    if (!values.consent_contact) {
-      errors.push('consent_contact');
-      setError('consent_contact', 'Please confirm that HealthCore may send appointment reminders.');
-    }
-
-    // Domain-specific validations linked to HealthCore US/UK operations.
-    if (values.market_country) {
-      if (values.phone && phonePatterns[values.market_country] && !phonePatterns[values.market_country].test(values.phone)) {
-        errors.push('phone');
-        const phoneMessage = values.market_country === 'US'
-          ? 'For United States care requests, enter a phone number using +1 followed by 10 digits.'
-          : 'For United Kingdom care requests, enter a phone number using +44 followed by 10 digits.';
-        setError('phone', phoneMessage);
-      }
-
-      if (values.clinic_location && !countryLocations[values.market_country].includes(values.clinic_location)) {
-        errors.push('clinic_location');
-        setError('clinic_location', 'Choose a clinic location that matches your selected country of care.');
-      }
-
-      if (values.payment_model && !countryPayments[values.market_country].includes(values.payment_model)) {
-        errors.push('payment_model');
-        setError('payment_model', 'Choose a payment model that matches your selected country of care.');
-      }
-    }
-
-    if (values.payment_model === 'NHS Contract (UK)' && !/^\d{10}$/.test(values.member_identifier)) {
-      errors.push('member_identifier');
-      setError('member_identifier', 'For NHS Contract (UK), enter a 10-digit member identifier.');
-    }
-
-    if (values.payment_model !== 'NHS Contract (UK)' && values.member_identifier && !/^[A-Za-z0-9-]{6,20}$/.test(values.member_identifier)) {
-      errors.push('member_identifier');
-      setError('member_identifier', 'Enter an insurance member identifier with 6 to 20 letters, numbers, or hyphens.');
-    }
-
-    return { valid: errors.length === 0, errors };
   }
+
+  function validate() {
+    const values = getValues();
+    const fieldNames = Object.keys(errorIds);
+    const errors = [];
+
+    fieldNames.forEach(function (fieldName) {
+      if (!validateField(fieldName, values)) {
+        errors.push(fieldName);
+      }
+    });
+
+    return { valid: errors.length === 0, errors: errors };
+  }
+
+  Object.keys(fields).forEach(function (fieldName) {
+    const field = fields[fieldName];
+    if (!field) {
+      return;
+    }
+
+    const eventName = field.type === 'checkbox' || field.tagName === 'SELECT' ? 'change' : 'input';
+
+    field.addEventListener('blur', function () {
+      validateField(fieldName);
+    });
+
+    field.addEventListener(eventName, function () {
+      validateField(fieldName);
+
+      if (fieldName === 'market_country') {
+        validateField('phone');
+        validateField('clinic_location');
+        validateField('payment_model');
+      }
+
+      if (fieldName === 'payment_model') {
+        validateField('member_identifier');
+      }
+    });
+  });
 
   form.addEventListener('submit', function (event) {
     event.preventDefault();

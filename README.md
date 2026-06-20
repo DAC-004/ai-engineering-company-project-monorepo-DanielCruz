@@ -30,6 +30,30 @@ This repository is the **starter template** for transversal projects. You will w
 
 ---
 
+## HealthCore Milestone 1 — run locally
+
+From the repository root, start the static site with:
+
+```bash
+npx http-server . -p 3000 -a 0.0.0.0 -c-1
+```
+
+Then open `http://127.0.0.1:3000/` for the landing page and `http://127.0.0.1:3000/application.html` for the care request form.
+
+This command is compatible with GitHub Codespaces and local development.
+
+## HealthCore Milestone 1 — deploy to Vercel
+
+The HealthCore landing page and application form deploy as a static site from the repository root.
+
+1. Import this repository in [Vercel](https://vercel.com/danielcruz-glitchs).
+2. Use the default settings (framework preset: **Other**, output: static files at root).
+3. Deploy the `main` branch (or your Milestone 1 feature branch for preview).
+
+After deployment, run [PageSpeed Insights](https://pagespeed.web.dev/) against your public Vercel URL. Milestone 1 requires a performance score of at least **80**.
+
+---
+
 ## How to think about this monorepo
 
 You are building **one company** across many milestones and projects. Each top-level folder has a **single responsibility** — like a real engineering team repo.
