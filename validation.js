@@ -43,13 +43,7 @@
   };
 
   const countryLocations = {
-    US: [
-      'Austin, Texas',
-      'Houston, Texas',
-      'Miami, Florida',
-      'Orlando, Florida',
-      'Atlanta, Georgia'
-    ],
+    US: ['Austin TX', 'Houston TX', 'Miami FL', 'Orlando FL', 'Atlanta GA'],
     UK: ['London', 'Manchester']
   };
 
@@ -57,6 +51,21 @@
     US: ['Private Insurance (US)', 'Medicare (US)', 'Medicaid (US)'],
     UK: ['Private Pay (UK)', 'NHS Contract (UK)']
   };
+
+  const serviceLines = [
+    'Primary Care',
+    'Specialist Consultation',
+    'Chronic Disease Management',
+    'Preventive Health Programme'
+  ];
+
+  const communicationChannels = ['SMS', 'Email', 'Phone Call'];
+
+  const timeWindows = [
+    'Morning (08:00-12:00)',
+    'Afternoon (12:00-17:00)',
+    'Evening (17:00-20:00)'
+  ];
 
   const phonePatterns = {
     US: /^\+1\d{10}$/,
@@ -84,6 +93,60 @@
 
   const errorClassNames = ['border-red-600', 'ring-2', 'ring-red-600/20'];
   const successClassNames = ['border-emerald-600', 'ring-2', 'ring-emerald-600/20'];
+
+  function populateSelect(select, options, placeholder, preserveValue) {
+    if (!select) {
+      return;
+    }
+
+    const currentValue = preserveValue ? select.value : '';
+
+    select.innerHTML = '';
+
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = placeholder;
+    select.appendChild(placeholderOption);
+
+    options.forEach(function (optionValue) {
+      const option = document.createElement('option');
+      option.value = optionValue;
+      option.textContent = optionValue;
+      select.appendChild(option);
+    });
+
+    if (currentValue && options.includes(currentValue)) {
+      select.value = currentValue;
+    } else {
+      select.value = '';
+    }
+  }
+
+  function updateCountryDependentFields(country) {
+    const hasCountry = Boolean(country);
+    const locationPlaceholder = hasCountry ? 'Choose a clinic location' : 'Choose a country of care first';
+    const paymentPlaceholder = hasCountry ? 'Choose a payment model' : 'Choose a country of care first';
+
+    populateSelect(
+      fields.clinic_location,
+      hasCountry ? countryLocations[country] : [],
+      locationPlaceholder
+    );
+    populateSelect(
+      fields.payment_model,
+      hasCountry ? countryPayments[country] : [],
+      paymentPlaceholder
+    );
+
+    fields.clinic_location.disabled = !hasCountry;
+    fields.payment_model.disabled = !hasCountry;
+
+    if (!hasCountry) {
+      clearError('clinic_location');
+      clearError('payment_model');
+      clearError('member_identifier');
+    }
+  }
 
   function setFieldVisualState(field, state) {
     if (!field) {
@@ -226,7 +289,11 @@
           setError('phone', 'Please enter your phone number.');
           return false;
         }
-        if (data.market_country && phonePatterns[data.market_country] && !phonePatterns[data.market_country].test(data.phone)) {
+        if (!data.market_country) {
+          setError('phone', 'Please choose your country of care before entering a phone number.');
+          return false;
+        }
+        if (!phonePatterns[data.market_country].test(data.phone)) {
           const phoneMessage = data.market_country === 'US'
             ? 'For United States care requests, enter a phone number using +1 followed by 10 digits.'
             : 'For United Kingdom care requests, enter a phone number using +44 followed by 10 digits.';
@@ -258,6 +325,10 @@
           setError('service_line', 'Please choose the service you need.');
           return false;
         }
+        if (!serviceLines.includes(data.service_line)) {
+          setError('service_line', 'Choose Primary Care, Specialist Consultation, Chronic Disease Management, or Preventive Health Programme.');
+          return false;
+        }
         return succeed();
 
       case 'preferred_date':
@@ -276,11 +347,19 @@
           setError('preferred_time_window', 'Please choose a preferred appointment window.');
           return false;
         }
+        if (!timeWindows.includes(data.preferred_time_window)) {
+          setError('preferred_time_window', 'Choose Morning (08:00-12:00), Afternoon (12:00-17:00), or Evening (17:00-20:00).');
+          return false;
+        }
         return succeed();
 
       case 'communication_channel':
         if (!data.communication_channel) {
           setError('communication_channel', 'Please choose how you would like to receive reminders.');
+          return false;
+        }
+        if (!communicationChannels.includes(data.communication_channel)) {
+          setError('communication_channel', 'Choose SMS, Email, or Phone Call.');
           return false;
         }
         return succeed();
@@ -299,6 +378,10 @@
       case 'member_identifier':
         if (!data.member_identifier) {
           setError('member_identifier', 'Please enter your insurance or NHS member identifier.');
+          return false;
+        }
+        if (!data.payment_model) {
+          setError('member_identifier', 'Please choose your payment model before entering a member identifier.');
           return false;
         }
         if (data.payment_model === 'NHS Contract (UK)' && !/^\d{10}$/.test(data.member_identifier)) {
@@ -360,9 +443,11 @@
       validateField(fieldName);
 
       if (fieldName === 'market_country') {
+        updateCountryDependentFields(fields.market_country.value);
         validateField('phone');
         validateField('clinic_location');
         validateField('payment_model');
+        validateField('member_identifier');
       }
 
       if (fieldName === 'payment_model') {
@@ -392,5 +477,8 @@
     clearAllErrors();
     status.classList.add('hidden');
     status.textContent = '';
+    updateCountryDependentFields('');
   });
+
+  updateCountryDependentFields('');
 })();

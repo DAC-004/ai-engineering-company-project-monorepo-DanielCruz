@@ -135,7 +135,7 @@ All Milestone 1 form field names, types, allowed values, and validation rules be
 
 ### Contact information (public-facing)
 
-- Headquarters: Austin, Texas, United States
+- Headquarters: Austin TX, United States
 - Network coverage: Texas, Florida, Georgia, London, Manchester
 - Email: care@healthcore.com
 - Phone (US): +1 (512) 555-0142
