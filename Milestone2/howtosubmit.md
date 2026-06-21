@@ -15,3 +15,13 @@ In the PR description include:
 What functionalities you implemented
 What challenges you encountered and how you solved them
 Screenshots if you implemented the test interface (optional)
+
+Submit the link to your Pull Request on the 4Geeks platform:
+
+1. Open your cohort lesson for Milestone 2 — Programming Fundamentals on [4Geeks.com](https://4geeks.com/learn).
+2. Log in if prompted.
+3. Paste your Pull Request URL in the deliverable field:
+
+   https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/pull/3
+
+4. Submit the lesson deliverable.
