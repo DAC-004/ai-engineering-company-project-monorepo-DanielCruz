@@ -5,6 +5,11 @@
   "description": "HealthCore AI Engineering monorepo — Milestone 1 static site at repo root",
   "scripts": {
     "start": "http-server . -p 3000 -a 0.0.0.0 -c-1",
+    "typecheck": "tsc --noEmit",
+    "build:milestone2": "tsc --project tsconfig.build.json",
+    "demo": "tsx src/demo.ts",
+    "test": "tsx --test src/tests/**/*.test.ts",
+    "verify:milestone2": "npm run typecheck && npm run test && npm run build:milestone2",
     "vercel": "vercel",
     "vercel:login": "vercel login",
     "vercel:link": "vercel link --scope danielcruz-glitchs-projects",
@@ -13,6 +18,8 @@
   },
   "devDependencies": {
     "http-server": "^14.1.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
     "vercel": "^54.14.5"
   }
 }

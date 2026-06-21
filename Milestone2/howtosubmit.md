@@ -1,4 +1,4 @@
- How to Submit
+# How to Submit
 Make sure all your changes are in the milestone-2-programming-fundamentals branch
 
 Commit your changes with descriptive messages. Example:
