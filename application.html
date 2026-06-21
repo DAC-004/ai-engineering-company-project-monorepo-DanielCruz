@@ -17,9 +17,35 @@
             colors: {
               hcBlue: '#0E3A5D',
               hcTeal: '#0E7490'
+            },
+            maxWidth: {
+              hc: '90rem',
+              'hc-form': '52rem'
             }
           }
-        }
+        },
+        plugins: [
+          function ({ addComponents, theme }) {
+            addComponents({
+              '.hc-container': {
+                width: '100%',
+                maxWidth: theme('maxWidth.hc'),
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                paddingLeft: 'clamp(1.25rem, 4vw, 4rem)',
+                paddingRight: 'clamp(1.25rem, 4vw, 4rem)'
+              },
+              '.hc-form-shell': {
+                width: '100%',
+                maxWidth: theme('maxWidth.hc-form'),
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                paddingLeft: 'clamp(1.25rem, 4vw, 4rem)',
+                paddingRight: 'clamp(1.25rem, 4vw, 4rem)'
+              }
+            });
+          }
+        ]
       };
     </script>
     <script type="application/ld+json">
@@ -50,60 +76,60 @@
     >
 
     <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/75">
-      <nav class="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6" aria-label="Primary navigation">
-        <a href="index.html" class="text-xl font-bold tracking-tight text-hcBlue">HealthCore</a>
-        <a href="index.html" class="rounded px-2 py-1 text-sm font-medium hover:text-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue">Back to Home</a>
+      <nav class="hc-container flex items-center justify-between py-5 lg:py-6" aria-label="Primary navigation">
+        <a href="index.html" class="text-2xl font-bold tracking-tight text-hcBlue lg:text-[1.75rem]">HealthCore</a>
+        <a href="index.html" class="rounded-md px-3 py-2 text-base font-medium hover:text-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue">Back to Home</a>
       </nav>
     </header>
 
-    <main id="main-content" class="mx-auto max-w-4xl scroll-mt-32 px-4 py-10 sm:px-6">
-      <section class="mb-8">
-        <h1 class="text-3xl font-extrabold text-hcBlue">Request Outpatient Care</h1>
-        <p class="mt-3 text-slate-700">
+    <main id="main-content" class="hc-form-shell scroll-mt-32 py-12 lg:py-16">
+      <section class="mb-10">
+        <h1 class="text-4xl font-extrabold text-hcBlue lg:text-5xl">Request Outpatient Care</h1>
+        <p class="mt-4 text-lg leading-relaxed text-slate-700 lg:text-xl">
           Complete this form to request care with a HealthCore clinic in the United States or
           United Kingdom. Please provide the details needed to review your request and contact you
           about next steps.
         </p>
       </section>
 
-      <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-        <div id="form-status" class="mb-6 hidden rounded-md border px-4 py-3 text-sm" role="status" aria-live="polite"></div>
+      <section class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-200 sm:p-9 lg:p-10">
+        <div id="form-status" class="mb-6 hidden rounded-md border px-4 py-3 text-base" role="status" aria-live="polite"></div>
 
         <form id="healthcore-application-form" novalidate>
-          <fieldset class="grid gap-5 md:grid-cols-2">
-            <legend class="mb-4 text-lg font-semibold text-hcBlue">Patient Information</legend>
+          <fieldset class="grid gap-6 md:grid-cols-2">
+            <legend class="mb-5 text-xl font-semibold text-hcBlue lg:text-2xl">Patient Information</legend>
 
             <div>
-              <label for="full_name" class="mb-1 block text-sm font-medium">Full Name *</label>
-              <input id="full_name" name="full_name" type="text" autocomplete="name" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <label for="full_name" class="mb-2 block text-base font-medium">Full Name *</label>
+              <input id="full_name" name="full_name" type="text" autocomplete="name" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="full_name_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
-              <label for="date_of_birth" class="mb-1 block text-sm font-medium">Date of Birth *</label>
-              <input id="date_of_birth" name="date_of_birth" type="date" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <label for="date_of_birth" class="mb-2 block text-base font-medium">Date of Birth *</label>
+              <input id="date_of_birth" name="date_of_birth" type="date" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="date_of_birth_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
-              <label for="email" class="mb-1 block text-sm font-medium">Email Address *</label>
-              <input id="email" name="email" type="email" autocomplete="email" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <label for="email" class="mb-2 block text-base font-medium">Email Address *</label>
+              <input id="email" name="email" type="email" autocomplete="email" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="email_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
-              <label for="phone" class="mb-1 block text-sm font-medium">Phone Number *</label>
-              <input id="phone" name="phone" type="tel" autocomplete="tel" required placeholder="United States: +1XXXXXXXXXX | United Kingdom: +44XXXXXXXXXX" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <label for="phone" class="mb-2 block text-base font-medium">Phone Number *</label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" required placeholder="United States: +1XXXXXXXXXX | United Kingdom: +44XXXXXXXXXX" class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="phone_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
           </fieldset>
 
-          <fieldset class="mt-8 grid gap-5 md:grid-cols-2">
-            <legend class="mb-4 text-lg font-semibold text-hcBlue">Clinic and Appointment Preferences</legend>
+          <fieldset class="mt-10 grid gap-6 md:grid-cols-2">
+            <legend class="mb-5 text-xl font-semibold text-hcBlue lg:text-2xl">Clinic and Appointment Preferences</legend>
 
             <div>
-              <label for="market_country" class="mb-1 block text-sm font-medium">Country of Care *</label>
-              <select id="market_country" name="market_country" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <label for="market_country" class="mb-2 block text-base font-medium">Country of Care *</label>
+              <select id="market_country" name="market_country" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a country</option>
                 <option value="US">United States</option>
                 <option value="UK">United Kingdom</option>
@@ -112,16 +138,16 @@
             </div>
 
             <div>
-              <label for="clinic_location" class="mb-1 block text-sm font-medium">Preferred Clinic Location *</label>
-              <select id="clinic_location" name="clinic_location" required disabled class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500">
+              <label for="clinic_location" class="mb-2 block text-base font-medium">Preferred Clinic Location *</label>
+              <select id="clinic_location" name="clinic_location" required disabled class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500">
                 <option value="">Choose a country of care first</option>
               </select>
               <p id="clinic_location_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
-              <label for="service_line" class="mb-1 block text-sm font-medium">Service Needed *</label>
-              <select id="service_line" name="service_line" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <label for="service_line" class="mb-2 block text-base font-medium">Service Needed *</label>
+              <select id="service_line" name="service_line" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a service</option>
                 <option value="Primary Care">Primary Care</option>
                 <option value="Specialist Consultation">Specialist Consultation</option>
@@ -132,14 +158,14 @@
             </div>
 
             <div>
-              <label for="preferred_date" class="mb-1 block text-sm font-medium">Preferred Appointment Date *</label>
-              <input id="preferred_date" name="preferred_date" type="date" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <label for="preferred_date" class="mb-2 block text-base font-medium">Preferred Appointment Date *</label>
+              <input id="preferred_date" name="preferred_date" type="date" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="preferred_date_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
-              <label for="preferred_time_window" class="mb-1 block text-sm font-medium">Preferred Appointment Window *</label>
-              <select id="preferred_time_window" name="preferred_time_window" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <label for="preferred_time_window" class="mb-2 block text-base font-medium">Preferred Appointment Window *</label>
+              <select id="preferred_time_window" name="preferred_time_window" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a time window</option>
                 <option value="Morning (08:00-12:00)">Morning (08:00-12:00)</option>
                 <option value="Afternoon (12:00-17:00)">Afternoon (12:00-17:00)</option>
@@ -149,8 +175,8 @@
             </div>
 
             <div>
-              <label for="communication_channel" class="mb-1 block text-sm font-medium">Preferred Reminder Method *</label>
-              <select id="communication_channel" name="communication_channel" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
+              <label for="communication_channel" class="mb-2 block text-base font-medium">Preferred Reminder Method *</label>
+              <select id="communication_channel" name="communication_channel" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20">
                 <option value="">Choose a reminder method</option>
                 <option value="SMS">SMS</option>
                 <option value="Email">Email</option>
@@ -160,64 +186,64 @@
             </div>
           </fieldset>
 
-          <fieldset class="mt-8 grid gap-5 md:grid-cols-2">
-            <legend class="mb-4 text-lg font-semibold text-hcBlue">Payment Details and Consent</legend>
+          <fieldset class="mt-10 grid gap-6 md:grid-cols-2">
+            <legend class="mb-5 text-xl font-semibold text-hcBlue lg:text-2xl">Payment Details and Consent</legend>
 
             <div>
-              <label for="payment_model" class="mb-1 block text-sm font-medium">Payment Model *</label>
-              <select id="payment_model" name="payment_model" required disabled class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500">
+              <label for="payment_model" class="mb-2 block text-base font-medium">Payment Model *</label>
+              <select id="payment_model" name="payment_model" required disabled class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500">
                 <option value="">Choose a country of care first</option>
               </select>
               <p id="payment_model_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div>
-              <label for="member_identifier" class="mb-1 block text-sm font-medium">Insurance or NHS Member Identifier *</label>
-              <input id="member_identifier" name="member_identifier" type="text" required class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
+              <label for="member_identifier" class="mb-2 block text-base font-medium">Insurance or NHS Member Identifier *</label>
+              <input id="member_identifier" name="member_identifier" type="text" required class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20" />
               <p id="member_identifier_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
             </div>
 
             <div class="md:col-span-2">
-              <label for="patient_notes" class="mb-1 block text-sm font-medium">Additional Notes (optional)</label>
-              <textarea id="patient_notes" name="patient_notes" rows="4" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20"></textarea>
-              <p class="mt-1 text-xs text-slate-600">Share only the information needed to help HealthCore understand your request for care.</p>
+              <label for="patient_notes" class="mb-2 block text-base font-medium">Additional Notes (optional)</label>
+              <textarea id="patient_notes" name="patient_notes" rows="4" class="w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-base focus:border-hcBlue focus:outline-none focus:ring-2 focus:ring-hcBlue/20"></textarea>
+              <p class="mt-2 text-sm text-slate-600 lg:text-base">Share only the information needed to help HealthCore understand your request for care.</p>
             </div>
 
             <div class="md:col-span-2">
-              <div class="rounded-md border border-slate-300 p-4">
+              <div class="rounded-md border border-slate-300 p-5 lg:p-6">
                 <div class="flex items-start gap-3">
                   <input id="consent_data_processing" name="consent_data_processing" type="checkbox" required class="mt-1 h-4 w-4 rounded border-slate-300 text-hcBlue focus:ring-hcBlue" />
-                  <label for="consent_data_processing" class="text-sm">I understand that HealthCore will process my personal health information in line with HIPAA in the US and UK GDPR in the UK. *</label>
+                  <label for="consent_data_processing" class="text-base leading-relaxed lg:text-lg">I understand that HealthCore will process my personal health information in line with HIPAA in the US and UK GDPR in the UK. *</label>
                 </div>
                 <p id="consent_data_processing_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
 
-                <div class="mt-4 flex items-start gap-3">
+                <div class="mt-5 flex items-start gap-3">
                   <input id="consent_contact" name="consent_contact" type="checkbox" required class="mt-1 h-4 w-4 rounded border-slate-300 text-hcBlue focus:ring-hcBlue" />
-                  <label for="consent_contact" class="text-sm">I agree to receive appointment reminders using the contact method I selected above. *</label>
+                  <label for="consent_contact" class="text-base leading-relaxed lg:text-lg">I agree to receive appointment reminders using the contact method I selected above. *</label>
                 </div>
                 <p id="consent_contact_error" class="mt-1 text-sm text-red-700" aria-live="polite"></p>
               </div>
             </div>
           </fieldset>
 
-          <div class="mt-8 flex flex-wrap gap-3">
-            <button type="submit" class="rounded-md bg-hcBlue px-5 py-3 text-sm font-semibold text-white hover:bg-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hcBlue">Submit Care Request</button>
-            <button type="reset" class="rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hcBlue">Clear Entered Details</button>
+          <div class="mt-10 flex flex-wrap gap-4">
+            <button type="submit" class="rounded-lg bg-hcBlue px-6 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hcBlue lg:px-8 lg:py-4 lg:text-lg">Submit Care Request</button>
+            <button type="reset" class="rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hcBlue lg:px-8 lg:py-4 lg:text-lg">Clear Entered Details</button>
           </div>
         </form>
       </section>
     </main>
 
     <footer class="border-t border-slate-200 bg-white">
-      <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <div class="grid gap-4 sm:grid-cols-2">
+      <div class="hc-container py-10 lg:py-12">
+        <div class="grid gap-8 sm:grid-cols-2 lg:gap-10">
           <div>
-            <p class="text-sm font-semibold text-hcBlue">HealthCore Patient Access</p>
-            <p class="mt-2 text-sm text-slate-700">Care request form for outpatient clinics in the United States and United Kingdom.</p>
+            <p class="text-base font-semibold text-hcBlue lg:text-lg">HealthCore Patient Access</p>
+            <p class="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">Care request form for outpatient clinics in the United States and United Kingdom.</p>
           </div>
           <div>
-            <p class="text-sm font-semibold text-hcBlue">Contact</p>
-            <address class="mt-2 space-y-1 text-sm not-italic text-slate-700">
+            <p class="text-base font-semibold text-hcBlue lg:text-lg">Contact</p>
+            <address class="mt-3 space-y-2 text-base not-italic text-slate-700 lg:text-lg">
               <p>Headquarters: Austin TX, United States</p>
               <p>Network coverage: Texas, Florida, Georgia, London, Manchester</p>
               <p>
@@ -235,7 +261,7 @@
             </address>
           </div>
         </div>
-        <p class="mt-6 border-t border-slate-200 pt-4 text-sm text-slate-600">© 2026 HealthCore.</p>
+        <p class="mt-8 border-t border-slate-200 pt-6 text-base text-slate-600 lg:text-lg">© 2026 HealthCore.</p>
       </div>
     </footer>
 
