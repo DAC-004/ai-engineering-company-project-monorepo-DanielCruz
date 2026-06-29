@@ -14,6 +14,7 @@ interface UseNotesResult {
   addSuccess: string | null;
   deletingNoteId: string | null;
   deleteError: string | null;
+  deleteSuccess: string | null;
   refetch: () => Promise<void>;
   addNote: (content: string) => Promise<boolean>;
   removeNote: (noteId: string) => Promise<boolean>;
@@ -29,6 +30,7 @@ export function useNotes(recordId: string): UseNotesResult {
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -73,6 +75,7 @@ export function useNotes(recordId: string): UseNotesResult {
       setIsAdding(true);
       setAddError(null);
       setAddSuccess(null);
+      setDeleteSuccess(null);
 
       try {
         await createNote(recordId, { content });
@@ -97,10 +100,13 @@ export function useNotes(recordId: string): UseNotesResult {
     async (noteId: string): Promise<boolean> => {
       setDeletingNoteId(noteId);
       setDeleteError(null);
+      setDeleteSuccess(null);
+      setAddSuccess(null);
 
       try {
         await deleteNote(recordId, noteId);
         setNotes((current) => current.filter((note) => note.id !== noteId));
+        setDeleteSuccess("Note deleted successfully.");
         return true;
       } catch (submitError) {
         const message =
@@ -125,6 +131,7 @@ export function useNotes(recordId: string): UseNotesResult {
     addSuccess,
     deletingNoteId,
     deleteError,
+    deleteSuccess,
     refetch,
     addNote,
     removeNote,

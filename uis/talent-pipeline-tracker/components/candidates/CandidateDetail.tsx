@@ -45,6 +45,14 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
           value={String(candidate.experience_years)}
         />
         <DetailItem
+          label="Application Status"
+          value={<StatusBadge status={candidate.status} />}
+        />
+        <DetailItem
+          label="Hiring Stage"
+          value={<StageBadge stage={candidate.stage} />}
+        />
+        <DetailItem
           label="Application Date"
           value={formatDate(candidate.applied_at)}
         />

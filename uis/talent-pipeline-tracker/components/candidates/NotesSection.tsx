@@ -24,6 +24,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
     addSuccess,
     deletingNoteId,
     deleteError,
+    deleteSuccess,
     refetch,
     addNote,
     removeNote,
@@ -125,6 +126,12 @@ export function NotesSection({ recordId }: NotesSectionProps) {
                 </li>
               ))}
             </ul>
+          ) : null}
+
+          {deleteSuccess ? (
+            <div className="mt-4">
+              <SuccessMessage message={deleteSuccess} />
+            </div>
           ) : null}
 
           {deleteError ? (
