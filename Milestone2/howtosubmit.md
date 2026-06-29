@@ -1,4 +1,4 @@
- How to Submit
+# How to Submit
 Make sure all your changes are in the milestone-2-programming-fundamentals branch
 
 Commit your changes with descriptive messages. Example:
@@ -15,3 +15,7 @@ In the PR description include:
 What functionalities you implemented
 What challenges you encountered and how you solved them
 Screenshots if you implemented the test interface (optional)
+
+Submit the link to your Pull Request on the 4Geeks platform:
+
+https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/pull/3

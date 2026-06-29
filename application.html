@@ -8,46 +8,7 @@
       name="description"
       content="Submit a care request for HealthCore outpatient services across US and UK clinics using an accessible application form for appointment preferences and patient details."
     />
-    <link rel="preconnect" href="https://cdn.tailwindcss.com" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              hcBlue: '#0E3A5D',
-              hcTeal: '#0E7490'
-            },
-            maxWidth: {
-              hc: '90rem',
-              'hc-form': '52rem'
-            }
-          }
-        },
-        plugins: [
-          function ({ addComponents, theme }) {
-            addComponents({
-              '.hc-container': {
-                width: '100%',
-                maxWidth: theme('maxWidth.hc'),
-                marginLeft: 'auto',
-                marginRight: 'auto',
-                paddingLeft: 'clamp(1.25rem, 4vw, 4rem)',
-                paddingRight: 'clamp(1.25rem, 4vw, 4rem)'
-              },
-              '.hc-form-shell': {
-                width: '100%',
-                maxWidth: theme('maxWidth.hc-form'),
-                marginLeft: 'auto',
-                marginRight: 'auto',
-                paddingLeft: 'clamp(1.25rem, 4vw, 4rem)',
-                paddingRight: 'clamp(1.25rem, 4vw, 4rem)'
-              }
-            });
-          }
-        ]
-      };
-    </script>
+    <link rel="stylesheet" href="assets/site.css" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

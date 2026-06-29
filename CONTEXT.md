@@ -140,3 +140,91 @@ All Milestone 1 form field names, types, allowed values, and validation rules be
 - Email: care@healthcore.com
 - Phone (US): +1 (512) 555-0142
 - Phone (UK): +44 20 7946 0958
+
+---
+
+## Milestone 2 — Programming Fundamentals
+
+All Milestone 2 entity names, field names, types, allowed values, validation rules, and reports below must match the implementation in `src/types/models.ts`, `src/utils/validations.ts`, and `src/utils/transformations.ts` exactly.
+
+### Shared types
+
+| Type name | Allowed values |
+| --- | --- |
+| `MarketCountry` | `US`, `UK` |
+| `ServiceLine` | Primary Care, Specialist Consultation, Chronic Disease Management, Preventive Health Programme |
+| `PreferredTimeWindow` | Morning (08:00-12:00), Afternoon (12:00-17:00), Evening (17:00-20:00) |
+| `CommunicationChannel` | SMS, Email, Phone Call |
+| `PaymentModelUS` | Private Insurance (US), Medicare (US), Medicaid (US) |
+| `PaymentModelUK` | Private Pay (UK), NHS Contract (UK) |
+| `CareRequestStatus` | Submitted, Under Review, Approved, Rejected |
+| `AppointmentStatus` | Pending Review, Scheduled, Completed, Cancelled, No Show |
+
+### Entity: `Clinic`
+
+| Field name | Type | Required | Validation rules |
+| --- | --- | --- | --- |
+| `id` | string | Yes | Non-empty unique identifier |
+| `name` | string | Yes | Must be one of the clinic locations for the selected `market_country` |
+| `market_country` | `MarketCountry` | Yes | Allowed values: `US`, `UK` |
+
+Clinic locations by country (must match Milestone 1):
+
+- US: Austin TX, Houston TX, Miami FL, Orlando FL, Atlanta GA
+- UK: London, Manchester
+
+### Entity: `CareRequest`
+
+Uses the same field names and validation rules as the Milestone 1 care request form, plus internal processing fields.
+
+| Field name | Type | Required | Validation rules |
+| --- | --- | --- | --- |
+| `id` | string | Yes | Non-empty unique identifier |
+| `full_name` | string | Yes | 2–80 characters; letters, spaces, apostrophes, periods, and hyphens only |
+| `date_of_birth` | string | Yes | ISO date (`YYYY-MM-DD`); patient must be at least 18 years old |
+| `email` | string | Yes | Valid email format |
+| `phone` | string | Yes | US (`market_country = US`): `+1` followed by 10 digits; UK (`market_country = UK`): `+44` followed by 10 digits |
+| `market_country` | `MarketCountry` | Yes | Allowed values: `US`, `UK` |
+| `clinic_location` | string | Yes | Must match selected country clinic list |
+| `service_line` | `ServiceLine` | Yes | Primary Care, Specialist Consultation, Chronic Disease Management, Preventive Health Programme |
+| `preferred_date` | string | Yes | ISO date (`YYYY-MM-DD`); today or a future date |
+| `preferred_time_window` | `PreferredTimeWindow` | Yes | Morning (08:00-12:00), Afternoon (12:00-17:00), Evening (17:00-20:00) |
+| `communication_channel` | `CommunicationChannel` | Yes | SMS, Email, Phone Call |
+| `payment_model` | string | Yes | Must match selected country payment list |
+| `member_identifier` | string | Yes | NHS Contract (UK): exactly 10 digits; all other payment models: 6–20 letters, numbers, or hyphens |
+| `consent_data_processing` | boolean | Yes | Must be `true` |
+| `consent_contact` | boolean | Yes | Must be `true` |
+| `patient_notes` | string | No | Optional free text |
+| `status` | `CareRequestStatus` | Yes | Submitted, Under Review, Approved, Rejected |
+
+Cross-field business rules (same as Milestone 1):
+
+- `clinic_location` must belong to the clinic list for the selected `market_country`.
+- `payment_model` must belong to the payment list for the selected `market_country`.
+- `phone` format must match the selected `market_country`.
+- `member_identifier` format depends on the selected `payment_model`.
+
+### Entity: `Appointment`
+
+| Field name | Type | Required | Validation rules |
+| --- | --- | --- | --- |
+| `id` | string | Yes | Non-empty unique identifier |
+| `care_request_id` | string | Yes | Must reference an existing `CareRequest.id` |
+| `clinic_id` | string | Yes | Must reference an existing `Clinic.id`; clinic `name` must match the linked care request `clinic_location` |
+| `preferred_date` | string | Yes | ISO date (`YYYY-MM-DD`); today or a future date |
+| `preferred_time_window` | `PreferredTimeWindow` | Yes | Morning (08:00-12:00), Afternoon (12:00-17:00), Evening (17:00-20:00) |
+| `service_line` | `ServiceLine` | Yes | Must match the linked care request `service_line` |
+| `status` | `AppointmentStatus` | Yes | Pending Review, Scheduled, Completed, Cancelled, No Show |
+
+### Required operational reports
+
+Generate typed reports from collections of `CareRequest`, `Clinic`, and `Appointment` records:
+
+1. Count care requests by `market_country`.
+2. Count care requests by `clinic_location`.
+3. Count care requests by `service_line`.
+4. Count care requests by `status`.
+5. Count appointments by `status`.
+6. Count appointments grouped by clinic name (via `clinic_id`).
+7. Minimum and maximum `preferred_date` among care requests (ISO date strings).
+8. Average days until `preferred_date` among care requests (rounded to one decimal), calculated from today's date at runtime.
