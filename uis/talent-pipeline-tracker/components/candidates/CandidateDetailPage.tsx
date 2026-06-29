@@ -41,7 +41,7 @@ export function CandidateDetailPage({ candidateId }: CandidateDetailPageProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:space-y-8">
       <CandidateDetail candidate={candidate} backHref={backHref} />
       <StatusStageControls candidate={candidate} onUpdated={setCandidate} />
       <NotesSection recordId={candidate.id} />

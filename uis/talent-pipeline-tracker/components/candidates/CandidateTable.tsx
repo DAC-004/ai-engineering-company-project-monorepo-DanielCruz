@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { getStageLabel, getStatusLabel } from "@/lib/labels";
+import { StageBadge, StatusBadge } from "@/components/ui/PipelineBadge";
+import { formatDate } from "@/lib/labels";
 import type { Candidate } from "@/types/candidate";
 
 interface CandidateTableProps {
@@ -15,50 +16,106 @@ export function CandidateTable({
   const suffix = queryString ? `?${queryString}` : "";
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-slate-50">
-          <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-              Full Name
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-              Role Applied For
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-              Status
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-              Stage
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {candidates.map((candidate) => (
-            <tr key={candidate.id} className="hover:bg-slate-50">
-              <td className="px-4 py-3">
-                <Link
-                  href={`/candidates/${candidate.id}${suffix}`}
-                  className="font-medium text-teal-800 hover:text-teal-900 hover:underline"
-                >
-                  {candidate.full_name}
-                </Link>
-              </td>
-              <td className="px-4 py-3 text-slate-700">{candidate.position}</td>
-              <td className="px-4 py-3">
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                  {getStatusLabel(candidate.status)}
-                </span>
-              </td>
-              <td className="px-4 py-3">
-                <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
-                  {getStageLabel(candidate.stage)}
-                </span>
-              </td>
+    <>
+      {/* Desktop table */}
+      <div className="surface-card hidden overflow-hidden md:block">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Candidate
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Role Applied For
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Status
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Stage
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Applied
+              </th>
+              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Action
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {candidates.map((candidate) => (
+              <tr
+                key={candidate.id}
+                className="transition-colors hover:bg-slate-50"
+              >
+                <td className="px-6 py-5">
+                  <div>
+                    <p className="text-base font-semibold text-slate-900">
+                      {candidate.full_name}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {candidate.email}
+                    </p>
+                  </div>
+                </td>
+                <td className="px-6 py-5 text-base text-slate-700">
+                  {candidate.position}
+                </td>
+                <td className="px-6 py-5">
+                  <StatusBadge status={candidate.status} />
+                </td>
+                <td className="px-6 py-5">
+                  <StageBadge stage={candidate.stage} />
+                </td>
+                <td className="px-6 py-5 text-sm text-slate-600">
+                  {formatDate(candidate.applied_at)}
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <Link
+                    href={`/candidates/${candidate.id}${suffix}`}
+                    className="text-sm font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+                  >
+                    View details
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="space-y-3 md:hidden">
+        {candidates.map((candidate) => (
+          <article
+            key={candidate.id}
+            className="surface-card p-4 shadow-sm"
+          >
+            <div className="flex flex-col gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  {candidate.full_name}
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">{candidate.email}</p>
+              </div>
+              <p className="text-sm text-slate-700">{candidate.position}</p>
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge status={candidate.status} />
+                <StageBadge stage={candidate.stage} />
+              </div>
+              <p className="text-sm text-slate-500">
+                Applied {formatDate(candidate.applied_at)}
+              </p>
+              <Link
+                href={`/candidates/${candidate.id}${suffix}`}
+                className="btn-secondary w-full"
+              >
+                View details
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }

@@ -36,24 +36,27 @@ export function StatusStageControls({
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-slate-900">
+    <section className="surface-card p-5 md:p-6 lg:p-8">
+      <h3 className="text-xl font-semibold tracking-tight text-slate-900 md:text-2xl">
         Update Pipeline Status
       </h3>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-2 text-base leading-7 text-slate-600">
         Move this applicant through HealthCore&apos;s hiring pipeline.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">Status</span>
+      <form
+        onSubmit={handleSubmit}
+        className="mt-6 grid gap-5 sm:grid-cols-2 md:gap-6"
+      >
+        <label className="flex flex-col gap-2">
+          <span className="label-field">Status</span>
           <select
             value={status}
             onChange={(event) =>
               setStatus(event.target.value as CandidateStatus)
             }
             disabled={isSubmitting}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:opacity-60"
+            className="input-field disabled:opacity-60"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -63,13 +66,13 @@ export function StatusStageControls({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">Stage</span>
+        <label className="flex flex-col gap-2">
+          <span className="label-field">Stage</span>
           <select
             value={stage}
             onChange={(event) => setStage(event.target.value as CandidateStage)}
             disabled={isSubmitting}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:opacity-60"
+            className="input-field disabled:opacity-60"
           >
             {STAGE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -80,24 +83,20 @@ export function StatusStageControls({
         </label>
 
         <div className="sm:col-span-2">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <button type="submit" disabled={isSubmitting} className="btn-primary">
             {isSubmitting ? "Saving..." : "Save status & stage"}
           </button>
         </div>
       </form>
 
       {success ? (
-        <div className="mt-4">
+        <div className="mt-5">
           <SuccessMessage message={success} />
         </div>
       ) : null}
 
       {error ? (
-        <div className="mt-4">
+        <div className="mt-5">
           <ErrorState message={error} />
         </div>
       ) : null}

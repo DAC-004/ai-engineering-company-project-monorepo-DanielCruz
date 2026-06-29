@@ -70,24 +70,24 @@ export function CandidateFilters({ onChange }: CandidateFiltersProps) {
   }
 
   return (
-    <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Search by name or email</span>
+    <div className="surface-card grid gap-5 p-4 md:grid-cols-3 md:p-5 lg:gap-6">
+      <label className="flex flex-col gap-2">
+        <span className="label-field">Search by name or email</span>
         <input
           type="search"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           placeholder="Search candidates..."
-          className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+          className="input-field"
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Filter by status</span>
+      <label className="flex flex-col gap-2">
+        <span className="label-field">Filter by status</span>
         <select
           value={status}
           onChange={(event) => updateParam("status", event.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+          className="input-field"
         >
           <option value="">All statuses</option>
           {STATUS_OPTIONS.map((option) => (
@@ -98,12 +98,12 @@ export function CandidateFilters({ onChange }: CandidateFiltersProps) {
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Filter by stage</span>
+      <label className="flex flex-col gap-2">
+        <span className="label-field">Filter by stage</span>
         <select
           value={stage}
           onChange={(event) => updateParam("stage", event.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+          className="input-field"
         >
           <option value="">All stages</option>
           {STAGE_OPTIONS.map((option) => (

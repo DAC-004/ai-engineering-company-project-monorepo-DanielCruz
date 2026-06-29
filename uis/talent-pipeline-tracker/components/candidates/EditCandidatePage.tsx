@@ -40,12 +40,15 @@ export function EditCandidatePage({ candidateId }: EditCandidatePageProps) {
 
   if (error || !candidate) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         <ErrorState
           message={error ?? "Candidate not found."}
           onRetry={() => void refetch()}
         />
-        <Link href="/" className="text-sm font-medium text-teal-800 hover:underline">
+        <Link
+          href="/"
+          className="text-base font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+        >
           ← Back to pipeline
         </Link>
       </div>
@@ -55,13 +58,18 @@ export function EditCandidatePage({ candidateId }: EditCandidatePageProps) {
   const initialValues = candidateToFormValues(candidate);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-2xl font-semibold text-slate-900">Edit Candidate</h2>
-      <p className="mt-2 text-sm text-slate-600">
+    <section className="surface-card p-5 md:p-6 lg:p-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+        Edit Application
+      </p>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+        Edit Candidate
+      </h2>
+      <p className="mt-4 text-base leading-7 text-slate-600 md:text-lg">
         Update applicant details for {candidate.full_name}.
       </p>
 
-      <div className="mt-6">
+      <div className="mt-8">
         <CandidateForm
           initialValues={initialValues}
           submitLabel="Save changes"

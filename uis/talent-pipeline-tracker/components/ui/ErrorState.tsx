@@ -5,15 +5,14 @@ interface ErrorStateProps {
 
 export function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
-    <div className="rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-red-800">
-      <p className="font-medium">Something went wrong</p>
-      <p className="mt-1 text-sm">{message}</p>
+    <div
+      className="surface-card border-rose-200 bg-rose-50 px-6 py-5 text-rose-900"
+      role="alert"
+    >
+      <p className="text-base font-semibold">Something went wrong</p>
+      <p className="mt-2 text-base leading-7 text-rose-800">{message}</p>
       {onRetry ? (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-3 rounded-md bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800"
-        >
+        <button type="button" onClick={onRetry} className="btn-primary mt-4">
           Try again
         </button>
       ) : null}

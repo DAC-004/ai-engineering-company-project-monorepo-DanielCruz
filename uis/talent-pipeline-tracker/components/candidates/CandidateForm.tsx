@@ -82,8 +82,8 @@ export function CandidateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+      <div className="grid gap-5 sm:grid-cols-2 md:gap-6">
         <FormField
           label="Full Name"
           name="full_name"
@@ -149,7 +149,7 @@ export function CandidateForm({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-primary"
       >
         {isSubmitting ? submittingLabel : submitLabel}
       </button>
@@ -177,8 +177,8 @@ function FormField({
   className?: string;
 }) {
   return (
-    <label className={`flex flex-col gap-1 text-sm ${className}`}>
-      <span className="font-medium text-slate-700">
+    <label className={`flex flex-col gap-2 ${className}`}>
+      <span className="label-field">
         {label}
         {required ? " *" : ""}
       </span>
@@ -189,7 +189,7 @@ function FormField({
         min={min}
         required={required}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+        className="input-field"
       />
     </label>
   );

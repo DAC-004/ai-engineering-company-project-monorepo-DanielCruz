@@ -43,86 +43,96 @@ export function NotesSection({ recordId }: NotesSectionProps) {
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-slate-900">Recruiter Notes</h3>
-      <p className="mt-1 text-sm text-slate-600">
+    <section className="surface-card p-5 md:p-6 lg:p-8">
+      <h3 className="text-xl font-semibold tracking-tight text-slate-900 md:text-2xl">
+        Recruiter Notes
+      </h3>
+      <p className="mt-2 text-base leading-7 text-slate-600">
         Interview feedback and hiring observations for Diane Foster&apos;s team.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">Add a note</span>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <label className="flex flex-col gap-2">
+          <span className="label-field">Add a note</span>
           <textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
             rows={4}
             placeholder="Document interview feedback or hiring observations..."
-            className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+            className="textarea-field"
           />
         </label>
         <button
           type="submit"
           disabled={isAdding || !content.trim()}
-          className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary"
         >
           {isAdding ? "Adding note..." : "Add note"}
         </button>
       </form>
 
       {addSuccess ? (
-        <div className="mt-4">
+        <div className="mt-5">
           <SuccessMessage message={addSuccess} />
         </div>
       ) : null}
 
       {addError ? (
-        <div className="mt-4">
+        <div className="mt-5">
           <ErrorState message={addError} />
         </div>
       ) : null}
 
-      <div className="mt-6">
-        {loading ? <LoadingState message="Loading notes..." /> : null}
+      <div className="mt-8 border-t border-slate-100 pt-6">
+        <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Activity log
+        </h4>
 
-        {!loading && error ? (
-          <ErrorState message={error} onRetry={() => void refetch()} />
-        ) : null}
+        <div className="mt-4">
+          {loading ? <LoadingState message="Loading notes..." /> : null}
 
-        {!loading && !error && notes.length === 0 ? (
-          <EmptyState title="No recruiter notes yet." />
-        ) : null}
+          {!loading && error ? (
+            <ErrorState message={error} onRetry={() => void refetch()} />
+          ) : null}
 
-        {!loading && !error && notes.length > 0 ? (
-          <ul className="space-y-3">
-            {notes.map((note) => (
-              <li
-                key={note.id}
-                className="rounded-lg border border-slate-200 bg-slate-50 p-4"
-              >
-                <p className="text-sm text-slate-800">{note.content}</p>
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-slate-500">
-                    {formatDate(note.created_at)}
+          {!loading && !error && notes.length === 0 ? (
+            <EmptyState title="No recruiter notes yet." />
+          ) : null}
+
+          {!loading && !error && notes.length > 0 ? (
+            <ul className="space-y-4">
+              {notes.map((note) => (
+                <li
+                  key={note.id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-5"
+                >
+                  <p className="text-base leading-7 text-slate-800">
+                    {note.content}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => void removeNote(note.id)}
-                    disabled={deletingNoteId === note.id}
-                    className="text-sm font-medium text-red-700 hover:text-red-800 disabled:opacity-60"
-                  >
-                    {deletingNoteId === note.id ? "Deleting..." : "Delete"}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
+                    <p className="text-sm text-slate-500">
+                      {formatDate(note.created_at)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void removeNote(note.id)}
+                      disabled={deletingNoteId === note.id}
+                      className="text-sm font-semibold text-rose-700 hover:text-rose-800 disabled:opacity-60"
+                    >
+                      {deletingNoteId === note.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
-        {deleteError ? (
-          <div className="mt-4">
-            <ErrorState message={deleteError} />
-          </div>
-        ) : null}
+          {deleteError ? (
+            <div className="mt-4">
+              <ErrorState message={deleteError} />
+            </div>
+          ) : null}
+        </div>
       </div>
     </section>
   );

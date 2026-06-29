@@ -5,10 +5,12 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description }: EmptyStateProps) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-      <p className="font-medium text-slate-800">{title}</p>
+    <div className="surface-card border-dashed px-6 py-12 text-center md:px-8 md:py-16">
+      <p className="text-lg font-semibold text-slate-900 md:text-xl">{title}</p>
       {description ? (
-        <p className="mt-2 text-sm text-slate-600">{description}</p>
+        <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-slate-600">
+          {description}
+        </p>
       ) : null}
     </div>
   );

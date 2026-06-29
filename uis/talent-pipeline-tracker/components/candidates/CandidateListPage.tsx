@@ -59,7 +59,7 @@ export function CandidateListPage() {
 
     const start = (page - 1) * limit + 1;
     const end = Math.min(page * limit, total);
-    return `Showing ${start}-${end} of ${total} candidates`;
+    return `Showing ${start}–${end} of ${total} candidates`;
   }, [total, page, limit]);
 
   function goToPage(nextPage: number) {
@@ -69,12 +69,13 @@ export function CandidateListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section>
-        <h2 className="text-2xl font-semibold text-slate-900">
+    <div className="space-y-6 lg:space-y-8">
+      <section className="surface-card p-5 md:p-6 lg:p-8">
+        <p className="eyebrow text-teal-700">Pipeline Overview</p>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
           Clinical &amp; Operational Candidates
         </h2>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+        <p className="mt-4 max-w-4xl text-base leading-7 text-slate-600 md:text-lg">
           Track applicants for HealthCore&apos;s People &amp; Workforce hiring
           pipeline across US and UK clinic locations. Clinical roles currently
           take an average of 47 days to close.
@@ -99,25 +100,25 @@ export function CandidateListPage() {
       {!loading && !error && candidates.length > 0 ? (
         <>
           <CandidateTable candidates={candidates} queryString={queryString} />
-          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-600">{paginationLabel}</p>
-            <div className="flex items-center gap-2">
+          <div className="surface-card flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+            <p className="text-base text-slate-600">{paginationLabel}</p>
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 disabled={page <= 1}
                 onClick={() => goToPage(page - 1)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Previous
               </button>
-              <span className="text-sm text-slate-600">
+              <span className="text-base text-slate-600">
                 Page {page} of {totalPages}
               </span>
               <button
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => goToPage(page + 1)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next
               </button>
