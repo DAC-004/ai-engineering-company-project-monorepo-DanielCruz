@@ -24,11 +24,9 @@ export function CreateCandidatePage() {
 
   return (
     <section className="surface-card p-5 md:p-6 lg:p-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
-        New Application
-      </p>
-      <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-        Register New Candidate
+      <p className="eyebrow">New Application</p>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight text-hc-blue md:text-4xl">
+        Register Candidate
       </h2>
       <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 md:text-lg">
         Add a clinical or operational applicant to HealthCore&apos;s People

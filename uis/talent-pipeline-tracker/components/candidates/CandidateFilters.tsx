@@ -83,7 +83,7 @@ export function CandidateFilters({ onChange }: CandidateFiltersProps) {
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="label-field">Filter by status</span>
+        <span className="label-field">Application Status</span>
         <select
           value={status}
           onChange={(event) => updateParam("status", event.target.value)}
@@ -99,7 +99,7 @@ export function CandidateFilters({ onChange }: CandidateFiltersProps) {
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="label-field">Filter by stage</span>
+        <span className="label-field">Hiring Stage</span>
         <select
           value={stage}
           onChange={(event) => updateParam("stage", event.target.value)}

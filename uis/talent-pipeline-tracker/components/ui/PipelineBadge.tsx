@@ -4,17 +4,17 @@ import { getStageLabel, getStatusLabel } from "@/lib/labels";
 
 const STATUS_STYLES: Record<CandidateStatus, string> = {
   received: "bg-slate-100 text-slate-700 ring-slate-200",
-  in_progress: "bg-sky-50 text-sky-800 ring-sky-200",
+  in_progress: "bg-sky-50 text-sky-900 ring-sky-200",
   selected: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   discarded: "bg-rose-50 text-rose-800 ring-rose-200",
 };
 
 const STAGE_STYLES: Record<CandidateStage, string> = {
-  pending: "bg-amber-50 text-amber-900 ring-amber-200",
-  review: "bg-teal-50 text-teal-800 ring-teal-200",
-  personal_interview: "bg-cyan-50 text-cyan-900 ring-cyan-200",
-  technical_interview: "bg-indigo-50 text-indigo-900 ring-indigo-200",
-  offer_presented: "bg-violet-50 text-violet-900 ring-violet-200",
+  pending: "bg-slate-50 text-slate-700 ring-slate-200",
+  review: "bg-cyan-50 text-cyan-900 ring-cyan-200",
+  personal_interview: "bg-sky-50 text-sky-900 ring-sky-200",
+  technical_interview: "bg-blue-50 text-blue-900 ring-blue-200",
+  offer_presented: "bg-teal-50 text-teal-900 ring-teal-200",
 };
 
 interface PipelineBadgeProps {

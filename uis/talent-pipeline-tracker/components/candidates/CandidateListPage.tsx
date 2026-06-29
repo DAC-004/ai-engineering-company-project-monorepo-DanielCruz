@@ -70,10 +70,10 @@ export function CandidateListPage() {
 
   return (
     <div className="space-y-6 lg:space-y-8">
-      <section className="surface-card p-5 md:p-6 lg:p-8">
-        <p className="eyebrow text-teal-700">Pipeline Overview</p>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-          Clinical &amp; Operational Candidates
+      <section className="surface-card border-hc-teal/10 bg-gradient-to-br from-white to-hc-mint/40 p-5 md:p-6 lg:p-8">
+        <p className="eyebrow">Internal Operations</p>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight text-hc-blue md:text-4xl">
+          Candidate Records
         </h2>
         <p className="mt-4 max-w-4xl text-base leading-7 text-slate-600 md:text-lg">
           Track applicants for HealthCore&apos;s People &amp; Workforce hiring

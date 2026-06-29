@@ -14,13 +14,14 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
     <section className="surface-card p-5 md:p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
-            Candidate Profile
-          </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-            {candidate.full_name}
+          <p className="eyebrow">HealthCore People &amp; Talent</p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-hc-blue md:text-3xl">
+            Candidate Record
           </h2>
-          <p className="mt-2 text-base text-slate-600">{candidate.position}</p>
+          <p className="mt-2 text-xl font-semibold text-slate-900">
+            {candidate.full_name}
+          </p>
+          <p className="mt-1 text-base text-slate-600">{candidate.position}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <StatusBadge status={candidate.status} />
             <StageBadge stage={candidate.stage} />
@@ -30,7 +31,7 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
           href={`/candidates/${candidate.id}/edit`}
           className="btn-secondary shrink-0"
         >
-          Edit Candidate
+          Edit Record
         </Link>
       </div>
 
@@ -55,7 +56,7 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
                 href={candidate.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-teal-700 hover:text-teal-800 hover:underline"
+                className="link-accent"
               >
                 View profile
               </a>
@@ -72,7 +73,7 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
                 href={candidate.cv_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-teal-700 hover:text-teal-800 hover:underline"
+                className="link-accent"
               >
                 View CV
               </a>
@@ -86,7 +87,7 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
       <div className="mt-8 border-t border-slate-100 pt-6">
         <Link
           href={backHref}
-          className="text-base font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+          className="link-accent text-base"
         >
           ← Back to pipeline
         </Link>

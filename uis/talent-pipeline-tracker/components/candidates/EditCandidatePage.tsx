@@ -47,7 +47,7 @@ export function EditCandidatePage({ candidateId }: EditCandidatePageProps) {
         />
         <Link
           href="/"
-          className="text-base font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+          className="link-accent text-base"
         >
           ← Back to pipeline
         </Link>
@@ -59,11 +59,9 @@ export function EditCandidatePage({ candidateId }: EditCandidatePageProps) {
 
   return (
     <section className="surface-card p-5 md:p-6 lg:p-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
-        Edit Application
-      </p>
-      <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-        Edit Candidate
+      <p className="eyebrow">Edit Application</p>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight text-hc-blue md:text-4xl">
+        Update Candidate Record
       </h2>
       <p className="mt-4 text-base leading-7 text-slate-600 md:text-lg">
         Update applicant details for {candidate.full_name}.

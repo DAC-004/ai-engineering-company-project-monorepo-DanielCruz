@@ -33,7 +33,7 @@ export function CandidateDetailPage({ candidateId }: CandidateDetailPageProps) {
           message={error ?? "Candidate not found."}
           onRetry={() => void refetch()}
         />
-        <Link href={backHref} className="text-sm font-medium text-teal-800 hover:underline">
+        <Link href={backHref} className="link-accent text-base">
           ← Back to pipeline
         </Link>
       </div>

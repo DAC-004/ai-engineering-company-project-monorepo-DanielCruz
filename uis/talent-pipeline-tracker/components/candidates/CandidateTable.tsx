@@ -73,7 +73,7 @@ export function CandidateTable({
                 <td className="px-6 py-5 text-right">
                   <Link
                     href={`/candidates/${candidate.id}${suffix}`}
-                    className="text-sm font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+                    className="link-accent text-sm"
                   >
                     View details
                   </Link>

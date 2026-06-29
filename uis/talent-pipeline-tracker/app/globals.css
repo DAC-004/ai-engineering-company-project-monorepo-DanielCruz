@@ -3,11 +3,19 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --hc-blue: #0e3a5d;
+  --hc-teal: #0e7490;
+  --hc-mint: #dff7f2;
+  --hc-ink: #0f172a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-hc-blue: var(--hc-blue);
+  --color-hc-teal: var(--hc-teal);
+  --color-hc-mint: var(--hc-mint);
+  --color-hc-ink: var(--hc-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -20,7 +28,7 @@ body {
 
 @layer components {
   .app-shell-wide {
-    width: min(94vw, 1600px);
+    width: min(94vw, 90rem);
     margin-inline: auto;
   }
 
@@ -29,19 +37,19 @@ body {
   }
 
   .input-field {
-    @apply h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10;
+    @apply h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-hc-teal focus:ring-4 focus:ring-hc-blue/10;
   }
 
   .textarea-field {
-    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base leading-7 text-slate-900 outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10;
+    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base leading-7 text-slate-900 outline-none transition focus:border-hc-teal focus:ring-4 focus:ring-hc-blue/10;
   }
 
   .btn-primary {
-    @apply inline-flex h-11 items-center justify-center rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white transition hover:bg-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:opacity-60 md:text-base;
+    @apply inline-flex h-11 items-center justify-center rounded-lg bg-hc-blue px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-hc-teal focus:outline-none focus:ring-4 focus:ring-hc-blue/20 disabled:cursor-not-allowed disabled:opacity-60 md:text-base;
   }
 
   .btn-secondary {
-    @apply inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-500/10 md:text-base;
+    @apply inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-hc-teal hover:text-hc-blue focus:outline-none focus:ring-4 focus:ring-hc-blue/10 md:text-base;
   }
 
   .label-field {
@@ -49,6 +57,10 @@ body {
   }
 
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.2em] text-teal-400;
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-hc-teal;
+  }
+
+  .link-accent {
+    @apply font-semibold text-hc-blue hover:text-hc-teal hover:underline;
   }
 }

@@ -44,8 +44,8 @@ export function NotesSection({ recordId }: NotesSectionProps) {
 
   return (
     <section className="surface-card p-5 md:p-6 lg:p-8">
-      <h3 className="text-xl font-semibold tracking-tight text-slate-900 md:text-2xl">
-        Recruiter Notes
+      <h3 className="text-xl font-semibold tracking-tight text-hc-blue md:text-2xl">
+        Internal Notes
       </h3>
       <p className="mt-2 text-base leading-7 text-slate-600">
         Interview feedback and hiring observations for Diane Foster&apos;s team.
@@ -117,7 +117,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
                       type="button"
                       onClick={() => void removeNote(note.id)}
                       disabled={deletingNoteId === note.id}
-                      className="text-sm font-semibold text-rose-700 hover:text-rose-800 disabled:opacity-60"
+                      className="text-sm font-medium text-slate-600 hover:text-rose-700 disabled:opacity-60"
                     >
                       {deletingNoteId === note.id ? "Deleting..." : "Delete"}
                     </button>

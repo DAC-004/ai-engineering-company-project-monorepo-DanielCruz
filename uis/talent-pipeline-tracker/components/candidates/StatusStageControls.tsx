@@ -37,8 +37,8 @@ export function StatusStageControls({
 
   return (
     <section className="surface-card p-5 md:p-6 lg:p-8">
-      <h3 className="text-xl font-semibold tracking-tight text-slate-900 md:text-2xl">
-        Update Pipeline Status
+      <h3 className="text-xl font-semibold tracking-tight text-hc-blue md:text-2xl">
+        Application Status &amp; Hiring Stage
       </h3>
       <p className="mt-2 text-base leading-7 text-slate-600">
         Move this applicant through HealthCore&apos;s hiring pipeline.
@@ -49,7 +49,7 @@ export function StatusStageControls({
         className="mt-6 grid gap-5 sm:grid-cols-2 md:gap-6"
       >
         <label className="flex flex-col gap-2">
-          <span className="label-field">Status</span>
+          <span className="label-field">Application Status</span>
           <select
             value={status}
             onChange={(event) =>
@@ -67,7 +67,7 @@ export function StatusStageControls({
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="label-field">Stage</span>
+          <span className="label-field">Hiring Stage</span>
           <select
             value={stage}
             onChange={(event) => setStage(event.target.value as CandidateStage)}
