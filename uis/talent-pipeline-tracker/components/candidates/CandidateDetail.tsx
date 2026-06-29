@@ -30,6 +30,7 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
       </div>
 
       <dl className="grid gap-4 sm:grid-cols-2">
+        <DetailItem label="Full Name" value={candidate.full_name} />
         <DetailItem label="Email" value={candidate.email} />
         <DetailItem label="Phone" value={candidate.phone} />
         <DetailItem label="Role Applied For" value={candidate.position} />
