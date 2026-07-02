@@ -2,6 +2,32 @@
 
 Internal People & Workforce hiring tool for HealthCore — Milestone 3.
 
+## Reviewer setup
+
+Run these commands from the app directory in the monorepo:
+
+```bash
+cd uis/talent-pipeline-tracker
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+Before reviewing:
+
+- Use `.env.example` as the reference for required environment variables.
+- Do **not** commit `.env.local` (it is gitignored).
+- Run the app from `uis/talent-pipeline-tracker/`, not the repository root.
+
+Optional checks:
+
+```bash
+npm run lint
+npm run build
+```
+
 ## Setup
 
 1. Install dependencies:
@@ -28,9 +54,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Variable | Description |
 | --- | --- |
-| `NEXT_PUBLIC_API_BASE_URL` | Base URL for the Talent Tracker REST API |
+| `NEXT_PUBLIC_API_BASE_URL` | Base URL for the Talent Tracker REST API (required) |
 
-Example:
+Example (also in `.env.example`):
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://playground.4geeks.com/tracker/api/v1
@@ -49,4 +75,7 @@ NEXT_PUBLIC_API_BASE_URL=https://playground.4geeks.com/tracker/api/v1
 
 This app integrates with the [4Geeks Talent Tracker API](https://playground.4geeks.com/tracker/api/v1/docs).
 
-Do not commit `.env.local`. Commit `.env.example` instead.
+## Submission notes
+
+- Push your branch to the monorepo on GitHub and share the link with your instructor.
+- Commit `.env.example`; do **not** commit `.env.local`.
