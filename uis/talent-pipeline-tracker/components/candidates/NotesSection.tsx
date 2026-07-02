@@ -7,7 +7,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { SuccessMessage } from "@/components/ui/SuccessMessage";
 import { useNotes } from "@/hooks/useNotes";
-import { formatDate } from "@/lib/labels";
+import { formatDate, formatNoteContent } from "@/lib/labels";
 
 interface NotesSectionProps {
   recordId: string;
@@ -108,7 +108,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
                   className="rounded-xl border border-slate-200 bg-slate-50 p-5"
                 >
                   <p className="text-base leading-7 text-slate-800">
-                    {note.content}
+                    {formatNoteContent(note.content)}
                   </p>
                   <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
                     <p className="text-sm text-slate-500">

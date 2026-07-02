@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { StageBadge, StatusBadge } from "@/components/ui/PipelineBadge";
-import { formatDate } from "@/lib/labels";
+import { formatDate, formatPosition } from "@/lib/labels";
 import type { Candidate } from "@/types/candidate";
 
 interface CandidateTableProps {
@@ -59,7 +59,7 @@ export function CandidateTable({
                   </div>
                 </td>
                 <td className="px-6 py-5 text-base text-slate-700">
-                  {candidate.position}
+                  {formatPosition(candidate.position)}
                 </td>
                 <td className="px-6 py-5">
                   <StatusBadge status={candidate.status} />
@@ -98,7 +98,9 @@ export function CandidateTable({
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">{candidate.email}</p>
               </div>
-              <p className="text-sm text-slate-700">{candidate.position}</p>
+              <p className="text-sm text-slate-700">
+                {formatPosition(candidate.position)}
+              </p>
               <div className="flex flex-wrap gap-2">
                 <StatusBadge status={candidate.status} />
                 <StageBadge stage={candidate.stage} />

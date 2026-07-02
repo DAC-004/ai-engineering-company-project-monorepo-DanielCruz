@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { StageBadge, StatusBadge } from "@/components/ui/PipelineBadge";
-import { formatDate } from "@/lib/labels";
+import { formatDate, formatPosition } from "@/lib/labels";
 import type { Candidate } from "@/types/candidate";
 
 interface CandidateDetailProps {
@@ -21,7 +21,9 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
           <p className="mt-2 text-xl font-semibold text-slate-900">
             {candidate.full_name}
           </p>
-          <p className="mt-1 text-base text-slate-600">{candidate.position}</p>
+          <p className="mt-1 text-base text-slate-600">
+            {formatPosition(candidate.position)}
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <StatusBadge status={candidate.status} />
             <StageBadge stage={candidate.stage} />
@@ -39,7 +41,10 @@ export function CandidateDetail({ candidate, backHref }: CandidateDetailProps) {
         <DetailItem label="Full Name" value={candidate.full_name} />
         <DetailItem label="Email" value={candidate.email} />
         <DetailItem label="Phone" value={candidate.phone} />
-        <DetailItem label="Role Applied For" value={candidate.position} />
+        <DetailItem
+          label="Role Applied For"
+          value={formatPosition(candidate.position)}
+        />
         <DetailItem
           label="Years of Experience"
           value={String(candidate.experience_years)}
