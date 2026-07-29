@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --bo-bg: #f3f7f8;
+  --bo-surface: #ffffff;
+  --bo-ink: #10232d;
+  --bo-muted: #50636c;
+  --bo-accent: #12606c;
+  --bo-accent-soft: #d9eff1;
+  --bo-line: #d5e1e6;
+}
+
+body {
+  background:
+    radial-gradient(circle at top right, rgba(18, 96, 108, 0.14), transparent 30%),
+    linear-gradient(180deg, #f8fbfc 0%, var(--bo-bg) 100%);
+  color: var(--bo-ink);
+}
+
+.bo-shell {
+  width: 100%;
+  max-width: 88rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(1.25rem, 3vw, 3rem);
+  padding-right: clamp(1.25rem, 3vw, 3rem);
+}
