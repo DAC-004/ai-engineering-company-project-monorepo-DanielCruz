@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HealthCore Talent Pipeline Tracker
 
-## Getting Started
+Internal People & Workforce hiring tool for HealthCore — Milestone 3.
 
-First, run the development server:
+## Reviewer setup
+
+Run these commands from the app directory in the monorepo:
+
+```bash
+cd uis/talent-pipeline-tracker
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+Before reviewing:
+
+- Use `.env.example` as the reference for required environment variables.
+- Do **not** commit `.env.local` (it is gitignored).
+- Run the app from `uis/talent-pipeline-tracker/`, not the repository root.
+
+Optional checks:
+
+```bash
+npm run lint
+npm run build
+```
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Base URL for the Talent Tracker REST API (required) |
 
-## Learn More
+Example (also in `.env.example`):
 
-To learn more about Next.js, take a look at the following resources:
+```env
+NEXT_PUBLIC_API_BASE_URL=https://playground.4geeks.com/tracker/api/v1
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Route | Purpose |
+| --- | --- |
+| `/` | Candidate list with status/stage filters and search |
+| `/candidates/new` | Register a new candidate |
+| `/candidates/[id]` | Candidate detail, status/stage updates, notes |
+| `/candidates/[id]/edit` | Edit candidate profile |
 
-## Deploy on Vercel
+## API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This app integrates with the [4Geeks Talent Tracker API](https://playground.4geeks.com/tracker/api/v1/docs).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Submission notes
+
+- Push your branch to the monorepo on GitHub and share the link with your instructor.
+- Commit `.env.example`; do **not** commit `.env.local`.

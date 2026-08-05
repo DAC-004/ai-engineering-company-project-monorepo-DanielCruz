@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthCore Milestone 2 Utilities Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased">
+    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <header class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">HealthCore Milestone 2 Test Interface</h1>
+        <p class="mt-3 text-slate-700">
+          Manual test page for filter, sort, search, report, and validation utilities.
+        </p>
+      </header>
+
+      <section class="grid gap-6 lg:grid-cols-2">
+        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <h2 class="text-xl font-semibold text-slate-900">Filter care requests</h2>
+          <div class="mt-4 grid gap-3">
+            <label class="block text-sm font-medium" for="filter-country">Country</label>
+            <select id="filter-country" class="w-full rounded-md border border-slate-300 px-3 py-2">
+              <option value="">All</option>
+              <option value="US">US</option>
+              <option value="UK">UK</option>
+            </select>
+            <label class="block text-sm font-medium" for="filter-clinic">Clinic location</label>
+            <input id="filter-clinic" class="w-full rounded-md border border-slate-300 px-3 py-2" placeholder="Austin TX" />
+            <label class="block text-sm font-medium" for="filter-service">Service line</label>
+            <input id="filter-service" class="w-full rounded-md border border-slate-300 px-3 py-2" placeholder="Primary Care" />
+            <label class="block text-sm font-medium" for="filter-status">Status</label>
+            <input id="filter-status" class="w-full rounded-md border border-slate-300 px-3 py-2" placeholder="Submitted" />
+            <button id="btn-filter" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Run filter</button>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <h2 class="text-xl font-semibold text-slate-900">Sort and search</h2>
+          <div class="mt-4 grid gap-3">
+            <label class="block text-sm font-medium" for="sort-direction">Sort preferred_date</label>
+            <select id="sort-direction" class="w-full rounded-md border border-slate-300 px-3 py-2">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+            <button id="btn-sort" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Run sort</button>
+            <label class="block text-sm font-medium" for="search-query">Linear search by full_name</label>
+            <input id="search-query" class="w-full rounded-md border border-slate-300 px-3 py-2" placeholder="Jordan Lee" />
+            <button id="btn-linear-search" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Run linear search</button>
+            <label class="block text-sm font-medium" for="search-id">Binary search by id</label>
+            <input id="search-id" class="w-full rounded-md border border-slate-300 px-3 py-2" placeholder="cr-003" />
+            <button id="btn-binary-search" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Run binary search</button>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <h2 class="text-xl font-semibold text-slate-900">Reports and validation</h2>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <button id="btn-reports" class="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white">Generate reports</button>
+            <button id="btn-validate" class="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white">Run validation</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="text-xl font-semibold text-slate-900">Results</h2>
+        <pre id="output" class="mt-4 overflow-x-auto rounded-lg bg-slate-950 p-4 text-sm text-slate-100"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="../dist/app.js"></script>
+  </body>
+</html>
