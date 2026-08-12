@@ -12,12 +12,12 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.routers import incidents  # noqa: E402
+from app.routers import auth, incidents, profiles, users  # noqa: E402
 
 app = FastAPI(
     title="HealthCore API",
     description="Centralized HealthCore Digital API",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -34,9 +34,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(profiles.router)
 app.include_router(incidents.router)
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
+    """Public liveness probe — intentionally unauthenticated."""
     return {"status": "ok"}
