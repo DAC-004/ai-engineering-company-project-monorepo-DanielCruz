@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HealthCore Internal Workspace (`uis/talent-pipeline-tracker`)
 
-## Getting Started
+Next.js application that completes AUTH-02: login, registration, JWT session handling, protected views, and profile management against the HealthCore API (`services/api`).
 
-First, run the development server:
+## Prerequisites
+
+1. AUTH-01 API running at `http://127.0.0.1:8000`
+2. Node.js 20+
+
+## Setup
 
 ```bash
+cd uis/talent-pipeline-tracker
+cp .env.example .env.local
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Path | Auth | Purpose |
+| --- | --- | --- |
+| `/login` | Public | Email/password login → stores JWT in `localStorage` → redirects to `/` |
+| `/register` | Public | `POST /users` then `POST /auth/login` → stores JWT → redirects to `/` |
+| `/` | Protected | Main authenticated view |
+| `/account/profile` | Protected | Shows email + profile; updates via `PUT /profiles/me` |
 
-## Learn More
+Unauthenticated access to protected routes redirects to `/login` via a client-side `AuthGuard` (localStorage-compatible; no middleware token check).
 
-To learn more about Next.js, take a look at the following resources:
+Logout clears the JWT and returns to `/login`. Any protected API response of HTTP 401 clears the session and redirects to `/login`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Out of scope
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Milestone 1 public website (`index.html`, `application.html` at the repository root) is not part of this application and is not wrapped in authentication.
