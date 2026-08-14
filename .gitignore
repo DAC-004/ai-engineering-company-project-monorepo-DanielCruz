@@ -7,3 +7,6 @@ node_modules/
 .pytest_cache/
 results.csv
 services/api/.venv/
+services/api/data/
+services/api/*.egg-info/
+.uv/
