@@ -7,9 +7,17 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.deps import get_current_user
 from app.core.security import create_access_token, verify_password
-from app.schemas.auth import AuthMeResponse, Token
+from app.schemas.auth import (
+    AuthMeResponse,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    PasswordActionResponse,
+    ResetPasswordRequest,
+    Token,
+)
 from app.schemas.user import UserInDB
-from app.services import profile_service, user_service
+from app.services import password_reset_service, profile_service, user_service
+from app.services.password_reset_service import InvalidResetTokenError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -49,3 +57,55 @@ def read_auth_me(current_user: UserInDB = Depends(get_current_user)) -> AuthMeRe
         role=current_user.role,
         profile=profile,
     )
+
+
+@router.post("/forgot-password", response_model=PasswordActionResponse)
+def forgot_password(payload: ForgotPasswordRequest) -> PasswordActionResponse:
+    """
+    Begin password recovery for an email address.
+
+    Always returns HTTP 200 with the same body whether or not the email is registered,
+    so the response cannot be used for account enumeration.
+    """
+    password_reset_service.request_password_reset(str(payload.email))
+    return PasswordActionResponse(
+        detail="If that address is registered, you'll receive a link shortly",
+    )
+
+
+@router.post("/reset-password", response_model=PasswordActionResponse)
+def reset_password(payload: ResetPasswordRequest) -> PasswordActionResponse:
+    """Consume a one-time reset token and set a new bcrypt-hashed password."""
+    try:
+        password_reset_service.reset_password_with_token(
+            token=payload.token,
+            new_password=payload.new_password,
+        )
+    except InvalidResetTokenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return PasswordActionResponse(detail="Password has been reset")
+
+
+@router.post("/change-password", response_model=PasswordActionResponse)
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: UserInDB = Depends(get_current_user),
+) -> PasswordActionResponse:
+    """Replace the authenticated user's password after verifying the current one."""
+    try:
+        password_reset_service.change_password(
+            user=current_user,
+            current_password=payload.current_password,
+            new_password=payload.new_password,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return PasswordActionResponse(detail="Password has been changed")

@@ -17,6 +17,9 @@ export default function HomePage() {
         <Link href="/account/profile" className="btn-primary">
           Manage profile
         </Link>
+        <Link href="/account/change-password" className="btn-secondary">
+          Change password
+        </Link>
       </div>
     </section>
   );

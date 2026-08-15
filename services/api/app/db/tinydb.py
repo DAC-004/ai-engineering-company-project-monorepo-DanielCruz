@@ -29,6 +29,11 @@ def profiles_table():
     return get_db().table("profiles")
 
 
+def password_reset_tokens_table():
+    """Opaque password-reset credentials (hashed) for one-time AUTH-03 use."""
+    return get_db().table("password_reset_tokens")
+
+
 def reset_db_for_tests() -> None:
     """Close and discard the cached DB handle (tests / isolated validation runs)."""
     global _db
