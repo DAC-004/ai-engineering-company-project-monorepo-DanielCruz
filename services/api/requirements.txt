@@ -1,3 +1,10 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-python-multipart>=0.0.12
+# HealthCore API — dependency management
+
+Dependencies are managed with **uv** via `pyproject.toml` and `uv.lock`.
+
+```bash
+cd services/api
+uv sync
+```
+
+This file is retained only as a pointer for older docs. Do not use `pip install -r requirements.txt` for AUTH-01 dependency changes.
