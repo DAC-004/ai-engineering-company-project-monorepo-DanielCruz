@@ -22,14 +22,19 @@ Open <http://localhost:3000>.
 
 | Path | Auth | Purpose |
 | --- | --- | --- |
-| `/login` | Public | Email/password login → stores JWT in `localStorage` → redirects to `/` |
+| `/login` | Public | Email/password login → stores JWT in `localStorage` → redirects to `/`; includes **Forgot your password?** |
 | `/register` | Public | `POST /users` then `POST /auth/login` → stores JWT → redirects to `/` |
+| `/forgot-password` | Public | Requests `POST /auth/forgot-password`; always shows the anti-enumeration confirmation and disables the form after submit |
+| `/reset-password` | Public | Reads `token` from the query string; `POST /auth/reset-password`; redirects to `/login?reset=success` on success |
 | `/` | Protected | Main authenticated view |
 | `/account/profile` | Protected | Shows email + profile; updates via `PUT /profiles/me` |
+| `/account/change-password` | Protected | Current + new + confirmation; `POST /auth/change-password` |
 
 Unauthenticated access to protected routes redirects to `/login` via a client-side `AuthGuard` (localStorage-compatible; no middleware token check).
 
 Logout clears the JWT and returns to `/login`. Any protected API response of HTTP 401 clears the session and redirects to `/login`.
+
+Password-reset emails are sent by the API via **Resend** (`RESEND_API_KEY` in `services/api/.env`).
 
 ## Out of scope
 

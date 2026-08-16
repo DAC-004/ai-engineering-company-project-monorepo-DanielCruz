@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export default function LoginPage() {
@@ -10,7 +12,9 @@ export default function LoginPage() {
           Authenticate against the HealthCore API. Your JWT is stored in localStorage
           for protected requests.
         </p>
-        <LoginForm />
+        <Suspense fallback={<p className="auth-loading">Loading sign-in form…</p>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

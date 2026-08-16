@@ -82,3 +82,40 @@ export const updateMyProfile = (
     method: "PUT",
     body: JSON.stringify(payload),
   });
+
+export type PasswordActionResponse = {
+  detail: string;
+};
+
+/** POST /auth/forgot-password — always succeeds outwardly (anti-enumeration). */
+export const requestPasswordReset = (
+  email: string,
+): Promise<PasswordActionResponse> =>
+  apiFetch<PasswordActionResponse>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+
+/** POST /auth/reset-password — consumes the one-time token from the email link. */
+export const resetPasswordWithToken = (
+  token: string,
+  newPassword: string,
+): Promise<PasswordActionResponse> =>
+  apiFetch<PasswordActionResponse>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+
+/** POST /auth/change-password — authenticated; verifies current password first. */
+export const changePassword = (
+  currentPassword: string,
+  newPassword: string,
+): Promise<PasswordActionResponse> =>
+  apiFetch<PasswordActionResponse>("/auth/change-password", {
+    auth: true,
+    method: "POST",
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
