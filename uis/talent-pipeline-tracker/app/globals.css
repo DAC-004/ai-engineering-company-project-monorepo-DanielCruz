@@ -162,6 +162,25 @@ h2,
   font-size: 0.92rem;
 }
 
+.error-recovery {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.error-recovery p {
+  margin: 0;
+}
+
+.error-recovery__help {
+  font-size: 0.88rem;
+}
+
+.error-recovery__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .field-hint {
   margin: 0;
   font-size: 0.85rem;

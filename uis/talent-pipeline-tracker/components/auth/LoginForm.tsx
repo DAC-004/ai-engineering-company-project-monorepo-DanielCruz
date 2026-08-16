@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { ErrorRecovery } from "@/components/auth/ErrorRecovery";
 import { ApiError } from "@/lib/auth/types";
+import { GENERIC_ERROR_MESSAGE } from "@/lib/auth/userFacingError";
 import { loginWithPassword, storeSessionToken } from "@/lib/auth/session";
 
 export const LoginForm = () => {
@@ -27,7 +29,7 @@ export const LoginForm = () => {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage("Unable to sign in. Check the API connection and try again.");
+        setErrorMessage(GENERIC_ERROR_MESSAGE);
       }
     } finally {
       setIsSubmitting(false);
@@ -62,11 +64,7 @@ export const LoginForm = () => {
         />
       </div>
 
-      {errorMessage ? (
-        <p className="form-error" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      {errorMessage ? <ErrorRecovery message={errorMessage} /> : null}
 
       <button type="submit" className="btn-primary" disabled={isSubmitting}>
         {isSubmitting ? "Signing in…" : "Sign in"}
