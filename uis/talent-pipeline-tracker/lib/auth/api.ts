@@ -24,7 +24,18 @@ const parseErrorBody = async (
   const fallback = `Request failed with status ${response.status}`;
 
   try {
-    const body = (await response.json()) as { detail?: unknown };
+    const body = (await response.json()) as {
+      detail?: unknown;
+      field?: unknown;
+      message?: unknown;
+    };
+
+    if (typeof body.field === "string" && typeof body.message === "string") {
+      return {
+        message: body.message,
+        fieldErrors: { [body.field]: body.message },
+      };
+    }
 
     if (typeof body.detail === "string") {
       return { message: body.detail, fieldErrors: {} };

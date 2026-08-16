@@ -72,6 +72,20 @@ Instructor clarification authorizes three additional legitimate Incident Analyze
 
 **Qualifying protected total: 5**
 
+### Incident manager routes (`/api/incidents`)
+
+JWT-protected. Validation failures return HTTP 400 with `{ "field", "message" }`.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/api/incidents` | Create (generated `id`, `created_at`, `updated_at`) |
+| `GET` | `/api/incidents` | List; optional `status`, `origin`, `branch`, `category` |
+| `GET` | `/api/incidents/summary` | Totals by status, category, origin, branch |
+| `GET` | `/api/incidents/{id}` | Detail; 404 if missing |
+| `PATCH` | `/api/incidents/{id}/status` | Lifecycle only; advances `updated_at` |
+
+Historical load: `python scripts/seed_incidents.py` (same TinyDB file).
+
 ## Identity storage
 
 - User and Profile live in TinyDB only (`data/auth.json` by default)
