@@ -1,5 +1,6 @@
 (() => {
   const API_BASE = "http://127.0.0.1:8000";
+  const SUPPORT_EMAIL = "care@healthcore.com";
 
   const INVALID_LABELS = {
     invalid_clinic_id: "Invalid or missing clinic_id",
@@ -27,8 +28,11 @@
   const results = document.getElementById("results");
   const exportBtn = document.getElementById("export-btn");
   const analyzeBtn = document.getElementById("analyze-btn");
+  const errorRecovery = document.getElementById("error-recovery");
+  const retryBtn = document.getElementById("retry-btn");
 
   let selectedFile = null;
+  let lastFailedAction = null;
 
   const setStatus = (message, kind = "") => {
     statusMsg.textContent = message;
@@ -36,10 +40,45 @@
     if (kind) statusMsg.classList.add(kind);
   };
 
+  const hideRecovery = () => {
+    lastFailedAction = null;
+    errorRecovery.classList.add("is-hidden");
+  };
+
+  const showRecovery = (action) => {
+    lastFailedAction = action;
+    errorRecovery.classList.remove("is-hidden");
+  };
+
+  const toUserFacingFetchError = (response) => {
+    if (!response) {
+      return "Unable to reach the server. Check your connection and try again.";
+    }
+    if (response.status === 401) {
+      return (
+        "Sign-in is required to analyze incidents. Contact support at " +
+        SUPPORT_EMAIL +
+        " if you need access."
+      );
+    }
+    if (response.status === 400) {
+      return "The file could not be analyzed. Check that it is a valid CSV and try again.";
+    }
+    if (response.status === 404) {
+      return "No analysis results are available yet. Analyze a CSV first.";
+    }
+    return (
+      "Something went wrong. Please try again or contact support at " +
+      SUPPORT_EMAIL +
+      "."
+    );
+  };
+
   const pct = (part, whole) =>
     whole > 0 ? `${((part / whole) * 100).toFixed(1)}%` : "0.0%";
 
   const renderList = (element, entries) => {
+    if (!element) return;
     element.innerHTML = entries
       .map(
         ([label, value]) =>
@@ -49,17 +88,20 @@
   };
 
   const renderResults = (data) => {
+    const payload = data || {};
     const general = document.getElementById("general-metrics");
-    general.innerHTML = [
-      ["Total records", data.total_records],
-      ["Valid", data.valid_count],
-      ["Invalid", data.invalid_count],
-    ]
-      .map(
-        ([label, value]) =>
-          `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`
-      )
-      .join("");
+    if (general) {
+      general.innerHTML = [
+        ["Total records", payload.total_records ?? 0],
+        ["Valid", payload.valid_count ?? 0],
+        ["Invalid", payload.invalid_count ?? 0],
+      ]
+        .map(
+          ([label, value]) =>
+            `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`
+        )
+        .join("");
+    }
 
     const ruleOrder = [
       "invalid_clinic_id",
@@ -72,12 +114,15 @@
     ];
     const invalidEntries = ruleOrder
       .filter((key) => {
-        const count = data.invalid_by_rule?.[key] || 0;
+        const count = payload.invalid_by_rule?.[key] || 0;
         return key !== "score_out_of_range" || count > 0;
       })
-      .map((key) => [INVALID_LABELS[key] || key, data.invalid_by_rule?.[key] || 0]);
+      .map((key) => [
+        INVALID_LABELS[key] || key,
+        payload.invalid_by_rule?.[key] || 0,
+      ]);
 
-    if (data.invalid_count === 0) {
+    if ((payload.invalid_count ?? 0) === 0) {
       renderList(document.getElementById("invalid-list"), [
         ["No invalid records detected", "0"],
       ]);
@@ -85,38 +130,42 @@
       renderList(document.getElementById("invalid-list"), invalidEntries);
     }
 
+    const validCount = payload.valid_count ?? 0;
     renderList(
       document.getElementById("category-list"),
-      Object.entries(data.category_counts || {}).map(([key, count]) => [
+      Object.entries(payload.category_counts || {}).map(([key, count]) => [
         key,
-        `${count} (${pct(count, data.valid_count)})`,
+        `${count} (${pct(count, validCount)})`,
       ])
     );
 
     renderList(
       document.getElementById("status-list"),
-      Object.entries(data.status_counts || {}).map(([key, count]) => [
+      Object.entries(payload.status_counts || {}).map(([key, count]) => [
         key,
-        `${count} (${pct(count, data.valid_count)})`,
+        `${count} (${pct(count, validCount)})`,
       ])
     );
 
     renderList(
       document.getElementById("country-list"),
-      Object.entries(data.country_counts || {}).map(([key, count]) => [
+      Object.entries(payload.country_counts || {}).map(([key, count]) => [
         key,
-        `${count} (${pct(count, data.valid_count)})`,
+        `${count} (${pct(count, validCount)})`,
       ])
     );
 
-    const satisfaction = data.satisfaction || {};
+    const satisfaction = payload.satisfaction || {};
     const average =
       satisfaction.average === null || satisfaction.average === undefined
         ? "n/a"
         : Number(satisfaction.average).toFixed(2);
-    document.getElementById("satisfaction-summary").textContent =
-      `Scored cases: ${satisfaction.scored_cases ?? 0} of ` +
-      `${satisfaction.closed_cases ?? 0}. Average score: ${average} / 5.00`;
+    const satisfactionSummary = document.getElementById("satisfaction-summary");
+    if (satisfactionSummary) {
+      satisfactionSummary.textContent =
+        `Scored cases: ${satisfaction.scored_cases ?? 0} of ` +
+        `${satisfaction.closed_cases ?? 0}. Average score: ${average} / 5.00`;
+    }
 
     const scoreCounts = satisfaction.score_counts || {};
     renderList(
@@ -129,6 +178,87 @@
 
     results.classList.remove("is-hidden");
     exportBtn.disabled = false;
+  };
+
+  const analyzeFile = async () => {
+    const file = selectedFile || fileInput.files?.[0];
+    if (!file) {
+      setStatus("Choose a CSV file before analyzing.", "is-error");
+      showRecovery("analyze");
+      return;
+    }
+
+    hideRecovery();
+    analyzeBtn.disabled = true;
+    setStatus("Analyzing…");
+
+    const body = new FormData();
+    body.append("file", file, file.name);
+
+    try {
+      let response;
+      try {
+        response = await fetch(`${API_BASE}/api/incidents/analyze`, {
+          method: "POST",
+          body,
+        });
+      } catch {
+        throw { response: null };
+      }
+
+      if (!response.ok) {
+        throw { response };
+      }
+
+      const payload = await response.json().catch(() => ({}));
+      renderResults(payload);
+      setStatus(
+        (payload.invalid_count ?? 0) > 0
+          ? `Analysis complete. ${payload.invalid_count} invalid record(s) found.`
+          : "Analysis complete. No invalid records.",
+        "is-ok"
+      );
+    } catch (failure) {
+      results.classList.add("is-hidden");
+      exportBtn.disabled = true;
+      setStatus(toUserFacingFetchError(failure?.response), "is-error");
+      showRecovery("analyze");
+    } finally {
+      analyzeBtn.disabled = false;
+    }
+  };
+
+  const exportResults = async () => {
+    hideRecovery();
+    exportBtn.disabled = true;
+    setStatus("Exporting…");
+
+    try {
+      let response;
+      try {
+        response = await fetch(`${API_BASE}/api/incidents/results/export`);
+      } catch {
+        throw { response: null };
+      }
+
+      if (!response.ok) {
+        throw { response };
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "results.csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setStatus("Results CSV downloaded.", "is-ok");
+    } catch (failure) {
+      setStatus(toUserFacingFetchError(failure?.response), "is-error");
+      showRecovery("export");
+    } finally {
+      exportBtn.disabled = results.classList.contains("is-hidden");
+    }
   };
 
   fileInput.addEventListener("change", () => {
@@ -162,61 +292,18 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const file = selectedFile || fileInput.files?.[0];
-    if (!file) {
-      setStatus("Choose a CSV file before analyzing.", "is-error");
-      return;
-    }
-
-    analyzeBtn.disabled = true;
-    setStatus("Analyzing…");
-
-    const body = new FormData();
-    body.append("file", file, file.name);
-
-    try {
-      const response = await fetch(`${API_BASE}/api/incidents/analyze`, {
-        method: "POST",
-        body,
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const detail = payload.detail || "Analysis failed.";
-        throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
-      }
-      renderResults(payload);
-      setStatus(
-        payload.invalid_count > 0
-          ? `Analysis complete. ${payload.invalid_count} invalid record(s) found.`
-          : "Analysis complete. No invalid records.",
-        "is-ok"
-      );
-    } catch (error) {
-      results.classList.add("is-hidden");
-      exportBtn.disabled = true;
-      setStatus(error.message || "Unable to reach the API.", "is-error");
-    } finally {
-      analyzeBtn.disabled = false;
-    }
+    await analyzeFile();
   });
 
   exportBtn.addEventListener("click", async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/incidents/results/export`);
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.detail || "Export failed.");
-      }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = "results.csv";
-      anchor.click();
-      URL.revokeObjectURL(url);
-      setStatus("Results CSV downloaded.", "is-ok");
-    } catch (error) {
-      setStatus(error.message || "Export failed.", "is-error");
+    await exportResults();
+  });
+
+  retryBtn.addEventListener("click", async () => {
+    if (lastFailedAction === "export") {
+      await exportResults();
+      return;
     }
+    await analyzeFile();
   });
 })();

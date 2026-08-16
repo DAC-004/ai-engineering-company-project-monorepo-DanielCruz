@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { ErrorRecovery } from "@/components/auth/ErrorRecovery";
 import { ApiError, type FieldErrors } from "@/lib/auth/types";
+import { GENERIC_ERROR_MESSAGE } from "@/lib/auth/userFacingError";
 import { registerAndAuthenticate, storeSessionToken } from "@/lib/auth/session";
 
 const emptyFields = {
@@ -49,7 +51,7 @@ export const RegisterForm = () => {
         }
         setFormError(error.message);
       } else {
-        setFormError("Unable to register. Check the API connection and try again.");
+        setFormError(GENERIC_ERROR_MESSAGE);
       }
     } finally {
       setIsSubmitting(false);
@@ -160,11 +162,7 @@ export const RegisterForm = () => {
         </div>
       </fieldset>
 
-      {formError ? (
-        <p className="form-error" role="alert">
-          {formError}
-        </p>
-      ) : null}
+      {formError ? <ErrorRecovery message={formError} /> : null}
 
       <button type="submit" className="btn-primary" disabled={isSubmitting}>
         {isSubmitting ? "Creating account…" : "Create account"}

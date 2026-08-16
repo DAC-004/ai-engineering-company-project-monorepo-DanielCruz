@@ -52,7 +52,13 @@ async def analyze_incidents(
             detail="Incorrect file format: only CSV files are accepted.",
         )
 
-    data = await file.read()
+    try:
+        data = await file.read()
+    except OSError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The file could not be read. Try again.",
+        ) from exc
     if not data or not data.strip():
         raise HTTPException(status_code=400, detail="The CSV file is empty.")
 

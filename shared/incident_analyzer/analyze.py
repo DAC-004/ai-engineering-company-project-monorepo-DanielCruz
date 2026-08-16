@@ -138,29 +138,34 @@ def _parse_csv_text(text: str, source_name: str) -> AnalysisResult:
     if not text or not text.strip():
         raise IncidentCsvError("The CSV file is empty.")
 
-    reader = csv.DictReader(io.StringIO(text))
-    if reader.fieldnames is None:
-        raise IncidentCsvError("The CSV file has no header row.")
+    try:
+        reader = csv.DictReader(io.StringIO(text))
+        if reader.fieldnames is None:
+            raise IncidentCsvError("The CSV file has no header row.")
 
-    normalized = [name.strip() for name in reader.fieldnames if name is not None]
-    missing = [col for col in REQUIRED_COLUMNS if col not in normalized]
-    if missing:
-        raise IncidentCsvError(
-            "Incorrect CSV format: missing required columns: "
-            + ", ".join(missing)
-        )
+        normalized = [name.strip() for name in reader.fieldnames if name is not None]
+        missing = [col for col in REQUIRED_COLUMNS if col not in normalized]
+        if missing:
+            raise IncidentCsvError(
+                "Incorrect CSV format: missing required columns: "
+                + ", ".join(missing)
+            )
 
-    # Rebuild reader with stripped headers mapped from original names.
-    header_map = {
-        (name.strip() if name else ""): name for name in reader.fieldnames if name
-    }
-    rows: list[dict[str, str]] = []
-    for raw in reader:
-        row = {
-            field: (raw.get(header_map[field], "") or "").strip()
-            for field in REQUIRED_COLUMNS
+        # Rebuild reader with stripped headers mapped from original names.
+        header_map = {
+            (name.strip() if name else ""): name for name in reader.fieldnames if name
         }
-        rows.append(row)
+        rows: list[dict[str, str]] = []
+        for raw in reader:
+            row = {
+                field: (raw.get(header_map[field], "") or "").strip()
+                for field in REQUIRED_COLUMNS
+            }
+            rows.append(row)
+    except csv.Error as exc:
+        raise IncidentCsvError(
+            "The CSV file could not be parsed. Check the file format and try again."
+        ) from exc
 
     if not rows:
         raise IncidentCsvError("The CSV file contains no data rows.")
@@ -172,7 +177,12 @@ def analyze_csv_path(path: str | Path) -> AnalysisResult:
     csv_path = Path(path)
     if not csv_path.is_file():
         raise IncidentCsvError(f"File not found: {csv_path}")
-    text = csv_path.read_text(encoding="utf-8")
+    try:
+        text = csv_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise IncidentCsvError(
+            "Incorrect file format: file must be UTF-8 encoded CSV."
+        ) from exc
     return _parse_csv_text(text, source_name=csv_path.name)
 
 
