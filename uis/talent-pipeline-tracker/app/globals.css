@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../incidents";
 
 :root {
   --hc-ink: #10272f;
@@ -114,7 +115,9 @@ h2,
   font-weight: 650;
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
   border: 1px solid var(--hc-line);
   border-radius: 0.75rem;
@@ -124,12 +127,21 @@ h2,
   font: inherit;
 }
 
-.field input:focus {
+.field textarea {
+  resize: vertical;
+  min-height: 8rem;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
   outline: 2px solid color-mix(in srgb, var(--hc-accent) 45%, white);
   border-color: var(--hc-accent);
 }
 
-.field input:disabled {
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
   background: #eef3f5;
   color: var(--hc-muted);
 }
@@ -279,6 +291,123 @@ h2,
 
 .profile-form {
   margin-top: 0.5rem;
+}
+
+.incident-panel {
+  width: min(100%, 48rem);
+  background: color-mix(in srgb, var(--hc-panel) 92%, transparent);
+  border: 1px solid var(--hc-line);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 60px -36px var(--hc-glow);
+  padding: 2rem;
+}
+
+.incident-panel--wide {
+  width: min(100%, 72rem);
+}
+
+.incident-panel h1 {
+  margin: 0.65rem 0 0;
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.phi-warning {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 2px solid var(--hc-danger);
+  border-radius: 0.9rem;
+  background: var(--hc-danger-soft);
+  color: var(--hc-danger);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.phi-warning strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 1.05rem;
+}
+
+.field--branch-highlight {
+  padding: 0.85rem;
+  border: 2px solid var(--hc-accent);
+  border-radius: 1rem;
+  background: var(--hc-accent-soft);
+}
+
+.incident-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.incident-empty {
+  margin: 1rem 0 0;
+  padding: 1rem 1.1rem;
+  border: 1px dashed var(--hc-line);
+  border-radius: 0.9rem;
+  background: var(--hc-surface);
+  color: var(--hc-muted);
+}
+
+.incident-table-wrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.incident-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.incident-table th,
+.incident-table td {
+  text-align: left;
+  padding: 0.7rem 0.6rem;
+  border-bottom: 1px solid var(--hc-line);
+  vertical-align: top;
+}
+
+.incident-table th {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hc-muted);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.summary-card {
+  border: 1px solid var(--hc-line);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  background: var(--hc-surface);
+}
+
+.summary-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.summary-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.summary-card li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 @media (max-width: 640px) {

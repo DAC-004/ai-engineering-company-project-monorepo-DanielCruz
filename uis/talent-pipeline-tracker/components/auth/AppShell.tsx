@@ -28,12 +28,40 @@ export const AppShell = ({ children }: AppShellProps) => {
             Internal Workspace
           </Link>
         </div>
-        <nav className="app-nav" aria-label="Account">
+        <nav className="app-nav" aria-label="Application">
           <Link
             href="/"
             className={pathname === "/" ? "app-nav__link is-active" : "app-nav__link"}
           >
             Home
+          </Link>
+          <Link
+            href="/incidents/new"
+            className={
+              pathname.startsWith("/incidents/new")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Register incident
+          </Link>
+          <Link
+            href="/incidents"
+            className={
+              pathname === "/incidents" ? "app-nav__link is-active" : "app-nav__link"
+            }
+          >
+            Incidents
+          </Link>
+          <Link
+            href="/incidents/summary"
+            className={
+              pathname.startsWith("/incidents/summary")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Summary
           </Link>
           <Link
             href="/account/profile"

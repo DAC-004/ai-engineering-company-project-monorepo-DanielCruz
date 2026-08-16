@@ -25,6 +25,9 @@ Open <http://localhost:3000>.
 | `/login` | Public | Email/password login → stores JWT in `localStorage` → redirects to `/` |
 | `/register` | Public | `POST /users` then `POST /auth/login` → stores JWT → redirects to `/` |
 | `/` | Protected | Main authenticated view |
+| `/incidents/new` | Protected | Register an incident |
+| `/incidents` | Protected | Incident list and status updates |
+| `/incidents/summary` | Protected | Aggregate incident metrics |
 | `/account/profile` | Protected | Shows email + profile; updates via `PUT /profiles/me` |
 
 Unauthenticated access to protected routes redirects to `/login` via a client-side `AuthGuard` (localStorage-compatible; no middleware token check).
