@@ -3,21 +3,37 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.routers import auth, incidents, profiles, users  # noqa: E402
+from app.db.database import get_engine, init_databases  # noqa: E402
+from app.routers import auth, incidents, inventory, profiles, users  # noqa: E402
+from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Open TinyDB + Supabase engines, create inventory tables, then seed if empty."""
+    init_databases()
+    with Session(get_engine()) as session:
+        seed_inventory_if_empty(session)
+    yield
+
 
 app = FastAPI(
     title="HealthCore API",
     description="Centralized HealthCore Digital API",
-    version="0.2.0",
+    version="0.3.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -38,6 +54,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(profiles.router)
 app.include_router(incidents.router)
+app.include_router(inventory.router)
 
 
 @app.get("/health")

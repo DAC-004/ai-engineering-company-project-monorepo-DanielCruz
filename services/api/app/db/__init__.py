@@ -1,1 +1,1 @@
-"""TinyDB adapters for identity data."""
+"""Database adapters: TinyDB for identity, SQLModel/Supabase for inventory."""

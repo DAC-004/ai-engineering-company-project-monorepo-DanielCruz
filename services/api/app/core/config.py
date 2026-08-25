@@ -1,4 +1,4 @@
-"""Environment-backed settings for JWT and TinyDB identity storage."""
+"""Environment-backed settings for JWT, TinyDB identity, and Supabase inventory."""
 
 from __future__ import annotations
 
@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     # Instructor stack: JWT algorithm is environment-configurable; HS256 remains the default.
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM", min_length=1)
     tinydb_path: Path = Field(default=DEFAULT_TINYDB_PATH, alias="TINYDB_PATH")
+    # Supabase transaction-pooler URI (or sqlite for isolated tests). Never hard-code credentials.
+    database_url: str = Field(..., alias="DATABASE_URL", min_length=1)
 
 
 @lru_cache

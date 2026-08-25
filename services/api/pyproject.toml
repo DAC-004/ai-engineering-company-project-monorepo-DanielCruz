@@ -1,16 +1,18 @@
 [project]
 name = "healthcore-api"
 version = "0.1.0"
-description = "HealthCore FastAPI API with JWT auth and TinyDB identity"
+description = "HealthCore FastAPI API with JWT auth, TinyDB identity, and SQLModel inventory"
 requires-python = ">=3.11"
 dependencies = [
     "email-validator>=2.3.0",
     "fastapi>=0.141.1",
     "libpass[bcrypt]>=1.9.3",
+    "psycopg2-binary>=2.9.12",
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.2",
     "python-jose[cryptography]>=3.5.0",
     "python-multipart>=0.0.32",
+    "sqlmodel>=0.0.39",
     "tinydb>=4.9.0",
     "uvicorn[standard]>=0.52.1",
 ]

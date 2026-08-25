@@ -20,6 +20,7 @@ os.environ["SECRET_KEY"] = "validation-secret-key-32chars!!"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
+os.environ["DATABASE_URL"] = f"sqlite:///{(Path(_tmpdir) / 'inventory.db').resolve().as_posix()}"
 
 from fastapi.testclient import TestClient  # noqa: E402
 from jose import jwt  # noqa: E402

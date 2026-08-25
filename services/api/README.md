@@ -9,8 +9,10 @@ Validation and metrics for incidents use the shared module at `shared/incident_a
 ```bash
 cd services/api
 uv sync
-cp .env.example .env   # then set SECRET_KEY
+cp .env.example .env   # then set SECRET_KEY and DATABASE_URL
 ```
+
+`DATABASE_URL` must be the Supabase **transaction pooler** URI (Connect → Direct → Transaction pooler → URI). Do not commit `.env`.
 
 Do not use `pip install` or Poetry for dependency changes.
 
@@ -72,11 +74,31 @@ Instructor clarification authorizes three additional legitimate Incident Analyze
 
 **Qualifying protected total: 5**
 
-## Identity storage
+## Identity and inventory storage
 
 - User and Profile live in TinyDB only (`data/auth.json` by default)
 - Profile links to User through `user_id`
 - No User/Profile SQLModel, PostgreSQL, or Supabase tables
+- MedicalSupply, SupplyDelivery, and SupplyConsumption live in PostgreSQL via SQLModel (`DATABASE_URL`, Supabase transaction pooler in the live app)
+
+## Inventory routes (`/inventory`)
+
+HealthCore inventory routes require authentication. Catalog rows are `MedicalSupply`. Inbound writes are `SupplyDelivery`. Outbound writes are `SupplyConsumption`.
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `GET` | `/inventory/products` | Protected |
+| `POST` | `/inventory/products` | Protected |
+| `GET` | `/inventory/products/{id}` | Protected |
+| `POST` | `/inventory/orders/inbound` | Protected |
+| `POST` | `/inventory/orders/outbound` | Protected |
+| `GET` | `/inventory/orders` | Protected |
+
+`current_stock` is computed as `SUM(SupplyDelivery.quantity) - SUM(SupplyConsumption.quantity)` for each `MedicalSupply`. A consumption that would make that stock negative returns HTTP 400 with `Insufficient stock for supply '{name}'. Available: {available}, requested: {quantity}.` and is not persisted.
+
+Seed (idempotent on empty tables): `uv run python scripts/seed_inventory.py`
+
+Validate inventory behavior: `uv run python scripts/validate_inventory.py`
 
 ## Security notes
 
