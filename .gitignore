@@ -8,6 +8,8 @@ node_modules/
 results.csv
 services/api/.venv/
 services/api/data/
+*.sqlite
+*.sqlite3
 .env
 .env.local
 **/.env.local

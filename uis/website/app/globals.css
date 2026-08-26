@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hcBlue: #0e3a5d;
+  --color-hcTeal: #0e7490;
+  --color-hcMint: #dff7f2;
+  --color-hcInk: #0f172a;
+}
+
+.hc-container {
+  width: 100%;
+  max-width: 90rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(1.25rem, 4vw, 4rem);
+  padding-right: clamp(1.25rem, 4vw, 4rem);
+}
+
+.hc-form-shell {
+  width: 100%;
+  max-width: 52rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(1.25rem, 4vw, 4rem);
+  padding-right: clamp(1.25rem, 4vw, 4rem);
+}
