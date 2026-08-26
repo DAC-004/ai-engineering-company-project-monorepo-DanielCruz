@@ -9,4 +9,6 @@ results.csv
 services/api/.venv/
 services/api/data/
 .env
+.env.local
+**/.env.local
 services/api/.env

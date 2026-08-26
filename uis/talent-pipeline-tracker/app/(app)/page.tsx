@@ -14,7 +14,19 @@ export default function HomePage() {
         application attach that token as Authorization: Bearer.
       </p>
       <div className="home-actions">
-        <Link href="/account/profile" className="btn-primary">
+        <Link href="/backoffice/inventory/products" className="btn-primary">
+          Medical supplies
+        </Link>
+        <Link href="/backoffice/inventory/orders/inbound" className="btn-secondary">
+          Log supply delivery
+        </Link>
+        <Link href="/backoffice/inventory/orders/outbound" className="btn-secondary">
+          Log supply consumption
+        </Link>
+        <Link href="/backoffice/inventory/orders" className="btn-secondary">
+          Supply movements
+        </Link>
+        <Link href="/account/profile" className="btn-secondary">
           Manage profile
         </Link>
       </div>

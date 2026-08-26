@@ -1,10 +1,10 @@
 # HealthCore Internal Workspace (`uis/talent-pipeline-tracker`)
 
-Next.js application that completes AUTH-02: login, registration, JWT session handling, protected views, and profile management against the HealthCore API (`services/api`).
+Next.js application for AUTH-02 (login, registration, JWT session handling, protected views, and profile management) and the HealthCore medical-supply inventory backoffice against the HealthCore API (`services/api`).
 
 ## Prerequisites
 
-1. AUTH-01 API running at `http://127.0.0.1:8000`
+1. HealthCore API running at `http://127.0.0.1:8000` (inventory routes are on the same process)
 2. Node.js 20+
 
 ## Setup
@@ -16,7 +16,20 @@ npm install
 npm run dev
 ```
 
+`npm run dev` uses webpack. Turbopack exceeds Windows `MAX_PATH` in this monorepo path.
+
 Open <http://localhost:3000>.
+
+`.env.local` must include:
+
+```
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+NEXT_PUBLIC_INVENTORY_API_URL=http://localhost:8000
+```
+
+Never commit `.env.local`.
+
+Inventory calls are centralized in `lib/inventory.ts`. Components do not call `fetch` directly. Protected inventory requests send `Authorization: Bearer <token>` from `localStorage`.
 
 ## Routes
 
@@ -26,6 +39,10 @@ Open <http://localhost:3000>.
 | `/register` | Public | `POST /users` then `POST /auth/login` → stores JWT → redirects to `/` |
 | `/` | Protected | Main authenticated view |
 | `/account/profile` | Protected | Shows email + profile; updates via `PUT /profiles/me` |
+| `/backoffice/inventory/products` | Protected | Medical supplies with current stock and stock-level indicators |
+| `/backoffice/inventory/orders/inbound` | Protected | Log a supply delivery (vendor shipment) |
+| `/backoffice/inventory/orders/outbound` | Protected | Log a supply consumption (clinical use or expiry waste) |
+| `/backoffice/inventory/orders` | Protected | Read-only supply delivery and consumption history |
 
 Unauthenticated access to protected routes redirects to `/login` via a client-side `AuthGuard` (localStorage-compatible; no middleware token check).
 

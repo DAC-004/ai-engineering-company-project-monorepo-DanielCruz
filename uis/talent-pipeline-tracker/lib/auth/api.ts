@@ -91,6 +91,8 @@ type ApiFetchOptions = RequestInit & {
   auth?: boolean;
   /** Override Content-Type / skip JSON default (needed for OAuth2 form login). */
   json?: boolean;
+  /** Override the AUTH-01 base URL (used by the inventory module). */
+  baseUrl?: string;
 };
 
 /**
@@ -104,8 +106,9 @@ export const apiFetch = async <T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> => {
-  const { auth = false, json = true, headers, ...rest } = options;
-  const url = `${getBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  const { auth = false, json = true, headers, baseUrl, ...rest } = options;
+  const root = (baseUrl ?? getBaseUrl()).replace(/\/$/, "");
+  const url = `${root}${path.startsWith("/") ? path : `/${path}`}`;
 
   const requestHeaders = new Headers(headers);
 

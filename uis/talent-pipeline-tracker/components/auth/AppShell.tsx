@@ -28,12 +28,52 @@ export const AppShell = ({ children }: AppShellProps) => {
             Internal Workspace
           </Link>
         </div>
-        <nav className="app-nav" aria-label="Account">
+        <nav className="app-nav" aria-label="Workspace">
           <Link
             href="/"
             className={pathname === "/" ? "app-nav__link is-active" : "app-nav__link"}
           >
             Home
+          </Link>
+          <Link
+            href="/backoffice/inventory/products"
+            className={
+              pathname.startsWith("/backoffice/inventory/products")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Medical supplies
+          </Link>
+          <Link
+            href="/backoffice/inventory/orders/inbound"
+            className={
+              pathname.startsWith("/backoffice/inventory/orders/inbound")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Supply delivery
+          </Link>
+          <Link
+            href="/backoffice/inventory/orders/outbound"
+            className={
+              pathname.startsWith("/backoffice/inventory/orders/outbound")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Supply consumption
+          </Link>
+          <Link
+            href="/backoffice/inventory/orders"
+            className={
+              pathname === "/backoffice/inventory/orders"
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Supply movements
           </Link>
           <Link
             href="/account/profile"
