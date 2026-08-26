@@ -4,8 +4,10 @@ This folder contains **all projects with a user interface** for the cross-functi
 
 The two main projects stored here are:
 
-- **`website`** — the company's public-facing web presence.
-- **`backoffice`** — the internal admin application. This is the ideal place to develop multiple solutions within a single project: authentication, people management, operations management, internal communication, and other back-office capabilities.
+- **`website`** — HealthCore public-facing Next.js site (port `3000` in Docker). Mapped from the Milestone 1 landing and care-request pages.
+- **`backoffice`** — HealthCore internal Next.js workspace (port `3001` in Docker): authentication, profile, and medical-supply inventory. Mapped from `uis/talent-pipeline-tracker`.
+
+`docker compose up` from the repository root starts both apps in a single UI container. See each subfolder README for local non-Docker commands.
 
 Organize `uis/` by **different concerns** — each subfolder covers a distinct area of the company (for example, public web vs internal operations) and includes its own technical and functional documentation.
 

@@ -1,37 +1,36 @@
-# HealthCore Internal Workspace (`uis/talent-pipeline-tracker`)
-
-The canonical path for Ticket `#infra-40` is [`uis/backoffice`](../backoffice). This folder is the original source location and is retained until container validation is complete.
+# HealthCore Internal Workspace (`uis/backoffice`)
 
 Next.js application for AUTH-02 (login, registration, JWT session handling, protected views, and profile management) and the HealthCore medical-supply inventory backoffice against the HealthCore API (`services/api`).
 
+This application was mapped from `uis/talent-pipeline-tracker` for Ticket `#infra-40`. The original folder is retained until container validation is complete.
+
 ## Prerequisites
 
-1. HealthCore API running at `http://127.0.0.1:8000` (inventory routes are on the same process)
+1. HealthCore API running (default `http://127.0.0.1:8000`; inventory routes are on the same process)
 2. Node.js 20+
 
-## Setup
+## Setup (local, without Docker)
 
 ```bash
-cd uis/talent-pipeline-tracker
+cd uis/backoffice
 cp .env.example .env.local
 npm install
-npm run dev
+npm run dev -- --port 3001
 ```
 
 `npm run dev` uses webpack. Turbopack exceeds Windows `MAX_PATH` in this monorepo path.
 
-Open <http://localhost:3000>.
+Open <http://localhost:3001>.
 
-`.env.local` must include:
-
-```
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
-NEXT_PUBLIC_INVENTORY_API_URL=http://localhost:8000
-```
+`.env.local` must include the variables from `.env.example`. `NEXT_PUBLIC_*` values are a same-origin `/backend` prefix. `API_PROXY_TARGET` is server-side only and must point at the FastAPI origin (`http://127.0.0.1:8000` locally, or `http://backend:8000` inside Docker Compose).
 
 Never commit `.env.local`.
 
 Inventory calls are centralized in `lib/inventory.ts`. Components do not call `fetch` directly. Protected inventory requests send `Authorization: Bearer <token>` from `localStorage`.
+
+## Docker
+
+From the repository root, `docker compose up` starts this app on host port `3001` in the shared UI container.
 
 ## Routes
 
@@ -52,4 +51,4 @@ Logout clears the JWT and returns to `/login`. Any protected API response of HTT
 
 ## Out of scope
 
-The Milestone 1 public website (`index.html`, `application.html` at the repository root) is not part of this application and is not wrapped in authentication.
+The public website lives at `uis/website` (and the Milestone 1 static files remain at the repository root). Those pages are not wrapped in authentication.

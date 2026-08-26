@@ -12,11 +12,15 @@ uv sync
 cp .env.example .env   # then set SECRET_KEY and DATABASE_URL
 ```
 
-`DATABASE_URL` must be the Supabase **transaction pooler** URI (Connect → Direct → Transaction pooler → URI). Do not commit `.env`.
+`DATABASE_URL` is required. Outside Docker it may be the Supabase **transaction pooler** URI (Connect → Direct → Transaction pooler → URI). Local Docker Compose uses SQLite via the repository-root `.env` (`sqlite:////app/services/api/data/inventory.db`). TinyDB remains the identity store either way. Do not commit `.env`.
 
-Do not use `pip install` or Poetry for dependency changes.
+Dependency versions are locked in `uv.lock`. `requirements.txt` is the installable export used by `/services/Dockerfile` (`uv pip install -r requirements.txt`). Prefer `uv sync` for local non-Docker work. Do not use Poetry.
 
-## Run
+## Docker
+
+From the repository root, `docker compose up` starts this API on host port `8000` with `--reload`.
+
+## Run (local, without Docker)
 
 From `services/api`:
 

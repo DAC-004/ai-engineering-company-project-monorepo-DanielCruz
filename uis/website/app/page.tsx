@@ -1,0 +1,437 @@
+import Link from "next/link";
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MedicalOrganization",
+  name: "HealthCore",
+  description:
+    "Outpatient healthcare clinic network operating across the United States and United Kingdom.",
+  foundingDate: "2011",
+  founder: {
+    "@type": "Person",
+    name: "Dr. Sandra Okonkwo",
+  },
+  areaServed: [
+    { "@type": "Country", name: "United States" },
+    { "@type": "Country", name: "United Kingdom" },
+  ],
+  numberOfEmployees: {
+    "@type": "QuantitativeValue",
+    value: 200,
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Austin TX",
+    addressCountry: "United States",
+  },
+  email: "care@healthcore.com",
+  telephone: ["+15125550142", "+442079460958"],
+  department: [
+    { "@type": "MedicalBusiness", name: "Primary Care" },
+    { "@type": "MedicalBusiness", name: "Specialist Consultations" },
+    { "@type": "MedicalBusiness", name: "Chronic Disease Management" },
+    { "@type": "MedicalBusiness", name: "Preventive Health Programmes" },
+  ],
+};
+
+const HomePage = () => (
+  <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+    />
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-hcBlue focus:shadow-lg"
+    >
+      Skip to main content
+    </a>
+
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/75">
+      <nav
+        className="hc-container flex flex-wrap items-center justify-between gap-4 py-5 lg:py-6"
+        aria-label="Primary navigation"
+      >
+        <Link href="/" className="text-2xl font-bold tracking-tight text-hcBlue lg:text-[1.75rem]">
+          HealthCore
+        </Link>
+        <ul className="flex flex-wrap items-center justify-end gap-4 text-base font-medium sm:gap-8 lg:gap-10">
+          <li>
+            <a
+              href="#services"
+              className="rounded-md px-3 py-2 hover:text-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+            >
+              Services
+            </a>
+          </li>
+          <li>
+            <a
+              href="#why-healthcore"
+              className="rounded-md px-3 py-2 hover:text-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+            >
+              Why HealthCore
+            </a>
+          </li>
+          <li>
+            <a
+              href="#contact"
+              className="rounded-md px-3 py-2 hover:text-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+            >
+              Contact
+            </a>
+          </li>
+          <li>
+            <Link
+              href="/application"
+              className="rounded-lg bg-hcBlue px-5 py-2.5 text-base font-semibold text-white shadow-sm hover:bg-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hcBlue"
+            >
+              Apply
+            </Link>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main-content" className="scroll-mt-32">
+      <section className="relative overflow-hidden text-white">
+        <img
+          src="/assets/backgrounds/hero-healthcare.jpg"
+          alt="Modern hospital corridor representing HealthCore outpatient care access"
+          className="absolute inset-0 h-full w-full object-cover"
+          width={1920}
+          height={1080}
+          decoding="async"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(14,58,93,0.84)_0%,rgba(17,94,117,0.8)_52%,rgba(14,116,144,0.78)_100%)]"></div>
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute -left-12 top-10 h-40 w-40 rounded-full bg-cyan-200 blur-3xl"></div>
+          <div className="absolute right-0 top-0 h-56 w-56 translate-x-1/4 -translate-y-1/4 rounded-full bg-white/20 blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-emerald-200/30 blur-3xl"></div>
+        </div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:32px_32px] opacity-10"></div>
+        <div className="relative hc-container grid gap-10 py-20 lg:grid-cols-[1.15fr_0.85fr] lg:gap-14 lg:py-28 xl:py-32">
+          <div>
+            <p className="mb-4 inline-flex rounded-full border border-white/20 bg-white/12 px-4 py-1.5 text-sm font-semibold uppercase tracking-[0.18em] text-cyan-50">
+              Outpatient Care Network | United States and United Kingdom
+            </p>
+            <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-6xl xl:text-[4rem]">
+              Outpatient care designed to be clear, timely, and easier to access.
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-cyan-50 sm:text-xl lg:max-w-3xl lg:text-2xl">
+              Founded in Austin TX in 2011, HealthCore supports patients across 12 clinics in Texas,
+              Florida, Georgia, London, and Manchester. Our network provides primary care,
+              specialist consultations, chronic disease management, and preventive health
+              programmes with a focus on coordinated outpatient care.
+            </p>
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link
+                href="/application"
+                className="rounded-lg bg-white px-6 py-3.5 text-base font-semibold text-hcBlue shadow-sm hover:bg-cyan-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:px-8 lg:py-4 lg:text-lg"
+              >
+                Request Care Access
+              </Link>
+              <a
+                href="#services"
+                className="rounded-lg border border-white/60 px-6 py-3.5 text-base font-semibold text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:px-8 lg:py-4 lg:text-lg"
+              >
+                View Our Services
+              </a>
+            </div>
+          </div>
+          <div className="grid gap-5 self-center lg:gap-6">
+            <div className="rounded-3xl border border-white/20 bg-white/12 p-7 shadow-2xl shadow-cyan-950/20 backdrop-blur-md lg:p-8">
+              <h2 className="text-2xl font-semibold lg:text-[1.75rem]">HealthCore at a glance</h2>
+              <ul className="mt-5 space-y-4 text-base leading-relaxed text-cyan-50 lg:text-lg">
+                <li>
+                  <strong>Founded in 2011</strong> to make high-quality outpatient care easier to access
+                </li>
+                <li>
+                  <strong>12 clinics</strong> serving patients across the United States and United Kingdom
+                </li>
+                <li>
+                  <strong>200 team members</strong> across clinical, operational, and administrative roles
+                </li>
+                <li>
+                  <strong>Four core service areas</strong> spanning primary, specialist, chronic, and
+                  preventive care
+                </li>
+              </ul>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <article className="rounded-2xl border border-white/20 bg-slate-950/15 p-5 backdrop-blur-sm lg:p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                  Patient access
+                </p>
+                <p className="mt-3 text-base leading-relaxed text-cyan-50 lg:text-lg">
+                  Same-day bookings, extended hours, and clear follow-up support in key markets.
+                </p>
+              </article>
+              <article className="rounded-2xl border border-white/20 bg-slate-950/15 p-5 backdrop-blur-sm lg:p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                  Responsible care
+                </p>
+                <p className="mt-3 text-base leading-relaxed text-cyan-50 lg:text-lg">
+                  Healthcare delivery informed by regulated data responsibilities in both the US and UK.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="services" className="hc-container scroll-mt-32 py-16 lg:py-20 xl:py-24">
+        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-32px_rgba(14,58,93,0.35)]">
+          <div className="relative overflow-hidden px-8 py-10 sm:px-10 lg:px-12 lg:py-12">
+            <img
+              src="/assets/backgrounds/services-healthcare.jpg"
+              alt="Healthcare technology workspace representing HealthCore outpatient services"
+              className="absolute inset-0 h-full w-full object-cover"
+              width={1920}
+              height={1080}
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(223,247,242,0.82)_0%,rgba(255,255,255,0.94)_72%)]"></div>
+            <div className="relative">
+              <h2 className="text-3xl font-bold text-hcBlue sm:text-4xl lg:text-[2.75rem]">
+                Outpatient Services Built Around Continuity of Care
+              </h2>
+              <p className="mt-4 max-w-4xl text-lg leading-relaxed text-slate-700 lg:text-xl">
+                HealthCore brings together core outpatient services with the scheduling, follow-up, and
+                care coordination patients need to move through care with greater confidence.
+              </p>
+            </div>
+          </div>
+          <div className="px-8 pb-10 sm:px-10 lg:px-12 lg:pb-12">
+            <div className="mt-2 grid gap-6 md:grid-cols-2 xl:grid-cols-4 xl:gap-8">
+              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+                <h3 className="text-xl font-semibold text-hcBlue lg:text-2xl">Primary Care</h3>
+                <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                  Primary care designed to support timely appointments, routine needs, and ongoing health
+                  concerns across the network.
+                </p>
+              </article>
+              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+                <h3 className="text-xl font-semibold text-hcBlue lg:text-2xl">Specialist Consultations</h3>
+                <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                  Specialist consultations delivered within an outpatient model that supports clear next
+                  steps and coordinated follow-up.
+                </p>
+              </article>
+              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+                <h3 className="text-xl font-semibold text-hcBlue lg:text-2xl">Chronic Disease Management</h3>
+                <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                  Structured support for long-term conditions, helping patients stay connected to care
+                  across visits and locations.
+                </p>
+              </article>
+              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+                <h3 className="text-xl font-semibold text-hcBlue lg:text-2xl">Preventive Health Programmes</h3>
+                <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                  Preventive health programmes focused on earlier action, regular follow-up, and better
+                  long-term health planning.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="why-healthcore" className="relative scroll-mt-32 overflow-hidden">
+        <img
+          src="/assets/backgrounds/about-healthcare.jpg"
+          alt="Doctor consulting with a patient in a modern HealthCore clinic"
+          className="absolute inset-0 h-full w-full object-cover"
+          width={1920}
+          height={1080}
+          loading="lazy"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(223,247,242,0.72)_0%,rgba(248,250,252,0.88)_100%)]"></div>
+        <div className="relative hc-container py-16 lg:py-20 xl:py-24">
+          <h2 className="text-3xl font-bold text-hcBlue sm:text-4xl lg:text-[2.75rem]">
+            Why Patients and Families Choose HealthCore
+          </h2>
+          <p className="mt-4 max-w-4xl text-lg leading-relaxed text-slate-700 lg:text-xl">
+            HealthCore was built to reduce delays, simplify access, and support a more consistent
+            outpatient experience across every clinic in the network.
+          </p>
+          <div className="mt-10 grid gap-6 md:grid-cols-3 lg:gap-8">
+            <article className="rounded-2xl bg-white/90 p-6 shadow-sm ring-1 ring-slate-200 backdrop-blur-sm lg:p-8">
+              <h3 className="text-lg font-semibold text-hcBlue lg:text-xl">
+                Reliable access across the network
+              </h3>
+              <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                HealthCore serves patients through clinics in both the US and UK, supporting a more
+                connected outpatient journey.
+              </p>
+            </article>
+            <article className="rounded-2xl bg-white/90 p-6 shadow-sm ring-1 ring-slate-200 backdrop-blur-sm lg:p-8">
+              <h3 className="text-lg font-semibold text-hcBlue lg:text-xl">Care that is easier to navigate</h3>
+              <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                From appointment requests to follow-up communication, HealthCore is focused on making
+                outpatient care easier to understand and access.
+              </p>
+            </article>
+            <article className="rounded-2xl bg-white/90 p-6 shadow-sm ring-1 ring-slate-200 backdrop-blur-sm lg:p-8">
+              <h3 className="text-lg font-semibold text-hcBlue lg:text-xl">
+                Respect for privacy and regulated care
+              </h3>
+              <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                Patient information is handled within the responsibilities of HIPAA in the US and UK GDPR
+                in the UK.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" className="hc-container scroll-mt-32 py-16 lg:py-20 xl:py-24">
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_-32px_rgba(14,58,93,0.28)] ring-1 ring-slate-200 lg:grid lg:grid-cols-2 lg:gap-10 lg:p-10 xl:p-12">
+          <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_center,_rgba(14,116,144,0.12),_transparent_66%)] lg:block"></div>
+          <div>
+            <h2 className="text-3xl font-bold text-hcBlue sm:text-4xl">Questions About Care Access?</h2>
+            <p className="mt-4 text-lg leading-relaxed text-slate-700 lg:text-xl">
+              If you are looking for outpatient care or want to learn more about HealthCore services, you
+              can submit an application request and our team will review your information.
+            </p>
+            <dl className="mt-8 space-y-3 text-base text-slate-700 lg:text-lg">
+              <div>
+                <dt className="font-semibold">Headquarters</dt>
+                <dd>Austin TX, United States</dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Network coverage</dt>
+                <dd>Texas, Florida, Georgia, London, Manchester</dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Email</dt>
+                <dd>
+                  <a
+                    href="mailto:care@healthcore.com"
+                    className="text-hcTeal underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+                  >
+                    care@healthcore.com
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Phone (US)</dt>
+                <dd>
+                  <a
+                    href="tel:+15125550142"
+                    className="text-hcTeal underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+                  >
+                    +1 (512) 555-0142
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Phone (UK)</dt>
+                <dd>
+                  <a
+                    href="tel:+442079460958"
+                    className="text-hcTeal underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+                  >
+                    +44 20 7946 0958
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <div className="relative overflow-hidden rounded-2xl p-6 ring-1 ring-slate-200 lg:p-8">
+            <img
+              src="/assets/backgrounds/care-team-healthcare.jpg"
+              alt="HealthCore care team collaborating in a modern clinical setting"
+              className="absolute inset-0 h-full w-full object-cover"
+              width={1920}
+              height={1080}
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.88)_0%,rgba(255,255,255,0.92)_100%)]"></div>
+            <div className="relative">
+              <h3 className="text-xl font-semibold text-hcBlue lg:text-2xl">Begin your care request</h3>
+              <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+                Share your preferred clinic, service type, and contact details so HealthCore can review
+                your request for outpatient care access.
+              </p>
+              <Link
+                href="/application"
+                className="mt-6 inline-flex rounded-lg bg-hcBlue px-6 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-hcTeal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hcBlue lg:px-8 lg:py-4 lg:text-lg"
+              >
+                Open the Application Form
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer className="border-t border-slate-200 bg-white">
+      <div className="hc-container py-10 lg:py-12">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
+          <div>
+            <p className="text-base font-semibold text-hcBlue lg:text-lg">HealthCore</p>
+            <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+              Outpatient care services across the United States and United Kingdom.
+            </p>
+          </div>
+          <div>
+            <p className="text-base font-semibold text-hcBlue lg:text-lg">Contact</p>
+            <address className="mt-3 space-y-2 text-base not-italic text-slate-700 lg:text-lg">
+              <p>Headquarters: Austin TX, United States</p>
+              <p>Network coverage: Texas, Florida, Georgia, London, Manchester</p>
+              <p>
+                Email:{" "}
+                <a
+                  href="mailto:care@healthcore.com"
+                  className="text-hcTeal underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+                >
+                  care@healthcore.com
+                </a>
+              </p>
+              <p>
+                Phone (US):{" "}
+                <a
+                  href="tel:+15125550142"
+                  className="text-hcTeal underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+                >
+                  +1 (512) 555-0142
+                </a>
+              </p>
+              <p>
+                Phone (UK):{" "}
+                <a
+                  href="tel:+442079460958"
+                  className="text-hcTeal underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue"
+                >
+                  +44 20 7946 0958
+                </a>
+              </p>
+            </address>
+          </div>
+          <div>
+            <p className="text-base font-semibold text-hcBlue lg:text-lg">Care access</p>
+            <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+              Submit a care request online or contact our patient access team for appointment support.
+            </p>
+            <Link
+              href="/application"
+              className="mt-4 inline-flex text-base font-semibold text-hcTeal underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-hcBlue lg:text-lg"
+            >
+              Open application form
+            </Link>
+          </div>
+        </div>
+        <p className="mt-8 border-t border-slate-200 pt-6 text-base text-slate-600 lg:text-lg">
+          © 2026 HealthCore. Supporting clearer access, continuity of care, and responsible handling of
+          patient information.
+        </p>
+      </div>
+    </footer>
+  </>
+);
+
+export default HomePage;

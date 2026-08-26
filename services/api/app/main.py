@@ -15,9 +15,19 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from app.core.config import get_settings  # noqa: E402
 from app.db.database import get_engine, init_databases  # noqa: E402
 from app.routers import auth, incidents, inventory, profiles, users  # noqa: E402
 from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
+
+
+def _cors_allow_origins() -> list[str]:
+    """Development origins from CORS_ORIGINS; keeps 3000 and adds backoffice 3001."""
+    return [
+        origin.strip()
+        for origin in get_settings().cors_origins.split(",")
+        if origin.strip()
+    ]
 
 
 @asynccontextmanager
@@ -38,13 +48,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:3000",
-        "http://localhost:3000",
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "null",
-    ],
+    allow_origins=_cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

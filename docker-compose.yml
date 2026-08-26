@@ -1,0 +1,61 @@
+services:
+  ui:
+    build:
+      context: ./uis
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      API_PROXY_TARGET: ${API_PROXY_TARGET}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      NEXT_PUBLIC_INVENTORY_API_URL: ${NEXT_PUBLIC_INVENTORY_API_URL}
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING}
+    volumes:
+      - ./uis/website:/uis/website
+      - ./uis/backoffice:/uis/backoffice
+      - ui_website_node_modules:/uis/website/node_modules
+      - ui_backoffice_node_modules:/uis/backoffice/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - healthcore-dev
+
+  backend:
+    build:
+      context: ./services
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      TINYDB_PATH: ${TINYDB_PATH}
+      DATABASE_URL: ${DATABASE_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    volumes:
+      - ./services/api:/app/services/api
+      - ./shared:/app/shared
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+    networks:
+      - healthcore-dev
+
+networks:
+  healthcore-dev:
+    name: healthcore-dev
+
+volumes:
+  ui_website_node_modules:
+  ui_backoffice_node_modules:
