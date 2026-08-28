@@ -7,7 +7,7 @@ objects. There is no SQLModel User table; user_uuid stores a TinyDB id.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import CheckConstraint
 from sqlmodel import Field, SQLModel
@@ -24,6 +24,10 @@ class MedicalSupply(SQLModel, table=True):
     category: str = Field(min_length=1, max_length=32, index=True)
     unit: str = Field(min_length=1, max_length=16)
     country: str = Field(min_length=2, max_length=2, index=True)
+    # Configured reorder floor used by stock_threshold_triggered. Not stored stock.
+    minimum_stock: int = Field(default=10, ge=0)
+    # Supply expiry on the catalog row so supply_expiry_flagged is computable.
+    expiry_date: date | None = Field(default=None)
 
 
 class SupplyDelivery(SQLModel, table=True):
@@ -57,6 +61,7 @@ class SupplyConsumption(SQLModel, table=True):
     supply_id: int = Field(foreign_key="medical_supply.id", index=True)
     quantity: int
     consumption_type: str = Field(min_length=1, max_length=32, index=True)
+    department: str = Field(min_length=1, max_length=64, index=True)
     clinic_id: int = Field(ge=1, le=12, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
     user_uuid: str = Field(min_length=1, max_length=64, index=True)

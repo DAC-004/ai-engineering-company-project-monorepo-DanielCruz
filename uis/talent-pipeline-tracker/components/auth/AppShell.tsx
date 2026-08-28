@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { logout } from "@/lib/auth/session";
+import { track } from "@/src/services/telemetry";
 
 type AppShellProps = {
   children: ReactNode;
@@ -15,6 +16,7 @@ export const AppShell = ({ children }: AppShellProps) => {
   const router = useRouter();
 
   const handleLogout = () => {
+    track("user_logout_completed", { logout_method: "user_initiated" });
     logout();
     router.replace("/login");
   };

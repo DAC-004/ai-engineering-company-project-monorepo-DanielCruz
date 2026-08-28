@@ -10,6 +10,8 @@ import {
   listMedicalSupplies,
   type MedicalSupply,
 } from "@/lib/inventory";
+import { trackInboundOrderCreated } from "@/lib/telemetry/inventoryEvents";
+import { useInventoryFlowTelemetry } from "@/lib/telemetry/useInventoryFlow";
 
 const emptyForm = {
   supplyId: "",
@@ -33,6 +35,21 @@ export const SupplyDeliveryForm = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const readyToSubmit =
+    formState.supplyId !== "" &&
+    Number(formState.quantity) > 0 &&
+    formState.vendorName.trim().length > 0 &&
+    formState.clinicId !== "";
+
+  useInventoryFlowTelemetry("inbound_order", {
+    productId: formState.supplyId,
+    quantity: formState.quantity,
+    clinicId: formState.clinicId,
+    readyToSubmit,
+    submitted,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -80,12 +97,26 @@ export const SupplyDeliveryForm = () => {
     setIsSubmitting(true);
 
     try {
-      await createSupplyDelivery({
+      const delivery = await createSupplyDelivery({
         supply_id: Number(formState.supplyId),
         quantity: Number(formState.quantity),
         vendor_name: formState.vendorName.trim(),
         clinic_id: Number(formState.clinicId),
       });
+      const selectedSupply = supplies.find(
+        (supply) => supply.id === Number(formState.supplyId),
+      );
+      if (selectedSupply) {
+        trackInboundOrderCreated({
+          clinicId: delivery.clinic_id,
+          productId: selectedSupply.id,
+          liveCategory: selectedSupply.category,
+          quantity: delivery.quantity,
+          vendorName: delivery.vendor_name,
+          inboundOrderId: delivery.id,
+        });
+      }
+      setSubmitted(true);
       setFormState({ ...emptyForm });
       setSuccessMessage("Supply delivery recorded.");
     } catch (error) {

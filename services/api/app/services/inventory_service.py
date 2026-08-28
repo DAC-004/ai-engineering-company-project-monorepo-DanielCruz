@@ -11,6 +11,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, func, select
 
+from app.inventory_constants import CLINIC_ID_MAX, CLINIC_ID_MIN
 from app.models import MedicalSupply, SupplyConsumption, SupplyDelivery
 from app.schemas.inventory import (
     InventoryOrderPublic,
@@ -40,7 +41,11 @@ class InsufficientSupplyStockError(Exception):
         )
 
 
-def _to_supply_public(supply: MedicalSupply, current_stock: int) -> MedicalSupplyPublic:
+def _to_supply_public(
+    supply: MedicalSupply,
+    current_stock: int,
+    clinic_current_stock: int | None = None,
+) -> MedicalSupplyPublic:
     if supply.id is None:
         raise RuntimeError("MedicalSupply is missing a persisted id.")
     return MedicalSupplyPublic(
@@ -51,6 +56,9 @@ def _to_supply_public(supply: MedicalSupply, current_stock: int) -> MedicalSuppl
         unit=supply.unit,
         country=supply.country,
         current_stock=current_stock,
+        minimum_stock=supply.minimum_stock,
+        expiry_date=supply.expiry_date,
+        clinic_current_stock=clinic_current_stock,
     )
 
 
@@ -98,6 +106,34 @@ def computed_stock_for_supply(session: Session, supply_id: int) -> int:
     return int(delivery_total) - int(consumption_total)
 
 
+def computed_stock_for_supply_at_clinic(session: Session, supply_id: int, clinic_id: int) -> int:
+    """
+    Remaining units for one MedicalSupply at one clinic.
+
+    Threshold telemetry requires clinic-partitioned remaining stock. The
+    insufficient-stock write rule remains global (deliveries minus consumptions
+    for the catalog row) so existing order validation is unchanged.
+    """
+    if clinic_id < CLINIC_ID_MIN or clinic_id > CLINIC_ID_MAX:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="clinic_id must be between 1 and 12",
+        )
+    delivery_total = session.exec(
+        select(func.coalesce(func.sum(SupplyDelivery.quantity), 0)).where(
+            SupplyDelivery.supply_id == supply_id,
+            SupplyDelivery.clinic_id == clinic_id,
+        )
+    ).one()
+    consumption_total = session.exec(
+        select(func.coalesce(func.sum(SupplyConsumption.quantity), 0)).where(
+            SupplyConsumption.supply_id == supply_id,
+            SupplyConsumption.clinic_id == clinic_id,
+        )
+    ).one()
+    return int(delivery_total) - int(consumption_total)
+
+
 def get_supply_or_404(session: Session, supply_id: int) -> MedicalSupply:
     supply = session.get(MedicalSupply, supply_id)
     if supply is None:
@@ -111,9 +147,20 @@ def list_medical_supplies(session: Session) -> list[MedicalSupplyPublic]:
     return [_to_supply_public(supply, stocks.get(supply.id or 0, 0)) for supply in supplies]
 
 
-def get_medical_supply(session: Session, supply_id: int) -> MedicalSupplyPublic:
+def get_medical_supply(
+    session: Session,
+    supply_id: int,
+    clinic_id: int | None = None,
+) -> MedicalSupplyPublic:
     supply = get_supply_or_404(session, supply_id)
-    return _to_supply_public(supply, computed_stock_for_supply(session, supply_id))
+    clinic_stock = None
+    if clinic_id is not None:
+        clinic_stock = computed_stock_for_supply_at_clinic(session, supply_id, clinic_id)
+    return _to_supply_public(
+        supply,
+        computed_stock_for_supply(session, supply_id),
+        clinic_current_stock=clinic_stock,
+    )
 
 
 def create_medical_supply(session: Session, payload: MedicalSupplyCreate) -> MedicalSupplyPublic:
@@ -123,6 +170,8 @@ def create_medical_supply(session: Session, payload: MedicalSupplyCreate) -> Med
         category=payload.category,
         unit=payload.unit,
         country=payload.country,
+        minimum_stock=payload.minimum_stock,
+        expiry_date=payload.expiry_date,
     )
     session.add(supply)
     try:
@@ -195,6 +244,7 @@ def create_supply_consumption(
         supply_id=payload.supply_id,
         quantity=payload.quantity,
         consumption_type=payload.consumption_type,
+        department=payload.department,
         clinic_id=payload.clinic_id,
         user_uuid=current_user.id,
     )
@@ -208,6 +258,7 @@ def create_supply_consumption(
         supply_id=consumption.supply_id,
         quantity=consumption.quantity,
         consumption_type=consumption.consumption_type,
+        department=consumption.department,
         clinic_id=consumption.clinic_id,
         created_at=consumption.created_at,
         user_uuid=consumption.user_uuid,
@@ -269,6 +320,7 @@ def list_inventory_orders(session: Session) -> list[InventoryOrderPublic]:
                 created_at=consumption.created_at,
                 user_uuid=consumption.user_uuid,
                 consumption_type=consumption.consumption_type,
+                department=consumption.department,
             )
         )
     orders.sort(key=lambda order: (order.created_at, order.order_type, order.id))

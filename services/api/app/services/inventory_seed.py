@@ -8,8 +8,11 @@ once any MedicalSupply row exists.
 
 from __future__ import annotations
 
+from datetime import date
+
 from sqlmodel import Session, select
 
+from app.inventory_constants import DEFAULT_MINIMUM_STOCK
 from app.models import MedicalSupply, SupplyConsumption, SupplyDelivery
 from app.schemas.user import UserCreate, UserRole
 from app.services import user_service
@@ -17,13 +20,15 @@ from app.services import user_service
 SEED_USER_EMAIL = "inventory.seed@healthcore.com"
 SEED_USER_PASSWORD = "HealthCoreSeed1!"
 
-SEED_SUPPLIES: tuple[dict[str, str], ...] = (
+SEED_SUPPLIES: tuple[dict[str, object], ...] = (
     {
         "name": "Nitrile gloves (box of 100)",
         "sku": "HCR-PPE-001",
         "category": "ppe",
         "unit": "box",
         "country": "US",
+        "minimum_stock": DEFAULT_MINIMUM_STOCK,
+        "expiry_date": None,
     },
     {
         "name": "Surgical mask (pack of 50)",
@@ -31,6 +36,8 @@ SEED_SUPPLIES: tuple[dict[str, str], ...] = (
         "category": "ppe",
         "unit": "pack",
         "country": "UK",
+        "minimum_stock": DEFAULT_MINIMUM_STOCK,
+        "expiry_date": None,
     },
     {
         "name": "Adhesive wound dressing",
@@ -38,6 +45,8 @@ SEED_SUPPLIES: tuple[dict[str, str], ...] = (
         "category": "wound_care",
         "unit": "box",
         "country": "US",
+        "minimum_stock": DEFAULT_MINIMUM_STOCK,
+        "expiry_date": None,
     },
     {
         "name": "Rapid strep test kit",
@@ -45,6 +54,8 @@ SEED_SUPPLIES: tuple[dict[str, str], ...] = (
         "category": "diagnostics",
         "unit": "unit",
         "country": "US",
+        "minimum_stock": DEFAULT_MINIMUM_STOCK,
+        "expiry_date": None,
     },
     {
         "name": "Blood glucose test strips (50)",
@@ -52,6 +63,8 @@ SEED_SUPPLIES: tuple[dict[str, str], ...] = (
         "category": "diagnostics",
         "unit": "box",
         "country": "UK",
+        "minimum_stock": DEFAULT_MINIMUM_STOCK,
+        "expiry_date": None,
     },
     {
         "name": "0.9% Saline solution 500ml",
@@ -59,6 +72,8 @@ SEED_SUPPLIES: tuple[dict[str, str], ...] = (
         "category": "medications",
         "unit": "vial",
         "country": "US",
+        "minimum_stock": DEFAULT_MINIMUM_STOCK,
+        "expiry_date": date(2026, 9, 12),
     },
 )
 
@@ -70,20 +85,20 @@ SEED_DELIVERIES: tuple[tuple[str, int, str, int], ...] = (
     ("HCR-WND-001", 18, "MedLine Industries", 2),
 )
 
-# sku -> list of (quantity, consumption_type, clinic_id)
-SEED_CONSUMPTIONS: tuple[tuple[str, int, str, int], ...] = (
-    ("HCR-PPE-001", 12, "clinical_use", 1),
-    ("HCR-PPE-001", 5, "expiry_waste", 4),
-    ("HCR-PPE-002", 4, "clinical_use", 11),
+# sku -> list of (quantity, consumption_type, clinic_id, department)
+SEED_CONSUMPTIONS: tuple[tuple[str, int, str, int, str], ...] = (
+    ("HCR-PPE-001", 12, "clinical_use", 1, "primary_care"),
+    ("HCR-PPE-001", 5, "expiry_waste", 4, "chronic_care"),
+    ("HCR-PPE-002", 4, "clinical_use", 11, "general_consultation"),
 )
 
 
 def expected_seed_stock() -> dict[str, int]:
     """Map SKU to delivery totals minus consumption totals."""
-    totals = {row["sku"]: 0 for row in SEED_SUPPLIES}
+    totals = {str(row["sku"]): 0 for row in SEED_SUPPLIES}
     for sku, quantity, _vendor, _clinic_id in SEED_DELIVERIES:
         totals[sku] += quantity
-    for sku, quantity, _consumption_type, _clinic_id in SEED_CONSUMPTIONS:
+    for sku, quantity, _consumption_type, _clinic_id, _department in SEED_CONSUMPTIONS:
         totals[sku] -= quantity
     return totals
 
@@ -109,11 +124,13 @@ def seed_inventory_if_empty(session: Session) -> None:
     supplies_by_sku: dict[str, MedicalSupply] = {}
     for row in SEED_SUPPLIES:
         supply = MedicalSupply(
-            name=row["name"],
-            sku=row["sku"],
-            category=row["category"],
-            unit=row["unit"],
-            country=row["country"],
+            name=str(row["name"]),
+            sku=str(row["sku"]),
+            category=str(row["category"]),
+            unit=str(row["unit"]),
+            country=str(row["country"]),
+            minimum_stock=int(row["minimum_stock"]),
+            expiry_date=row["expiry_date"] if isinstance(row["expiry_date"], date) else None,
         )
         session.add(supply)
         session.flush()
@@ -135,7 +152,7 @@ def seed_inventory_if_empty(session: Session) -> None:
             )
         )
 
-    for sku, quantity, consumption_type, clinic_id in SEED_CONSUMPTIONS:
+    for sku, quantity, consumption_type, clinic_id, department in SEED_CONSUMPTIONS:
         supply = supplies_by_sku[sku]
         if supply.id is None:
             raise RuntimeError("Seeded MedicalSupply is missing an id.")
@@ -144,6 +161,7 @@ def seed_inventory_if_empty(session: Session) -> None:
                 supply_id=supply.id,
                 quantity=quantity,
                 consumption_type=consumption_type,
+                department=department,
                 clinic_id=clinic_id,
                 user_uuid=user_uuid,
             )

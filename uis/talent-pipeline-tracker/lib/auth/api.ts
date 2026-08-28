@@ -1,3 +1,6 @@
+import { bindTelemetryRequestId, track } from "@/src/services/telemetry";
+import { isJwtExpired } from "@/lib/telemetry/identity";
+import { toApiRouteTemplate, toRoutePath } from "@/lib/telemetry/mapping";
 import { clearAccessToken, getAccessToken } from "@/lib/auth/token";
 import { ApiError, type FieldErrors } from "@/lib/auth/types";
 
@@ -86,6 +89,74 @@ export const clearSessionAndRedirectToLogin = (): void => {
   }
 };
 
+const shouldSampleApiSuccessGet = (): boolean => Math.random() < 0.1;
+
+const httpMethodFromRequest = (
+  method: string | undefined,
+): "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | null => {
+  const normalized = (method ?? "GET").toUpperCase();
+  if (
+    normalized === "GET" ||
+    normalized === "POST" ||
+    normalized === "PUT" ||
+    normalized === "PATCH" ||
+    normalized === "DELETE"
+  ) {
+    return normalized;
+  }
+  return null;
+};
+
+const outcomeFromStatus = (
+  statusCode: number,
+): "success" | "client_error" | "server_error" => {
+  if (statusCode >= 200 && statusCode < 300) {
+    return "success";
+  }
+  if (statusCode >= 500) {
+    return "server_error";
+  }
+  return "client_error";
+};
+
+const denialReasonFromMessage = (
+  message: string,
+): "not_owner" | "insufficient_role" | "other" => {
+  const lower = message.toLowerCase();
+  if (lower.includes("owner")) {
+    return "not_owner";
+  }
+  if (lower.includes("role") || lower.includes("admin")) {
+    return "insufficient_role";
+  }
+  return "other";
+};
+
+const trackApiRequestCompleted = (input: {
+  requestId: string;
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  path: string;
+  statusCode: number;
+  durationMs: number;
+}): void => {
+  if (input.statusCode < 100 || input.statusCode > 599) {
+    return;
+  }
+  const isSuccessGet =
+    input.method === "GET" && input.statusCode >= 200 && input.statusCode < 300;
+  if (isSuccessGet && !shouldSampleApiSuccessGet()) {
+    return;
+  }
+  bindTelemetryRequestId(input.requestId);
+  track("api_request_completed", {
+    http_method: input.method,
+    route_template: toApiRouteTemplate(input.path),
+    status_code: input.statusCode,
+    duration_ms: Math.max(0, Math.round(input.durationMs)),
+    outcome: outcomeFromStatus(input.statusCode),
+  });
+};
+
 type ApiFetchOptions = RequestInit & {
   /** When true, attach Authorization: Bearer <token> from localStorage. */
   auth?: boolean;
@@ -119,24 +190,71 @@ export const apiFetch = async <T>(
   if (auth) {
     const token = getAccessToken();
     if (!token) {
+      track("session_expired", {
+        expiry_source: "missing_token",
+        attempted_route: toRoutePath(
+          typeof window === "undefined" ? path : window.location.pathname,
+        ),
+      });
       clearSessionAndRedirectToLogin();
       throw new ApiError("Authentication required", 401);
     }
     requestHeaders.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(url, {
-    ...rest,
-    headers: requestHeaders,
-  });
+  const requestId = window.crypto.randomUUID();
+  requestHeaders.set("X-Request-Id", requestId);
+
+  const httpMethod = httpMethodFromRequest(rest.method);
+  const startedAt = performance.now();
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...rest,
+      headers: requestHeaders,
+    });
+  } catch (error) {
+    throw error;
+  }
+
+  const durationMs = performance.now() - startedAt;
+  if (httpMethod) {
+    trackApiRequestCompleted({
+      requestId,
+      method: httpMethod,
+      path,
+      statusCode: response.status,
+      durationMs,
+    });
+  }
 
   if (response.status === 401 && auth) {
+    track("session_expired", {
+      expiry_source: isJwtExpired()
+        ? "jwt_exp"
+        : path.includes("/auth/me")
+          ? "auth_me_401"
+          : "jwt_exp",
+      attempted_route: toRoutePath(
+        typeof window === "undefined" ? path : window.location.pathname,
+      ),
+    });
+    track("user_logout_completed", { logout_method: "forced_401" });
     clearSessionAndRedirectToLogin();
     throw new ApiError("Session expired or unauthorized", 401);
   }
 
   if (!response.ok) {
     const { message, fieldErrors } = await parseErrorBody(response);
+    if (response.status === 403 && httpMethod) {
+      track("authorization_denied", {
+        http_method: httpMethod,
+        route_template: toApiRouteTemplate(path),
+        status_code: 403,
+        denial_reason: denialReasonFromMessage(message),
+      });
+    }
     throw new ApiError(message, response.status, fieldErrors);
   }
 
