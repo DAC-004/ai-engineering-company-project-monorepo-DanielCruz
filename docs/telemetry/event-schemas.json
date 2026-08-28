@@ -1,0 +1,884 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://healthcore.local/telemetry/event-schemas.json",
+  "title": "HealthCore telemetry events",
+  "description": "JSON Schema draft-07 for the 16 fully designed HealthCore telemetry events. Envelope keys are closed. Each event_type has a closed properties allowlist. Markdown in telemetry-plan.md is the narrative contract; this file is the machine contract.",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "iso8601DateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "iso8601Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "userId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "clinicId": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 12
+    },
+    "country": {
+      "type": "string",
+      "enum": ["US", "UK"]
+    },
+    "productId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "productCategory": {
+      "type": "string",
+      "enum": ["medication", "ppe", "consumable", "equipment"]
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "primary_care",
+        "specialty_care",
+        "chronic_disease_management",
+        "preventive_health",
+        "general_consultation",
+        "chronic_care"
+      ]
+    },
+    "consumptionReason": {
+      "type": "string",
+      "enum": ["clinical_use", "expiry_waste"]
+    },
+    "httpMethod": {
+      "type": "string",
+      "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    "writeHttpMethod": {
+      "type": "string",
+      "enum": ["POST", "PUT", "PATCH", "DELETE"]
+    },
+    "role": {
+      "type": "string",
+      "enum": ["admin", "manager", "user"]
+    },
+    "stackHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "routePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^/"
+    },
+    "envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eventId",
+        "timestamp",
+        "sessionId",
+        "userId",
+        "event_type",
+        "schemaVersion",
+        "requestId",
+        "properties"
+      ],
+      "properties": {
+        "eventId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/iso8601DateTime"
+        },
+        "sessionId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "userId": {
+          "$ref": "#/definitions/userId"
+        },
+        "event_type": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "$ref": "#/definitions/schemaVersion"
+        },
+        "requestId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "properties": {
+          "type": "object"
+        }
+      }
+    },
+    "inbound_order_created_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "vendor_name",
+        "inbound_order_id"
+      ],
+      "properties": {
+        "clinic_id": {
+          "$ref": "#/definitions/clinicId"
+        },
+        "country": {
+          "$ref": "#/definitions/country"
+        },
+        "product_id": {
+          "$ref": "#/definitions/productId"
+        },
+        "product_category": {
+          "$ref": "#/definitions/productCategory"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "vendor_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "inbound_order_id": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "outbound_order_created_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "department",
+        "outbound_order_id"
+      ],
+      "properties": {
+        "clinic_id": {
+          "$ref": "#/definitions/clinicId"
+        },
+        "country": {
+          "$ref": "#/definitions/country"
+        },
+        "product_id": {
+          "$ref": "#/definitions/productId"
+        },
+        "product_category": {
+          "$ref": "#/definitions/productCategory"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "department": {
+          "$ref": "#/definitions/department"
+        },
+        "outbound_order_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "consumption_reason": {
+          "$ref": "#/definitions/consumptionReason"
+        }
+      }
+    },
+    "stock_threshold_triggered_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "minimum_stock",
+        "triggering_outbound_order_id"
+      ],
+      "properties": {
+        "clinic_id": {
+          "$ref": "#/definitions/clinicId"
+        },
+        "country": {
+          "$ref": "#/definitions/country"
+        },
+        "product_id": {
+          "$ref": "#/definitions/productId"
+        },
+        "product_category": {
+          "$ref": "#/definitions/productCategory"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum_stock": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "triggering_outbound_order_id": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "direct_stock_edit_rejected_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "http_method",
+        "route_template",
+        "rejection_reason"
+      ],
+      "properties": {
+        "clinic_id": {
+          "$ref": "#/definitions/clinicId"
+        },
+        "country": {
+          "$ref": "#/definitions/country"
+        },
+        "product_id": {
+          "$ref": "#/definitions/productId"
+        },
+        "product_category": {
+          "$ref": "#/definitions/productCategory"
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "http_method": {
+          "$ref": "#/definitions/writeHttpMethod"
+        },
+        "route_template": {
+          "$ref": "#/definitions/routePath"
+        },
+        "rejection_reason": {
+          "type": "string",
+          "enum": [
+            "stock_field_forbidden",
+            "method_not_allowed",
+            "direct_write_forbidden"
+          ]
+        }
+      }
+    },
+    "supply_expiry_flagged_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "expiry_date",
+        "days_until_expiry",
+        "expiry_window_days"
+      ],
+      "properties": {
+        "clinic_id": {
+          "$ref": "#/definitions/clinicId"
+        },
+        "country": {
+          "$ref": "#/definitions/country"
+        },
+        "product_id": {
+          "$ref": "#/definitions/productId"
+        },
+        "product_category": {
+          "$ref": "#/definitions/productCategory"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expiry_date": {
+          "$ref": "#/definitions/iso8601Date"
+        },
+        "days_until_expiry": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expiry_window_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "user_login_succeeded_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auth_method", "role"],
+      "properties": {
+        "auth_method": {
+          "type": "string",
+          "enum": ["password"]
+        },
+        "role": {
+          "$ref": "#/definitions/role"
+        }
+      }
+    },
+    "user_login_failed_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failure_reason"],
+      "properties": {
+        "failure_reason": {
+          "type": "string",
+          "enum": [
+            "invalid_credentials",
+            "inactive_user",
+            "malformed_request"
+          ]
+        }
+      }
+    },
+    "session_expired_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expiry_source", "attempted_route"],
+      "properties": {
+        "expiry_source": {
+          "type": "string",
+          "enum": ["jwt_exp", "missing_token", "auth_me_401"]
+        },
+        "attempted_route": {
+          "$ref": "#/definitions/routePath"
+        }
+      }
+    },
+    "user_logout_completed_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logout_method"],
+      "properties": {
+        "logout_method": {
+          "type": "string",
+          "enum": ["user_initiated", "forced_401"]
+        }
+      }
+    },
+    "authorization_denied_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "http_method",
+        "route_template",
+        "status_code",
+        "denial_reason"
+      ],
+      "properties": {
+        "http_method": {
+          "$ref": "#/definitions/httpMethod"
+        },
+        "route_template": {
+          "$ref": "#/definitions/routePath"
+        },
+        "status_code": {
+          "type": "integer",
+          "const": 403
+        },
+        "denial_reason": {
+          "type": "string",
+          "enum": ["not_owner", "insufficient_role", "other"]
+        }
+      }
+    },
+    "outbound_order_rejected_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clinic_id",
+        "country",
+        "product_id",
+        "product_category",
+        "quantity",
+        "available_quantity",
+        "rejection_reason"
+      ],
+      "properties": {
+        "clinic_id": {
+          "$ref": "#/definitions/clinicId"
+        },
+        "country": {
+          "$ref": "#/definitions/country"
+        },
+        "product_id": {
+          "$ref": "#/definitions/productId"
+        },
+        "product_category": {
+          "$ref": "#/definitions/productCategory"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "available_quantity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejection_reason": {
+          "type": "string",
+          "enum": ["insufficient_stock", "validation_failed"]
+        },
+        "department": {
+          "$ref": "#/definitions/department"
+        }
+      }
+    },
+    "api_request_completed_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "http_method",
+        "route_template",
+        "status_code",
+        "duration_ms",
+        "outcome"
+      ],
+      "properties": {
+        "http_method": {
+          "$ref": "#/definitions/httpMethod"
+        },
+        "route_template": {
+          "$ref": "#/definitions/routePath"
+        },
+        "status_code": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["success", "client_error", "server_error"]
+        }
+      }
+    },
+    "page_load_completed_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route", "duration_ms", "navigation_type"],
+      "properties": {
+        "route": {
+          "$ref": "#/definitions/routePath"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "navigation_type": {
+          "type": "string",
+          "enum": ["full_load", "client_navigation"]
+        }
+      }
+    },
+    "frontend_error_uncaught_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "error_name",
+        "sanitized_message",
+        "route",
+        "stack_hash"
+      ],
+      "properties": {
+        "error_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sanitized_message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route": {
+          "$ref": "#/definitions/routePath"
+        },
+        "stack_hash": {
+          "$ref": "#/definitions/stackHash"
+        }
+      }
+    },
+    "page_viewed_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route"],
+      "properties": {
+        "route": {
+          "$ref": "#/definitions/routePath"
+        },
+        "referrer_route": {
+          "$ref": "#/definitions/routePath"
+        }
+      }
+    },
+    "inventory_flow_abandoned_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flow_name", "last_completed_step", "time_in_flow_ms"],
+      "properties": {
+        "flow_name": {
+          "type": "string",
+          "enum": ["inbound_order", "outbound_order"]
+        },
+        "last_completed_step": {
+          "type": "string",
+          "enum": [
+            "form_opened",
+            "product_selected",
+            "quantity_entered",
+            "clinic_selected",
+            "ready_to_submit"
+          ]
+        },
+        "time_in_flow_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clinic_id": {
+          "$ref": "#/definitions/clinicId"
+        },
+        "product_id": {
+          "$ref": "#/definitions/productId"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "inbound_order_created"
+            },
+            "properties": {
+              "$ref": "#/definitions/inbound_order_created_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "outbound_order_created"
+            },
+            "properties": {
+              "$ref": "#/definitions/outbound_order_created_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "stock_threshold_triggered"
+            },
+            "properties": {
+              "$ref": "#/definitions/stock_threshold_triggered_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "direct_stock_edit_rejected"
+            },
+            "properties": {
+              "$ref": "#/definitions/direct_stock_edit_rejected_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "supply_expiry_flagged"
+            },
+            "properties": {
+              "$ref": "#/definitions/supply_expiry_flagged_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "user_login_succeeded"
+            },
+            "properties": {
+              "$ref": "#/definitions/user_login_succeeded_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "user_login_failed"
+            },
+            "properties": {
+              "$ref": "#/definitions/user_login_failed_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "session_expired"
+            },
+            "properties": {
+              "$ref": "#/definitions/session_expired_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "user_logout_completed"
+            },
+            "properties": {
+              "$ref": "#/definitions/user_logout_completed_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "authorization_denied"
+            },
+            "properties": {
+              "$ref": "#/definitions/authorization_denied_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "outbound_order_rejected"
+            },
+            "properties": {
+              "$ref": "#/definitions/outbound_order_rejected_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "api_request_completed"
+            },
+            "properties": {
+              "$ref": "#/definitions/api_request_completed_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "page_load_completed"
+            },
+            "properties": {
+              "$ref": "#/definitions/page_load_completed_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "frontend_error_uncaught"
+            },
+            "properties": {
+              "$ref": "#/definitions/frontend_error_uncaught_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "page_viewed"
+            },
+            "properties": {
+              "$ref": "#/definitions/page_viewed_properties"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/definitions/envelope"
+        },
+        {
+          "type": "object",
+          "required": ["event_type", "properties"],
+          "properties": {
+            "event_type": {
+              "const": "inventory_flow_abandoned"
+            },
+            "properties": {
+              "$ref": "#/definitions/inventory_flow_abandoned_properties"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
