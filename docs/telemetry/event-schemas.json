@@ -134,7 +134,8 @@
         "product_category",
         "quantity",
         "vendor_name",
-        "inbound_order_id"
+        "inbound_order_id",
+        "total_cost"
       ],
       "properties": {
         "clinic_id": {
@@ -161,6 +162,11 @@
         "inbound_order_id": {
           "type": "integer",
           "minimum": 1
+        },
+        "total_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Supply cost for this inbound order in the clinic's local currency. Never a patient charge."
         }
       }
     },

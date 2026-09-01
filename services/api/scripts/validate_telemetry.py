@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import tempfile
@@ -49,6 +50,7 @@ VALID_EVENT = {
         "quantity": 80,
         "vendor_name": "MedLine Industries",
         "inbound_order_id": 41,
+        "total_cost": 18420.50,
     },
 }
 
@@ -178,6 +180,123 @@ def main() -> int:
         "expiry throttle does not use cookies or localStorage",
         "document.cookie" not in inventory_events_source
         and "localStorage" not in inventory_events_source,
+    )
+
+    inbound_total_cost = VALID_EVENT["properties"]["total_cost"]
+    check(
+        "fixture event_type is inbound_order_created",
+        VALID_EVENT["event_type"] == "inbound_order_created",
+        str(VALID_EVENT["event_type"]),
+    )
+    check(
+        "fixture properties include numeric non-negative total_cost",
+        "total_cost" in VALID_EVENT["properties"]
+        and isinstance(inbound_total_cost, (int, float))
+        and not isinstance(inbound_total_cost, bool)
+        and inbound_total_cost >= 0,
+        str(inbound_total_cost),
+    )
+
+    def inbound_total_cost_accepted(properties: dict) -> bool:
+        if "total_cost" not in properties:
+            return False
+        cost = properties["total_cost"]
+        if isinstance(cost, bool) or not isinstance(cost, (int, float)):
+            return False
+        if cost != cost or cost < 0:
+            return False
+        return True
+
+    check(
+        "zero total_cost is accepted",
+        inbound_total_cost_accepted({**VALID_EVENT["properties"], "total_cost": 0}),
+    )
+    check(
+        "missing total_cost is rejected",
+        not inbound_total_cost_accepted(
+            {k: v for k, v in VALID_EVENT["properties"].items() if k != "total_cost"}
+        ),
+    )
+    check(
+        "non-numeric total_cost is rejected",
+        not inbound_total_cost_accepted(
+            {**VALID_EVENT["properties"], "total_cost": "18420.50"}
+        ),
+    )
+    check(
+        "negative total_cost is rejected",
+        not inbound_total_cost_accepted({**VALID_EVENT["properties"], "total_cost": -0.01}),
+    )
+    check(
+        "non-finite total_cost is rejected",
+        not inbound_total_cost_accepted(
+            {**VALID_EVENT["properties"], "total_cost": float("nan")}
+        ),
+    )
+
+    event_schemas = json.loads(
+        (REPO_ROOT / "docs" / "telemetry" / "event-schemas.json").read_text(encoding="utf-8")
+    )
+    inbound_properties_schema = event_schemas["definitions"]["inbound_order_created_properties"]
+    total_cost_schema = inbound_properties_schema.get("properties", {}).get("total_cost", {})
+    check(
+        "inbound_order_created schema requires total_cost",
+        "total_cost" in inbound_properties_schema.get("required", []),
+        str(inbound_properties_schema.get("required")),
+    )
+    check(
+        "total_cost schema is a non-negative number",
+        total_cost_schema.get("type") == "number" and total_cost_schema.get("minimum") == 0,
+        str(total_cost_schema),
+    )
+
+    telemetry_plan_source = (
+        REPO_ROOT / "docs" / "telemetry" / "telemetry-plan.md"
+    ).read_text(encoding="utf-8")
+    check(
+        "telemetry plan inbound example includes total_cost",
+        '"event_type": "inbound_order_created"' in telemetry_plan_source
+        and '"total_cost": 18420.50' in telemetry_plan_source,
+    )
+
+    schema_ts_source = (
+        REPO_ROOT / "uis" / "talent-pipeline-tracker" / "lib" / "telemetry" / "schema.ts"
+    ).read_text(encoding="utf-8")
+    check(
+        "schema.ts allowlists and requires total_cost",
+        schema_ts_source.count('"total_cost"') >= 2,
+    )
+    check(
+        "inbound emitter uses submitted finite non-negative totalCost",
+        "Number.isFinite(input.totalCost)" in inventory_events_source
+        and "input.totalCost < 0" in inventory_events_source
+        and "total_cost: input.totalCost" in inventory_events_source,
+    )
+    check(
+        "inbound emitter does not fabricate a fallback total_cost",
+        "total_cost: 0" not in inventory_events_source
+        and "total_cost: 18420" not in inventory_events_source
+        and "totalCost ?? " not in inventory_events_source
+        and "totalCost || " not in inventory_events_source,
+    )
+
+    delivery_form_source = (
+        REPO_ROOT
+        / "uis"
+        / "talent-pipeline-tracker"
+        / "components"
+        / "inventory"
+        / "SupplyDeliveryForm.tsx"
+    ).read_text(encoding="utf-8")
+    check(
+        "delivery form emits submitted form totalCost",
+        "submittedTotalCost = Number(formState.totalCost)" in delivery_form_source
+        and "totalCost: submittedTotalCost" in delivery_form_source,
+    )
+    check(
+        "delivery form requires non-negative totalCost",
+        "parsedTotalCost >= 0" in delivery_form_source
+        and 'formState.totalCost !== ""' in delivery_form_source,
     )
 
     other_frontend = [
