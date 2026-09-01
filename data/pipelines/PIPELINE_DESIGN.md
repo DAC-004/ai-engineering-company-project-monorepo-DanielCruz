@@ -51,7 +51,7 @@ Confirmed absences:
 - No insert into any telemetry table from the ingest route
 - Frontend delivery uses an in-memory queue, 10-second / 20-event batches, `sendBeacon` on hide, and up to three retries, then discards the batch
 
-The pipeline's required source remains `telemetry_events`. Creating and populating that table is a Part 2 prerequisite, not a rewrite of this design. Until persistence exists, scheduled runs must fail with an explicit source-unavailable error rather than publish zeros.
+The pipeline's required source **contract** is `telemetry_events` (CONTEXT section 3). That table is not in this repository. Ingest is still the capture stub. Persistence is a prerequisite for Part 2 orchestration (the flow that will extract from it). Part 1 does not create the table or change the stub into a writer. Until persistence exists, a Part 2 run must fail with an explicit source-unavailable error rather than publish zeros.
 
 Inventory domain tables (`medical_supply`, `supply_delivery`, `supply_consumption`) store operational supply records in Supabase via SQLModel. They are not the pipeline destination. v1 does not join them to compute KPIs, and it does not join any patient-level table.
 
@@ -615,7 +615,7 @@ The unique business key participates by making a lost race still duplicate-free.
 
 Prefect is **not implemented** in this milestone. Mapping only.
 
-Assignment wording "Underflow, load as a minimum" is treated as a source ambiguity. Surrounding text and the rubric require one main flow and at least three tasks aligned with extraction, transformation, and load. This design does not introduce an "underflow" stage.
+Assignment wording "Underflow, load as a minimum" is treated as garbled text, not a fifth pipeline stage. The same paragraph and the rubric require one main flow and at least three tasks aligned with extraction, transformation, and load. Those are the tasks named below. There is no underflow stage.
 
 ### 11.1 Main flow
 
@@ -723,7 +723,20 @@ Validation and emission:
 - After `POST /inventory/orders/inbound` returns 201, `trackInboundOrderCreated` receives that submitted number (`submittedTotalCost`), not a fabricated constant. A non-finite or negative value is not emitted.
 - Zero is a valid no-charge receipt. Missing, `NaN`, and negative values are dropped.
 
-This is an extension of the existing mandatory event. No new event type was created. No extra payload fields were added to satisfy the rubric phrase "three CONTEXT-required payload fields". The HealthCore pipeline CONTEXT specifies this one cost-field extension.
+**Which layer enforces `total_cost` today**
+
+| Layer | What it does now |
+| --- | --- |
+| Capture schema (`event-schemas.json`, `schema.ts`) | Declares `total_cost` required and non-negative. |
+| `SupplyDeliveryForm` | Requires a submitted finite value `>= 0`. |
+| `trackInboundOrderCreated` | Emits `input.totalCost` or drops the event. Does not invent a fallback. |
+| `validate_telemetry.py` | Asserts the fixture, schema, form, and emitter contract, including invalid-cost helpers. |
+| `POST /telemetry/events` | Validates the envelope only (`eventId`, `timestamp`, `sessionId`, `userId`, `event_type`, `schemaVersion`, `requestId`, `properties` as an object). It does **not** enforce per-event property schemas, including `total_cost`. It does not persist. |
+| Pipeline transform (designed, not implemented) | Will reject inbound rows whose `total_cost` is missing, non-finite, or negative before summing Supply Cost per Clinic. |
+
+Part 1 does not add server-side property validation to the ingest stub. The pipeline assignment requires adding the CONTEXT cost field to the **capture schema** and documenting the pipeline. The capture stub's job remains envelope validation and HTTP 200. Stronger server-side allowlist checks belong with telemetry persistence (when `telemetry_events` is written), which is a prerequisite for Part 2 orchestration, not a Part 1 runtime change.
+
+This is an extension of the existing mandatory event. No new event type was created. No extra payload fields were added to satisfy the rubric phrase "three CONTEXT-required payload fields". That rubric sentence conflicts with the HealthCore pipeline CONTEXT, which names one required cost-field extension (`unit_cost` or `total_cost`). CONTEXT and the explicit "example a cost field" wording outrank the "three" count. Inventing two additional fields would violate "do not add extra properties just in case."
 
 `SupplyDelivery` / `POST /inventory/orders/inbound` remain without a cost column. Cost is captured for telemetry at delivery-form time so the pipeline can later read it from `telemetry_events`.
 
@@ -746,15 +759,16 @@ This is an extension of the existing mandatory event. No new event type was crea
 
 | Item | Conflict or gap | Resolution used |
 | --- | --- | --- |
-| Rubric: "three CONTEXT-required payload fields" | HealthCore pipeline CONTEXT specifies one cost field on `inbound_order_created` | Add only `total_cost`. Record the wording discrepancy. |
-| "Underflow, load as a minimum" | Unclear assignment sentence | Interpret as one flow plus extract, transform, and load tasks. No underflow stage. |
+| Rubric: "three CONTEXT-required payload fields" | HealthCore pipeline CONTEXT specifies one cost field on `inbound_order_created` | Add only `total_cost`. CONTEXT outranks the "three" count. |
+| "Underflow, load as a minimum" | Unclear assignment sentence next to extract/transform/load | One flow and three stage-aligned tasks. No underflow stage. |
 | Assignment `git pull` | User non-negotiable: agent must not `git pull` | Inspected local HEAD vs upstream SHA only. Did not pull. |
-| `GET /telemetry/report` and `services/telemetry/analysis.py` | Assignment treats them as existing; fork does not contain them | Document absence. Do not create them. Do not modify them. |
-| `telemetry_events` table | Required source; not in `app/models.py`; ingest is a stub | Design the table and read path. Persistence is a Part 2 prerequisite. |
+| `GET /telemetry/report` and `services/telemetry/analysis.py` | Assignment assumes they exist; this fork does not contain them | Document absence. Do not create or modify them. Keep any future engineering report separate from `services/reporting/`. |
+| `telemetry_events` table | Required source contract; not in `app/models.py`; ingest is a stub | Design the read path. Persistence is a Part 2 orchestration prerequisite, not a Part 1 table. |
+| HTTP stub vs `total_cost` | Capture stub validates envelope only | Keep stub. Property enforcement is schema + form + emitter + designed transform. Server-side allowlists wait for persistence. |
 | Folder names `processed/` and `evals/` | Repo has `data/process/` and `data/eval/` | Use existing folders. Put this file in `data/pipelines/`. |
-| CONTEXT JSON `clinic_id: "austin-north"` | Live system uses integer clinic ids `1`–`12` | Store text `"1"`…`"12"`. Do not invent slugs. |
-| KPI text "consumption … by department" | Destination grain is clinic-month without department | Count outbound events at clinic-month. Do not add a department column to the required table. |
-| Technical report "already answers volume/errors/latency" | No report endpoint exists | Gap still holds: business KPIs are unanswered. |
+| CONTEXT JSON `clinic_id: "austin-north"` | Live system uses integer clinic ids `1`–`12` | Store text `"1"`…`"12"`. The JSON value is an illustration, not a live id. |
+| KPI text "consumption … by department" | Destination grain is clinic-month without department | Count `outbound_order_created` at clinic-month. Keep `department` on the source event only. |
+| Technical report "already answers volume/errors/latency" | No report endpoint exists | Assignment assumption. Gap still holds: business KPIs are unanswered. |
 
 ---
 
