@@ -6,11 +6,13 @@ the TinyDB user id in user_uuid. Stock is never accepted as input.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import ValidationError
 from sqlmodel import Session
 
 from app.core.deps import get_current_user
 from app.db.database import get_db
+from app.inventory_constants import CLINIC_ID_MAX, CLINIC_ID_MIN
 from app.schemas.inventory import (
     InventoryOrderPublic,
     MedicalSupplyCreate,
@@ -27,6 +29,14 @@ from app.services.inventory_service import InsufficientSupplyStockError
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
 
+DIRECT_STOCK_EDIT_DETAIL = (
+    "Stock cannot be modified directly. Record an inbound or outbound order."
+)
+STOCK_FIELD_FORBIDDEN_DETAIL = (
+    "stock and current_stock cannot be written. Record an inbound or outbound order."
+)
+
+
 @router.get("/products", response_model=list[MedicalSupplyPublic])
 def list_products(
     session: Session = Depends(get_db),
@@ -37,23 +47,70 @@ def list_products(
 
 
 @router.post("/products", response_model=MedicalSupplyPublic, status_code=status.HTTP_201_CREATED)
-def create_product(
-    payload: MedicalSupplyCreate,
+async def create_product(
+    request: Request,
     session: Session = Depends(get_db),
     _current_user: UserInDB = Depends(get_current_user),
 ) -> MedicalSupplyPublic:
-    """Create a MedicalSupply catalog row. Authentication required."""
+    """Create a MedicalSupply catalog row. Authentication required. Stock writes are rejected."""
+    try:
+        raw_payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="Body must be JSON",
+        ) from exc
+    if not isinstance(raw_payload, dict):
+        raise HTTPException(
+            status_code=422,
+            detail="Body must be a JSON object",
+        )
+    if "stock" in raw_payload or "current_stock" in raw_payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=STOCK_FIELD_FORBIDDEN_DETAIL,
+        )
+    try:
+        payload = MedicalSupplyCreate.model_validate(raw_payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=exc.errors(),
+        ) from exc
     return inventory_service.create_medical_supply(session, payload)
 
 
 @router.get("/products/{id}", response_model=MedicalSupplyPublic)
 def get_product(
     id: int,
+    clinic_id: int | None = Query(default=None, ge=CLINIC_ID_MIN, le=CLINIC_ID_MAX),
     session: Session = Depends(get_db),
     _current_user: UserInDB = Depends(get_current_user),
 ) -> MedicalSupplyPublic:
-    """Return one MedicalSupply with computed current_stock."""
-    return inventory_service.get_medical_supply(session, id)
+    """Return one MedicalSupply with computed current_stock and optional clinic stock."""
+    return inventory_service.get_medical_supply(session, id, clinic_id=clinic_id)
+
+
+@router.api_route(
+    "/products/{id}",
+    methods=["PUT", "PATCH"],
+    include_in_schema=True,
+)
+def reject_direct_stock_edit(
+    id: int,
+    session: Session = Depends(get_db),
+    _current_user: UserInDB = Depends(get_current_user),
+) -> None:
+    """
+    Explicitly reject catalog mutations, including any attempt to write stock.
+
+    Stock is computed from inbound and outbound orders only.
+    """
+    inventory_service.get_supply_or_404(session, id)
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail=DIRECT_STOCK_EDIT_DETAIL,
+    )
 
 
 @router.post(

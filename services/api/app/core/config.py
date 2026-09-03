@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     tinydb_path: Path = Field(default=DEFAULT_TINYDB_PATH, alias="TINYDB_PATH")
     # Supabase transaction-pooler URI (or sqlite for isolated tests). Never hard-code credentials.
     database_url: str = Field(..., alias="DATABASE_URL", min_length=1)
+    # Capture-phase destination. The stub does not redirect; Phase 3 will reuse this name.
+    telemetry_endpoint: str = Field(
+        default="http://localhost:8000/telemetry/events",
+        alias="TELEMETRY_ENDPOINT",
+        min_length=1,
+    )
 
 
 @lru_cache

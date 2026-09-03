@@ -1,3 +1,4 @@
+import { TelemetryBootstrap } from "@/components/telemetry/TelemetryBootstrap";
 import type { Metadata } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
@@ -25,7 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} h-full`}>
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        <TelemetryBootstrap />
+        {children}
+      </body>
     </html>
   );
 }

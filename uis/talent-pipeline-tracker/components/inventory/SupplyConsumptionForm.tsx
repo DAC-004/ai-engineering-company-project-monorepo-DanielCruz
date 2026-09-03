@@ -8,17 +8,27 @@ import {
   CLINIC_IDS,
   CONSUMPTION_TYPES,
   CONSUMPTION_TYPE_LABEL,
+  DEPARTMENTS,
+  DEPARTMENT_LABEL,
   createSupplyConsumption,
   getMedicalSupply,
   listMedicalSupplies,
   type ConsumptionType,
+  type Department,
   type MedicalSupply,
 } from "@/lib/inventory";
+import {
+  trackOutboundOrderCreated,
+  trackOutboundOrderRejected,
+  trackStockThresholdTriggered,
+} from "@/lib/telemetry/inventoryEvents";
+import { useInventoryFlowTelemetry } from "@/lib/telemetry/useInventoryFlow";
 
 const emptyForm = {
   supplyId: "",
   quantity: "",
   consumptionType: "" as "" | ConsumptionType,
+  department: "" as "" | Department,
   clinicId: "",
 };
 
@@ -34,6 +44,8 @@ export const SupplyConsumptionForm = () => {
   const [stockQuery, setStockQuery] = useState<{
     supplyId: number;
     currentStock: number | null;
+    clinicStock: number | null;
+    minimumStock: number | null;
     error: string | null;
   } | null>(null);
   const [isLoadingSupplies, setIsLoadingSupplies] = useState(true);
@@ -43,6 +55,22 @@ export const SupplyConsumptionForm = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [quantityApiError, setQuantityApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const readyToSubmit =
+    formState.supplyId !== "" &&
+    Number(formState.quantity) > 0 &&
+    formState.consumptionType !== "" &&
+    formState.department !== "" &&
+    formState.clinicId !== "";
+
+  useInventoryFlowTelemetry("outbound_order", {
+    productId: formState.supplyId,
+    quantity: formState.quantity,
+    clinicId: formState.clinicId,
+    readyToSubmit,
+    submitted,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -83,27 +111,32 @@ export const SupplyConsumptionForm = () => {
   }, []);
 
   const selectedSupplyId = Number(formState.supplyId);
+  const selectedClinicId = Number(formState.clinicId);
   const hasSelectedSupply =
     formState.supplyId !== "" && !Number.isNaN(selectedSupplyId);
+  const hasSelectedClinic =
+    formState.clinicId !== "" && !Number.isNaN(selectedClinicId);
 
-  // Fetch GET /inventory/products/{id} whenever the selected medical supply
-  // changes so current_stock is shown before quantity entry. The list payload
-  // is not treated as authoritative after selection.
+  // Fetch GET /inventory/products/{id}?clinic_id= when supply and clinic are
+  // selected so clinic-partitioned remaining stock is known before submit.
   useEffect(() => {
     if (!hasSelectedSupply) {
       return;
     }
 
     const supplyId = selectedSupplyId;
+    const clinicId = hasSelectedClinic ? selectedClinicId : undefined;
     let cancelled = false;
 
     const loadStock = async () => {
       try {
-        const supply = await getMedicalSupply(supplyId);
+        const supply = await getMedicalSupply(supplyId, clinicId);
         if (!cancelled) {
           setStockQuery({
             supplyId,
             currentStock: supply.current_stock,
+            clinicStock: supply.clinic_current_stock,
+            minimumStock: supply.minimum_stock,
             error: null,
           });
         }
@@ -117,6 +150,8 @@ export const SupplyConsumptionForm = () => {
         setStockQuery({
           supplyId,
           currentStock: null,
+          clinicStock: null,
+          minimumStock: null,
           error:
             error instanceof ApiError
               ? error.message
@@ -130,7 +165,7 @@ export const SupplyConsumptionForm = () => {
     return () => {
       cancelled = true;
     };
-  }, [hasSelectedSupply, selectedSupplyId]);
+  }, [hasSelectedSupply, hasSelectedClinic, selectedSupplyId, selectedClinicId]);
 
   const stockMatchesSelection =
     hasSelectedSupply && stockQuery?.supplyId === selectedSupplyId;
@@ -156,18 +191,73 @@ export const SupplyConsumptionForm = () => {
     setIsSubmitting(true);
 
     try {
-      await createSupplyConsumption({
+      const consumption = await createSupplyConsumption({
         supply_id: Number(formState.supplyId),
         quantity: Number(formState.quantity),
         consumption_type: formState.consumptionType as ConsumptionType,
+        department: formState.department as Department,
         clinic_id: Number(formState.clinicId),
       });
+      const selectedSupply = supplies.find(
+        (supply) => supply.id === Number(formState.supplyId),
+      );
+      if (selectedSupply) {
+        trackOutboundOrderCreated({
+          clinicId: consumption.clinic_id,
+          productId: selectedSupply.id,
+          liveCategory: selectedSupply.category,
+          quantity: consumption.quantity,
+          department: consumption.department,
+          outboundOrderId: consumption.id,
+          consumptionReason: consumption.consumption_type as ConsumptionType,
+        });
+        const remainingClinicStock =
+          stockQuery?.clinicStock !== null && stockQuery?.clinicStock !== undefined
+            ? stockQuery.clinicStock - consumption.quantity
+            : null;
+        const minimumStock = stockQuery?.minimumStock ?? selectedSupply.minimum_stock;
+        if (
+          remainingClinicStock !== null &&
+          remainingClinicStock >= 0 &&
+          typeof minimumStock === "number"
+        ) {
+          trackStockThresholdTriggered({
+            clinicId: consumption.clinic_id,
+            productId: selectedSupply.id,
+            liveCategory: selectedSupply.category,
+            remainingQuantity: remainingClinicStock,
+            minimumStock,
+            triggeringOutboundOrderId: consumption.id,
+          });
+        }
+      }
+      setSubmitted(true);
       setFormState({ ...emptyForm });
       setStockQuery(null);
       setSuccessMessage("Supply consumption recorded.");
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         return;
+      }
+      const selectedSupply = supplies.find(
+        (supply) => supply.id === Number(formState.supplyId),
+      );
+      if (
+        error instanceof ApiError &&
+        (error.status === 400 || error.status === 422) &&
+        selectedSupply &&
+        formState.clinicId
+      ) {
+        trackOutboundOrderRejected({
+          clinicId: Number(formState.clinicId),
+          productId: selectedSupply.id,
+          liveCategory: selectedSupply.category,
+          quantity: Number(formState.quantity),
+          availableQuantity: stockQuery?.clinicStock ?? stockQuery?.currentStock ?? 0,
+          rejectionReason:
+            error.status === 400 ? "insufficient_stock" : "validation_failed",
+          department: formState.department || undefined,
+        });
       }
       if (error instanceof ApiError) {
         // HTTP 400 insufficient-stock must sit next to quantity. Other FastAPI
@@ -319,6 +409,39 @@ export const SupplyConsumptionForm = () => {
           </p>
         ) : (
           <p className="field-hint">Clinical use or expiry waste only.</p>
+        )}
+      </div>
+
+      <div className="field">
+        <label htmlFor="consumption-department">Department</label>
+        <select
+          id="consumption-department"
+          name="department"
+          required
+          value={formState.department}
+          onChange={(event) =>
+            setFormState((current) => ({
+              ...current,
+              department: event.target.value as "" | Department,
+            }))
+          }
+          aria-invalid={Boolean(fieldErrors.department)}
+        >
+          <option value="">Select department</option>
+          {DEPARTMENTS.map((department) => (
+            <option key={department} value={department}>
+              {DEPARTMENT_LABEL[department]}
+            </option>
+          ))}
+        </select>
+        {fieldErrors.department ? (
+          <p className="field-error" role="alert">
+            {fieldErrors.department}
+          </p>
+        ) : (
+          <p className="field-hint">
+            Clinical service area only. Never a patient identifier.
+          </p>
         )}
       </div>
 

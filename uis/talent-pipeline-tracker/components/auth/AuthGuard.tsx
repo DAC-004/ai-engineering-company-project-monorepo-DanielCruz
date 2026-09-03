@@ -30,6 +30,8 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
 
     const verifySession = async () => {
       if (!hasAccessToken()) {
+        // Unauthenticated entry is not a session expiry. missing_token is
+        // reserved for protected API calls that expected a token (apiFetch).
         if (!cancelled) {
           setSessionState("anonymous");
           router.replace("/login");

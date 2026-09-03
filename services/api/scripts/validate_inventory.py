@@ -113,7 +113,13 @@ def main() -> int:
         check("POST /inventory/orders/inbound without token -> 401", r.status_code == 401)
         r = client.post(
             "/inventory/orders/outbound",
-            json={"supply_id": 1, "quantity": 1, "consumption_type": "clinical_use", "clinic_id": 1},
+            json={
+                "supply_id": 1,
+                "quantity": 1,
+                "consumption_type": "clinical_use",
+                "department": "primary_care",
+                "clinic_id": 1,
+            },
         )
         check("POST /inventory/orders/outbound without token -> 401", r.status_code == 401)
 
@@ -264,6 +270,7 @@ def main() -> int:
                 "supply_id": created.get("id"),
                 "quantity": 4,
                 "consumption_type": "clinical_use",
+                "department": "primary_care",
                 "clinic_id": 3,
             },
         )
@@ -282,6 +289,7 @@ def main() -> int:
                 "supply_id": created.get("id"),
                 "quantity": 1,
                 "consumption_type": "discarded",
+                "department": "primary_care",
                 "clinic_id": 3,
             },
         )
@@ -294,6 +302,7 @@ def main() -> int:
                 "supply_id": created.get("id"),
                 "quantity": 0,
                 "consumption_type": "clinical_use",
+                "department": "primary_care",
                 "clinic_id": 3,
             },
         )
@@ -334,6 +343,7 @@ def main() -> int:
                 "supply_id": created.get("id"),
                 "quantity": 9,
                 "consumption_type": "expiry_waste",
+                "department": "chronic_care",
                 "clinic_id": 3,
             },
         )

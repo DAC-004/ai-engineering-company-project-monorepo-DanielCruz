@@ -52,6 +52,49 @@ def get_db() -> Generator[Session, None, None]:
         yield session
 
 
+def _ensure_inventory_capture_columns(engine) -> None:
+    """
+    Add capture-phase columns on already-created tables.
+
+    SQLModel create_all does not ALTER existing databases. These columns are
+    required so mandatory telemetry can be computed without dropping inventory.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    statements: list[str] = []
+
+    if "medical_supply" in table_names:
+        supply_columns = {column["name"] for column in inspector.get_columns("medical_supply")}
+        if "minimum_stock" not in supply_columns:
+            statements.append(
+                "ALTER TABLE medical_supply ADD COLUMN minimum_stock INTEGER DEFAULT 10 NOT NULL"
+            )
+        if "expiry_date" not in supply_columns:
+            statements.append("ALTER TABLE medical_supply ADD COLUMN expiry_date DATE")
+
+    if "supply_consumption" in table_names:
+        consumption_columns = {
+            column["name"] for column in inspector.get_columns("supply_consumption")
+        }
+        if "department" not in consumption_columns:
+            statements.append(
+                "ALTER TABLE supply_consumption ADD COLUMN department VARCHAR(64) DEFAULT 'primary_care'"
+            )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+        if "medical_supply" in table_names:
+            connection.execute(
+                text(
+                    "UPDATE medical_supply SET expiry_date = '2026-09-12' "
+                    "WHERE sku = 'HCR-MED-001' AND expiry_date IS NULL"
+                )
+            )
+
+
 def init_databases() -> None:
     """
     Open both stores and create inventory tables.
@@ -65,3 +108,4 @@ def init_databases() -> None:
     from app import models as _inventory_models  # noqa: F401
 
     SQLModel.metadata.create_all(get_engine())
+    _ensure_inventory_capture_columns(get_engine())

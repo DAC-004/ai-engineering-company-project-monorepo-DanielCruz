@@ -17,6 +17,9 @@ export type MedicalSupply = {
   unit: string;
   country: string;
   current_stock: number;
+  minimum_stock: number;
+  expiry_date: string | null;
+  clinic_current_stock: number | null;
 };
 
 export type SupplyDelivery = {
@@ -34,6 +37,7 @@ export type SupplyConsumption = {
   supply_id: number;
   quantity: number;
   consumption_type: string;
+  department: string;
   clinic_id: number;
   created_at: string;
   user_uuid: string;
@@ -56,6 +60,7 @@ export type InventoryOrder = {
   user_uuid: string;
   vendor_name: string | null;
   consumption_type: string | null;
+  department: string | null;
 };
 
 export type SupplyDeliveryCreatePayload = {
@@ -69,14 +74,32 @@ export type SupplyConsumptionCreatePayload = {
   supply_id: number;
   quantity: number;
   consumption_type: ConsumptionType;
+  department: Department;
   clinic_id: number;
 };
 
 export type ConsumptionType = "clinical_use" | "expiry_waste";
 
+export type Department =
+  | "primary_care"
+  | "specialty_care"
+  | "chronic_disease_management"
+  | "preventive_health"
+  | "general_consultation"
+  | "chronic_care";
+
 export const CONSUMPTION_TYPES: readonly ConsumptionType[] = [
   "clinical_use",
   "expiry_waste",
+];
+
+export const DEPARTMENTS: readonly Department[] = [
+  "primary_care",
+  "specialty_care",
+  "chronic_disease_management",
+  "preventive_health",
+  "general_consultation",
+  "chronic_care",
 ];
 
 export const CLINIC_ID_MIN = 1;
@@ -131,6 +154,15 @@ export const CONSUMPTION_TYPE_LABEL: Record<ConsumptionType, string> = {
   expiry_waste: "Expiry waste",
 };
 
+export const DEPARTMENT_LABEL: Record<Department, string> = {
+  primary_care: "Primary care",
+  specialty_care: "Specialty care",
+  chronic_disease_management: "Chronic disease management",
+  preventive_health: "Preventive health",
+  general_consultation: "General consultation",
+  chronic_care: "Chronic care",
+};
+
 export const formatCategory = (category: string): string =>
   CATEGORY_LABEL[category] ?? category;
 
@@ -172,10 +204,16 @@ const inventoryFetch = <T>(path: string, options: RequestInit = {}): Promise<T> 
 export const listMedicalSupplies = (): Promise<MedicalSupply[]> =>
   inventoryFetch<MedicalSupply[]>("/inventory/products", { method: "GET" });
 
-export const getMedicalSupply = (supplyId: number): Promise<MedicalSupply> =>
-  inventoryFetch<MedicalSupply>(`/inventory/products/${supplyId}`, {
+export const getMedicalSupply = (
+  supplyId: number,
+  clinicId?: number,
+): Promise<MedicalSupply> => {
+  const query =
+    clinicId === undefined ? "" : `?clinic_id=${encodeURIComponent(String(clinicId))}`;
+  return inventoryFetch<MedicalSupply>(`/inventory/products/${supplyId}${query}`, {
     method: "GET",
   });
+};
 
 export const createSupplyDelivery = (
   payload: SupplyDeliveryCreatePayload,
@@ -195,3 +233,17 @@ export const createSupplyConsumption = (
 
 export const listInventoryOrders = (): Promise<InventoryOrder[]> =>
   inventoryFetch<InventoryOrder[]>("/inventory/orders", { method: "GET" });
+
+export type DirectStockEditPayload = {
+  clinic_id: number;
+  current_stock: number;
+};
+
+export const attemptDirectStockEdit = (
+  supplyId: number,
+  payload: DirectStockEditPayload,
+): Promise<never> =>
+  inventoryFetch<never>(`/inventory/products/${supplyId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
