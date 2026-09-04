@@ -1,10 +1,10 @@
 # HealthCore Monthly Clinic Supply Performance Pipeline
 
-**Status:** Part 1 design only. This document is the implementation contract for Part 2. It does not implement Prefect flows, reporting routes, or dashboard UI.
+**Status:** Part 1 design plus Part 2 implementation contract. Prefect flows and `services/reporting/` are implemented in Part 2. The Part 3 dashboard is out of scope.
 
 **Company context:** HealthCore Digital. Audience for the output is Dr. Okonkwo (CEO) and Claire Whitfield (Chief Compliance Officer).
 
-**Evidence date:** inspected against the `feat/telemetry-event-capture` worktree of `ai-engineering-company-project-monorepo-DanielCruz`. Statements below are repository facts unless labeled as a designed Part 2 artifact, a gap, or an assumption.
+**Evidence date:** Part 1 inspected the `feat/telemetry-event-capture` worktree. Part 2 implements against the integrated baseline that includes telemetry persistence (`timestamp` + `tags`) and the technical report. Capture-envelope fields remain in `properties`; persisted KPI fields are read from `tags`.
 
 ---
 
@@ -38,36 +38,36 @@ Envelope fields on every event, from `app/schemas/telemetry.py` and `event-schem
 
 `userId` is a workforce identifier from TinyDB auth. It is not a patient identifier. This pipeline must not copy `userId` into reporting tables, endpoint payloads, execution logs, diagrams, or fixtures.
 
-### 1.2 Where events are stored today
+### 1.2 Where events are stored
 
-**Repository evidence: they are not persisted.**
+`telemetry_events` is persisted by `POST /telemetry/events` through `app.services.telemetry_storage`. The physical stored contract is:
 
-`services/api/app/routers/telemetry.py` documents itself as a temporary receiver. `POST /telemetry/events` validates the envelope, logs `event_type`, and returns `{ "received": N }`. The module states there are no database writes and that persistence is a later phase.
+| Column | Meaning |
+| --- | --- |
+| `event_id` | envelope `eventId` |
+| `timestamp` | envelope `timestamp` (event time; this is the extract clock) |
+| `session_id` | envelope `sessionId` |
+| `user_id` | envelope `userId` (engineering only; pipeline extract projects it out) |
+| `event_type` | envelope `event_type` |
+| `schema_version` | envelope `schemaVersion` |
+| `request_id` | envelope `requestId` |
+| `tags` | allowlisted envelope `properties` |
 
-Confirmed absences:
+There is no `ingested_at` or `properties` column. Supply cost is stored at `tags.total_cost`. Ingest is write-once (`ON CONFLICT DO NOTHING` on `event_id`) and returns `{ "received", "stored", "rejected" }`.
 
-- No `telemetry_events` table in `app/models.py`
-- `SQLModel.metadata.create_all` creates `medical_supply`, `supply_delivery`, and `supply_consumption` only
-- No insert into any telemetry table from the ingest route
-- Frontend delivery uses an in-memory queue, 10-second / 20-event batches, `sendBeacon` on hide, and up to three retries, then discards the batch
-
-The pipeline's required source **contract** is `telemetry_events` (CONTEXT section 3). That table is not in this repository. Ingest is still the capture stub. Persistence is a prerequisite for Part 2 orchestration (the flow that will extract from it). Part 1 does not create the table or change the stub into a writer. Until persistence exists, a Part 2 run must fail with an explicit source-unavailable error rather than publish zeros.
+The pipeline never writes aggregates, run logs, or watermarks back into `telemetry_events`. If the table is missing, a Part 2 run fails with an explicit source-unavailable error rather than publishing zeros. An empty but reachable table is legitimate zero activity for that month.
 
 Inventory domain tables (`medical_supply`, `supply_delivery`, `supply_consumption`) store operational supply records in Supabase via SQLModel. They are not the pipeline destination. v1 does not join them to compute KPIs, and it does not join any patient-level table.
 
-### 1.3 Technical telemetry report (absent in this repository)
+### 1.3 Technical telemetry report (present; out of scope for this pipeline)
 
-The assignment describes an engineering report for event volume, error rate, and latency, served by `services/telemetry/analysis.py` and `GET /telemetry/report`.
+The engineering report is served by `services/telemetry/analysis.py` and `GET /telemetry/report`. It remains a separate path from `services/reporting/` and `reporting.monthly_clinic_supply_performance`. Part 2 does not modify it.
 
-Those components are **absent**. They were not inspected as existing implementation.
-
-| Assignment description | Evidence in this worktree |
+| Component | Baseline |
 | --- | --- |
-| `services/telemetry/analysis.py` | Path does not exist. Capture code lives under `services/api/app/routers/telemetry.py` and `services/api/app/schemas/telemetry.py`. |
-| `GET /telemetry/report` | Not registered in `app/main.py`. The only telemetry HTTP route is `POST /telemetry/events`. |
-| `services/reporting/` | Does not exist. This module is designed in section 12, not implemented in Part 1. |
-
-This design does not create or modify `services/telemetry/analysis.py` or `GET /telemetry/report`. If a later milestone adds an engineering report, it remains a separate path from `services/reporting/` and `reporting.monthly_clinic_supply_performance`.
+| `services/telemetry/analysis.py` | Present. Reads `timestamp`, `event_type`, and `tags` for operational volume, error, and latency metrics. |
+| `GET /telemetry/report` | Present, with a 60-second cache. Not a business KPI endpoint. |
+| `services/reporting/` | Implemented in Part 2 for the Monthly Clinic Supply Performance Report. |
 
 ### 1.4 Business gap
 
@@ -80,7 +80,7 @@ Dr. Okonkwo and Claire need a monthly, per-clinic, per-country view of:
 3. Critical Stockout Frequency
 4. Expiry Risk Count
 
-What exists today (capture plus a stub `POST /telemetry/events`) can at most tell engineers whether envelopes arrived in process logs. That does not produce monthly clinic supply cost, consumption volume, critical stockout frequency, or expiry risk. Even if an engineering report for volume, error rate, and latency is added later, it still would not answer those four leadership KPIs. That is the gap this pipeline exists to close.
+What exists today (persisted `telemetry_events` plus `GET /telemetry/report`) can tell engineers event volume, error rate, and latency. That does not produce monthly clinic supply cost, consumption volume, critical stockout frequency, or expiry risk. That is the gap this pipeline exists to close.
 
 ### 1.5 `data/` layout as it exists
 
@@ -113,29 +113,26 @@ The pipeline never writes aggregates, run logs, or watermarks back into `telemet
 
 ### 3.2 Event format
 
-Source rows are the capture envelope plus ingest metadata. Designed `telemetry_events` physical columns (Part 2 persistence, not implemented here):
+Capture clients still send the envelope `properties` object. Persistence projects allowlisted keys into `tags`. Extraction reads the physical stored shape:
 
 | Column | Source |
 | --- | --- |
-| `event_id` UUID PRIMARY KEY | envelope `eventId` |
-| `occurred_at` TIMESTAMPTZ | envelope `timestamp` |
-| `ingested_at` TIMESTAMPTZ | set by ingest, `now()` |
-| `event_type` TEXT | envelope `event_type` |
-| `schema_version` TEXT | envelope `schemaVersion` |
-| `session_id` UUID | envelope `sessionId` |
-| `request_id` UUID | envelope `requestId` |
-| `properties` JSONB | envelope `properties` |
+| `event_id` | envelope `eventId` |
+| `timestamp` | envelope `timestamp` (used as event time / `occurred_at` equivalent) |
+| `event_type` | envelope `event_type` |
+| `tags` | allowlisted envelope `properties` |
 
-`userId` may be stored on the raw table for engineering use. Extraction for this pipeline **projects it out**. Reporting extracts must select only:
+There is no `ingested_at` column. Do not add one. v1 always recomputes the full UTC month from `timestamp`.
+
+`userId` may be stored as `user_id` for engineering use. Extraction for this pipeline **projects it out**. Reporting extracts must select only:
 
 - `event_id`
-- `occurred_at`
-- `ingested_at`
+- `timestamp`
 - `event_type`
-- `properties.clinic_id`
-- `properties.country`
-- `properties.total_cost` (inbound only)
-- business keys inside properties (`inbound_order_id`, `outbound_order_id`, `triggering_outbound_order_id`, `product_id`)
+- `tags.clinic_id`
+- `tags.country`
+- `tags.total_cost` (inbound only)
+- business keys inside tags (`inbound_order_id`, `outbound_order_id`, `triggering_outbound_order_id`, `product_id`)
 
 ### 3.3 How and when source data is updated
 
@@ -145,19 +142,19 @@ Once `telemetry_events` exists, ingest is append-only:
 
 - A new real-world action creates a new `event_id`.
 - A retried transmission of the same envelope hits `UNIQUE (event_id)` and is not inserted again.
-- Capture does not update existing telemetry rows. A late event is a **new insert** whose `occurred_at` may fall in an already published month.
+- Capture does not update existing telemetry rows. A late event is a **new insert** whose `timestamp` may fall in an already published month.
 
-If a future correction path overwrites properties for the same `event_id`, ingest must use `INSERT ... ON CONFLICT (event_id) DO UPDATE` and bump `ingested_at`. The pipeline treats `ingested_at` as the "record changed" watermark in either case.
+v1 does not overwrite telemetry rows. The pipeline recomputes the full month from current `timestamp` values.
 
 ### 3.4 Monthly time window
 
 Grain: one output row per `clinic_id` per calendar month.
 
-- `month_start` = first day of the UTC calendar month (`date_trunc('month', occurred_at AT TIME ZONE 'UTC')`).
-- Inclusive start: `occurred_at >= month_start 00:00:00 UTC`.
-- Exclusive end: `occurred_at < month_start + 1 month`.
+- `month_start` = first day of the UTC calendar month of `timestamp`.
+- Inclusive start: `timestamp >= month_start 00:00:00 UTC`.
+- Exclusive end: `timestamp < month_start + 1 month`.
 
-Scheduled run (first working day of month M): process month M-1 in UTC, then also recompute any previously published month whose `ingested_at` is newer than that month's watermark (late events).
+Scheduled run (first working day of month M): process month M-1 in UTC. Manual `POST /reporting/pipeline-runs` recomputes a requested month, including late events whose `timestamp` falls in that month.
 
 Manual run: optional `month_start` query/body argument. If omitted, use the previous completed UTC month.
 
@@ -167,19 +164,19 @@ Backfill: caller supplies an inclusive `month_start` range. Each month is extrac
 
 Concrete mechanism (control table plus ingest timestamp):
 
-Table `reporting.pipeline_watermarks` (designed, not implemented):
+Table `reporting.pipeline_watermarks` (implemented in Part 2):
 
 | Column | Type | Meaning |
 | --- | --- | --- |
 | `month_start` | `date` PRIMARY KEY | UTC month the watermark describes |
-| `last_ingested_at` | `timestamptz` | highest `telemetry_events.ingested_at` included in the last successful load of that month |
+| `last_ingested_at` | `timestamptz` | highest source `timestamp` included in the last successful load of that month (control-table name retained; source has no `ingested_at`) |
 | `updated_at` | `timestamptz` | when this watermark row was written |
 
 Extraction for month M:
 
-1. Read events with `event_type` in the v1 set and `occurred_at` in month M.
-2. Additionally, if `last_ingested_at` is set, include events whose `occurred_at` is in month M and whose `ingested_at > last_ingested_at`, which is the late-arrival set. In practice step 1 already includes them because the full month is recomputed.
-3. v1 **always recomputes the entire month** from the current extracted set after `event_id` deduplication. The watermark does not slice the month into incremental counts. It tells operators and the scheduler **whether** a published month must run again.
+1. Read events with `event_type` in the v1 set and `timestamp` in month M.
+2. v1 **always recomputes the entire month** from the current extracted set after `event_id` deduplication. The watermark does not slice the month into incremental counts.
+3. Duplicate inbound/outbound business keys keep the earliest `timestamp`.
 
 This is a last-ingested watermark plus a unique-key upsert on the destination, not an incremental add of new counts.
 
@@ -194,7 +191,7 @@ This is a last-ingested watermark plus a unique-key upsert on the destination, n
 | Expiry correlator | `product_id` plus UTC calendar day | Frontend throttle only (`productId:YYYY-MM-DD` in `sessionStorage`). No durable warehouse key yet. |
 | Destination business key | `(clinic_id, month_start)` | Designed unique constraint on `reporting.monthly_clinic_supply_performance`. |
 
-Pipeline extraction deduplicates by `event_id` first. A second pass drops duplicate inbound/outbound business keys, keeping the earliest `ingested_at` so a double-emitted order cannot inflate cost or consumption.
+Pipeline extraction deduplicates by `event_id` first. A second pass drops duplicate inbound/outbound business keys, keeping the earliest `timestamp` so a double-emitted order cannot inflate cost or consumption.
 
 ---
 
@@ -206,7 +203,7 @@ Transformation lives in `data/pipelines/`, planned function `transform_monthly_c
 
 | KPI | Output column | Rule |
 | --- | --- | --- |
-| Supply Cost per Clinic | `total_supply_cost` | `sum(properties.total_cost)` for valid `inbound_order_created` in the month |
+| Supply Cost per Clinic | `total_supply_cost` | `sum(tags.total_cost)` for valid `inbound_order_created` in the month |
 | Supply Consumption Volume | `supply_consumption_count` | `count(*)` of valid `outbound_order_created` in the month |
 | Critical Stockout Frequency | `critical_stockout_count` | `count(*)` of valid `stock_threshold_triggered` in the month |
 | Expiry Risk Count | `expiry_risk_count` | `count(*)` of valid `supply_expiry_flagged` in the month |
@@ -219,11 +216,11 @@ Department is present on `outbound_order_created` (`primary_care`, `specialty_ca
 
 For each surviving event:
 
-1. `clinic_id_text` = `str(properties.clinic_id)` with no clinic-name invention. Live identifiers are integers `1`–`12`. The destination column is `text`, so `"3"` is the stored value. The pipeline CONTEXT example `"austin-north"` is not a live clinic identifier in this repository.
+1. `clinic_id_text` = `str(tags.clinic_id)` with no clinic-name invention. Live identifiers are integers `1`–`12`. The destination column is `text`, so `"3"` is the stored value. The pipeline CONTEXT example `"austin-north"` is not a live clinic identifier in this repository.
 2. `country` must be exactly `US` or `UK`.
 3. Derived country from `clinic_id`: `1`–`9` → `US`, `10`–`12` → `UK` (same rule as `countryFromClinicId` in `uis/talent-pipeline-tracker/lib/telemetry/mapping.ts`). If envelope `country` disagrees, the record is invalid.
 4. `currency` = `USD` when `country = US`, `GBP` when `country = UK`. Currency is **not** converted. A US row and a UK row are never summed together.
-5. `month_start` from `occurred_at` in UTC as defined above.
+5. `month_start` from `timestamp` in UTC as defined above.
 
 Do not use `MedicalSupply.country` as the event or aggregate country.
 
@@ -234,14 +231,14 @@ Invalid records are excluded from aggregates, counted in the run log (`records_r
 | Check | Pass rule | Failure |
 | --- | --- | --- |
 | Event type | One of the four v1 types | Ignore for this pipeline (other telemetry stays in `telemetry_events`) |
-| Clinic identity | `properties.clinic_id` is an integer `1`–`12` | Reject |
-| Country | `properties.country` in (`US`, `UK`) and matches clinic mapping | Reject |
-| Calendar month | `occurred_at` parses to a UTC timestamp | Reject |
-| Cost | For `inbound_order_created`, `total_cost` is a finite number `>= 0` | Reject inbound row from `total_supply_cost` |
+| Clinic identity | `tags.clinic_id` is an integer `1`–`12` | Reject |
+| Country | `tags.country` in (`US`, `UK`) and matches clinic mapping | Reject |
+| Calendar month | `timestamp` parses to a UTC timestamp inside the requested month | Reject |
+| Cost | For `inbound_order_created`, `tags.total_cost` is a finite number `>= 0` | Reject inbound row from `total_supply_cost` |
 | Currency | Derived only from country as above; no FX fields | Reject if country invalid; never convert |
-| Duplicate `event_id` | First ingest wins | Later copies dropped |
-| Duplicate inbound/outbound business key | First `ingested_at` wins | Later copies dropped |
-| Incomplete properties | Required allowlist keys present (clinic, country, and inbound `total_cost`) | Reject |
+| Duplicate `event_id` | First extract wins | Later copies dropped |
+| Duplicate inbound/outbound business key | First `timestamp` wins | Later copies dropped |
+| Incomplete tags | Required allowlist keys present (clinic, country, and inbound `total_cost`) | Reject |
 
 `total_cost` was missing from the capture contract at the start of this milestone. It is now a required inbound property (see section 13). Historical `inbound_order_created` envelopes without `total_cost` cannot contribute to Supply Cost per Clinic. They are rejected for that KPI, not invented as `0`, unless a run is explicitly labeled as a degraded backfill in the execution log.
 
@@ -347,12 +344,12 @@ If the transaction fails, PostgreSQL rolls it back. The published table is uncha
 flowchart LR
   subgraph captureStage [Capture]
     UI["inbound_order_created outbound_order_created stock_threshold_triggered supply_expiry_flagged"]
-    POST["POST /telemetry/events stub no DB write"]
+    POST["POST /telemetry/events persist tags"]
     UI --> POST
   end
 
   subgraph extractionStage [Extraction]
-    SRC["telemetry_events designed read-only source"]
+    SRC["telemetry_events timestamp plus tags"]
     EXT["extract_supply_performance_events"]
     SRC --> EXT
   end
@@ -382,16 +379,16 @@ flowchart LR
     FLOW["run_monthly_clinic_supply_performance"]
   end
 
-  POST -.->|"Part 2 persist telemetry_events"| SRC
+  POST --> SRC
   DEST --> KPI
   RUNS --> LATEST
   TRIG --> FLOW
   FLOW --> EXT
 ```
 
-Three pipeline stages are Extraction, Transformation, and Load. Real names: `inbound_order_created`, `outbound_order_created`, `stock_threshold_triggered`, `supply_expiry_flagged`, designed source `telemetry_events`, destination `reporting.monthly_clinic_supply_performance`.
+Three pipeline stages are Extraction, Transformation, and Load. Real names: `inbound_order_created`, `outbound_order_created`, `stock_threshold_triggered`, `supply_expiry_flagged`, source `telemetry_events` (`timestamp` + `tags`), destination `reporting.monthly_clinic_supply_performance`.
 
-The dashed edge is **not implemented**. Today's `POST /telemetry/events` validates envelopes and logs them; it does not insert into `telemetry_events`. The engineering report path `GET /telemetry/report` is absent and is not on this diagram.
+`GET /telemetry/report` exists on a separate engineering path and is not on this diagram.
 
 ---
 
@@ -444,16 +441,16 @@ Backfill iterates months. Each month uses the same extract-transform-upsert path
 
 ### 7.6 Late events
 
-A late event is inserted with a new `ingested_at` and an older `occurred_at`. The scheduler sees `ingested_at > watermark.last_ingested_at` for that month and reruns month M. Recompute from all valid events, then upsert. History keeps the pre-late totals.
+A late event is a new `event_id` whose `timestamp` falls in an already published month. The next scheduled or manual run recomputes that month from all valid events, then upserts. History keeps the pre-recompute totals.
 
 ### 7.7 Retrying telemetry transmission versus already stored
 
-Designed ingest responses (Part 2; today's stub always returns `{ "received": N }` with no storage):
+Designed ingest responses (implemented):
 
 | Outcome | HTTP | Client behavior |
 | --- | --- | --- |
-| New `event_id` stored | 200 `{ "received": N, "stored": N }` | Stop. Success. |
-| `event_id` already stored | 200 `{ "received": N, "duplicates": N }` | Stop. Already stored is success, not a retryable failure. |
+| New `event_id` stored | 200 `{ "received": N, "stored": N, "rejected": 0 }` | Stop. Success. |
+| `event_id` already stored or invalid item | 200 `{ "received": N, "stored": S, "rejected": N-S }` | Stop. Already stored is success, not a retryable failure. |
 | Envelope/schema invalid | 422 | Do not retry the same body. |
 | Database or process failure | 5xx | Retry with the same `eventId` batch. |
 
@@ -467,7 +464,7 @@ Browser-side, HTTP 200 (including duplicate) is success. Only non-OK responses a
 
 ### 8.1 Execution log table
 
-Designed table `reporting.pipeline_runs` (not implemented in Part 1).
+Designed table `reporting.pipeline_runs` (implemented in Part 2).
 
 Minimum fields (more than five; the first five match the assignment list):
 
@@ -495,7 +492,7 @@ Minimum fields (more than five; the first five match the assignment list):
 | No `pipeline_runs` row for that `month_start` | Pipeline never ran. Absence of a report is not a zero KPI. |
 | `Completed` with extracts > 0 but one clinic at zero | That clinic had no valid v1 events. Other clinics did. |
 
-Today's stub ingest can log events without storing them. A Completed run against an empty `telemetry_events` table after clinics were used in the UI is **failed capture**, detected by reconciling `records_extracted` against inventory write counts for the same month (`supply_delivery` / `supply_consumption` row counts) as an operator check, not as a patient join.
+Today's ingest persists events. A Completed run against an empty `telemetry_events` table after clinics were used in the UI is **failed capture**, detected by reconciling `records_extracted` against inventory write counts for the same month (`supply_delivery` / `supply_consumption` row counts) as an operator check, not as a patient join.
 
 ### 8.3 Tracing an event into a business aggregate
 
@@ -503,7 +500,7 @@ Given `eventId`:
 
 1. Read `telemetry_events` by `event_id`.
 2. Confirm `event_type` is one of the four v1 types.
-3. Compute `month_start` from `occurred_at` UTC.
+3. Compute `month_start` from `timestamp` UTC.
 4. Read `reporting.monthly_clinic_supply_performance` by `(str(clinic_id), month_start)`.
 5. Optional: list `reporting.monthly_clinic_supply_performance_history` for that key to see pre-recompute values.
 
@@ -515,7 +512,7 @@ Operators compare, per UTC day and `event_type`:
 
 - Event count in `telemetry_events`
 - Inventory write count (`supply_delivery` for inbound, `supply_consumption` for outbound)
-- Median `ingested_at - occurred_at` (interval drift)
+- Median extract-to-load lag is not available from source (`ingested_at` does not exist); operators use `timestamp` vs `computed_at` instead
 - Count of ingest responses with `duplicates > 0` (retransmission)
 - `records_rejected` on the last run (schema loss)
 
@@ -613,7 +610,7 @@ The unique business key participates by making a lost race still duplicate-free.
 
 ## 11. Prefect Mapping
 
-Prefect is **not implemented** in this milestone. Mapping only.
+Prefect is implemented in Part 2 as one flow with three stage-aligned tasks. `python data/pipelines/pipeline.py` and `POST /reporting/pipeline-runs` always submit `monthly_clinic_supply_performance_flow`; they do not call task `.fn()`. Local runs do not require `PREFECT_API_URL`. On Windows, if `PREFECT_HOME` is unset, the pipeline uses a short `%LOCALAPPDATA%\pf` (or `%TEMP%\pf`) directory so the ephemeral Prefect server can load Alembic files under MAX_PATH. An explicitly supplied `PREFECT_HOME` is preserved. Mapping:
 
 Assignment wording "Underflow, load as a minimum" is treated as garbled text, not a fifth pipeline stage. The same paragraph and the rubric require one main flow and at least three tasks aligned with extraction, transformation, and load. Those are the tasks named below. There is no underflow stage.
 
@@ -700,7 +697,7 @@ No ETL in `services/`. Each route calls a function in `data/pipelines/`.
 | Purpose | Trigger a manual pipeline run (for example a late-event recompute before the next schedule). |
 | Inputs | Optional JSON `{ "month_start": "2026-07-01" }`. Default previous UTC month. |
 | Output | HTTP 202 `{ "run_id": "...", "status": "Running", "month_start": "..." }`. HTTP 409 if an overlapping run holds the lock. HTTP 503 if `telemetry_events` is missing. |
-| `data/pipelines/` function / flow | `trigger_manual_pipeline_run(month_start)` which submits `monthly_clinic_supply_performance_flow` (Prefect) or, in a local worker, calls `run_monthly_clinic_supply_performance(month_start, trigger_type="manual")`. |
+| `data/pipelines/` function / flow | `trigger_manual_pipeline_run(month_start)` which submits `monthly_clinic_supply_performance_flow`. |
 | ETL boundary | HTTP authenticates, parses `month_start`, and invokes the pipeline entrypoint. Aggregation SQL stays in `data/pipelines/`. |
 
 Scheduled execution calls the same flow with `trigger_type="scheduled"`. It does not go through `services/reporting/`, but it uses the same `data/pipelines/` functions.
@@ -713,7 +710,7 @@ The pipeline CONTEXT requires a cost value on `inbound_order_created` (`unit_cos
 
 **Before this milestone:** the field was absent from `event-schemas.json`, `schema.ts`, `inventoryEvents.ts`, and `SupplyDelivery`. Inventory still has no cost column.
 
-**Chosen field:** `properties.total_cost` (number `>= 0`), the line-item supply cost of that inbound order in the clinic's local currency. The KPI is a sum of costs, so `total_cost` maps 1:1. Currency is not stored on the event. It is derived from `country` at aggregate time.
+**Chosen field:** capture `properties.total_cost`, persisted as `tags.total_cost` (number `>= 0`), the line-item supply cost of that inbound order in the clinic's local currency. The KPI is a sum of costs, so `total_cost` maps 1:1. Currency is not stored on the event. It is derived from `country` at aggregate time.
 
 Validation and emission:
 
@@ -731,10 +728,10 @@ Validation and emission:
 | `SupplyDeliveryForm` | Requires a submitted finite value `>= 0`. |
 | `trackInboundOrderCreated` | Emits `input.totalCost` or drops the event. Does not invent a fallback. |
 | `validate_telemetry.py` | Asserts the fixture, schema, form, and emitter contract, including invalid-cost helpers. |
-| `POST /telemetry/events` | Validates the envelope only (`eventId`, `timestamp`, `sessionId`, `userId`, `event_type`, `schemaVersion`, `requestId`, `properties` as an object). It does **not** enforce per-event property schemas, including `total_cost`. It does not persist. |
-| Pipeline transform (designed, not implemented) | Will reject inbound rows whose `total_cost` is missing, non-finite, or negative before summing Supply Cost per Clinic. |
+| `POST /telemetry/events` | Persists allowlisted tags, including inbound `total_cost`. Envelope validation remains; per-event JSON Schema is not enforced at ingest. |
+| Pipeline transform | Rejects inbound rows whose `tags.total_cost` is missing, non-finite, or negative before summing Supply Cost per Clinic. |
 
-Part 1 does not add server-side property validation to the ingest stub. The pipeline assignment requires adding the CONTEXT cost field to the **capture schema** and documenting the pipeline. The capture stub's job remains envelope validation and HTTP 200. Stronger server-side allowlist checks belong with telemetry persistence (when `telemetry_events` is written), which is a prerequisite for Part 2 orchestration, not a Part 1 runtime change.
+Part 1 added the capture-schema extension. Persistence now stores `total_cost` in inbound tags. The transform rejects missing, non-finite, or negative costs.
 
 This is an extension of the existing mandatory event. No new event type was created. No extra payload fields were added to satisfy the rubric phrase "three CONTEXT-required payload fields". That rubric sentence conflicts with the HealthCore pipeline CONTEXT, which names one required cost-field extension (`unit_cost` or `total_cost`). CONTEXT and the explicit "example a cost field" wording outrank the "three" count. Inventing two additional fields would violate "do not add extra properties just in case."
 
@@ -751,7 +748,7 @@ This is an extension of the existing mandatory event. No new event type was crea
 - Read `telemetry_events`. Do not write pipeline output into it.
 - v1 event types: only the four listed in the purpose sentence.
 - Do not replace the engineering telemetry report path.
-- Part 1 does not implement Prefect orchestration, reporting routers, or Part 3 dashboards.
+- Dashboard UI remains Part 3.
 
 ---
 
@@ -762,22 +759,33 @@ This is an extension of the existing mandatory event. No new event type was crea
 | Rubric: "three CONTEXT-required payload fields" | HealthCore pipeline CONTEXT specifies one cost field on `inbound_order_created` | Add only `total_cost`. CONTEXT outranks the "three" count. |
 | "Underflow, load as a minimum" | Unclear assignment sentence next to extract/transform/load | One flow and three stage-aligned tasks. No underflow stage. |
 | Assignment `git pull` | User non-negotiable: agent must not `git pull` | Inspected local HEAD vs upstream SHA only. Did not pull. |
-| `GET /telemetry/report` and `services/telemetry/analysis.py` | Assignment assumes they exist; this fork does not contain them | Document absence. Do not create or modify them. Keep any future engineering report separate from `services/reporting/`. |
-| `telemetry_events` table | Required source contract; not in `app/models.py`; ingest is a stub | Design the read path. Persistence is a Part 2 orchestration prerequisite, not a Part 1 table. |
-| HTTP stub vs `total_cost` | Capture stub validates envelope only | Keep stub. Property enforcement is schema + form + emitter + designed transform. Server-side allowlists wait for persistence. |
+| `GET /telemetry/report` and `services/telemetry/analysis.py` | Now present on the integrated baseline | Do not modify. Keep engineering report separate from `services/reporting/`. |
+| `telemetry_events` table | Physical columns are `timestamp` and `tags`, not the Part 1 designed `occurred_at` / `properties` / `ingested_at` | Extract `timestamp` and `tags.total_cost`. Full-month recompute. Do not add `ingested_at`. |
+| HTTP ingest vs `total_cost` | Persistence allowlist includes `total_cost` | Transform still rejects missing or invalid cost. |
 | Folder names `processed/` and `evals/` | Repo has `data/process/` and `data/eval/` | Use existing folders. Put this file in `data/pipelines/`. |
 | CONTEXT JSON `clinic_id: "austin-north"` | Live system uses integer clinic ids `1`–`12` | Store text `"1"`…`"12"`. The JSON value is an illustration, not a live id. |
 | KPI text "consumption … by department" | Destination grain is clinic-month without department | Count `outbound_order_created` at clinic-month. Keep `department` on the source event only. |
-| Technical report "already answers volume/errors/latency" | No report endpoint exists | Assignment assumption. Gap still holds: business KPIs are unanswered. |
+| Technical report "already answers volume/errors/latency" | Technical report exists; it still does not answer the four leadership KPIs | Business pipeline remains required. |
 
 ---
 
-## 16. Out of scope for Part 1 implementation
+## 16. Part 2 run command and monthly schedule
 
-- Prefect flow and task Python
-- `services/reporting/` routers
-- Creating `reporting` schema tables
-- Creating `telemetry_events` persistence (prerequisite called out, not built here except the capture-side `total_cost` field)
-- Dashboard UI (Part 3)
+From the repository root, in the HealthCore API environment (`SECRET_KEY` and `DATABASE_URL` from `services/api/.env` or the process environment):
+
+```bash
+python data/pipelines/pipeline.py
+```
+
+That command runs `monthly_clinic_supply_performance_flow` for the previous completed UTC month.
+
+Intended HealthCore schedule: first working day of month M, process UTC month M-1, so Dr. Okonkwo and Claire have the Monthly Clinic Supply Performance Report for the board pack.
+
+Manual recomputes use `POST /reporting/pipeline-runs` or the same CLI with a `month_start` argument supplied by the flow parameters.
+
+## 17. Out of scope
+
+- Part 3 dashboard UI
 - FX conversion
 - Additional event types
+- Modifications to `services/telemetry/analysis.py` or `GET /telemetry/report`
