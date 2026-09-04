@@ -35,3 +35,21 @@ class TelemetryBatch(BaseModel):
 
 class TelemetryIngestResponse(BaseModel):
     received: int
+
+
+class TelemetryReportPeriod(BaseModel):
+    """Resolved UTC window passed to every metric function."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    from_: str = Field(alias="from")
+    to: str
+
+
+class TelemetryReportResponse(BaseModel):
+    """Grouped operational metrics for GET /telemetry/report."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    period: TelemetryReportPeriod
+    metrics: dict[str, list[dict[str, Any]]]
