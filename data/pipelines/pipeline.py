@@ -55,6 +55,25 @@ def _venv_prefect_package() -> Path | None:
     return None
 
 
+def _sqlite_migrations_need_short_path(package: Path) -> bool:
+    """True when any Prefect SQLite Alembic file is unreachable under MAX_PATH.
+
+    The initial migration filename can be short enough to pass a single-file
+    check while a later, longer revision name still exceeds Windows MAX_PATH.
+    """
+    sqlite_versions = (
+        package / "server" / "database" / "_migrations" / "versions" / "sqlite"
+    )
+    try:
+        migration_files = [path for path in sqlite_versions.iterdir() if path.suffix == ".py"]
+    except OSError:
+        return True
+    if not migration_files:
+        long_migration = package / _PREFECT_MIGRATION_TAIL.relative_to("prefect")
+        return len(str(long_migration)) >= _WINDOWS_MAX_PATH or not long_migration.exists()
+    return any(len(str(path)) >= _WINDOWS_MAX_PATH or not path.exists() for path in migration_files)
+
+
 def _ensure_short_prefect_import_path(prefect_home: Path) -> None:
     """Import Prefect from a short junction when the venv path exceeds MAX_PATH.
 
@@ -66,8 +85,7 @@ def _ensure_short_prefect_import_path(prefect_home: Path) -> None:
     package = _venv_prefect_package()
     if package is None:
         return
-    long_migration = package / _PREFECT_MIGRATION_TAIL.relative_to("prefect")
-    if len(str(long_migration)) < _WINDOWS_MAX_PATH and long_migration.exists():
+    if not _sqlite_migrations_need_short_path(package):
         return
 
     package_root = prefect_home / "pkg"
@@ -280,12 +298,79 @@ def _handle_optional_snapshot_state(snapshot_state: State) -> None:
     logger.info("Optional eval snapshot completed: %s", snapshot_state)
 
 
+@flow(name="extract_clinic_supply_performance_events")
+def extract_clinic_supply_performance_events_flow(
+    month_start: date,
+) -> list[dict[str, Any]]:
+    """Extract the four HealthCore v1 supply events for one UTC month.
+
+    Input: ``month_start`` (first day of the UTC calendar month).
+    Output: projected ``telemetry_events`` rows (no ``user_id``) for
+    ``inbound_order_created``, ``outbound_order_created``,
+    ``stock_threshold_triggered``, and ``supply_expiry_flagged``.
+    """
+    init_databases()
+    engine = get_engine()
+    if not telemetry_events_available(engine):
+        raise SourceUnavailableError("telemetry_events table is not available")
+    return extract_supply_performance_events(month_start)
+
+
+@flow(name="transform_monthly_clinic_supply_kpis")
+def transform_monthly_clinic_supply_kpis_flow(
+    events: list[dict[str, Any]],
+    month_start: date,
+) -> dict[str, Any]:
+    """Compute the four Monthly Clinic Supply Performance KPIs.
+
+    Input: extracted events plus ``month_start``.
+    Output: clinic-month aggregates for Supply Cost per Clinic
+    (``total_supply_cost``), Supply Consumption Volume
+    (``supply_consumption_count``), Critical Stockout Frequency
+    (``critical_stockout_count``), and Expiry Risk Count
+    (``expiry_risk_count``), plus extract/reject counts.
+    """
+    return transform_monthly_clinic_aggregates(events, month_start)
+
+
+@flow(name="load_monthly_clinic_supply_performance")
+def load_monthly_clinic_supply_performance_flow(
+    transform_result: dict[str, Any],
+    run_id: str,
+    month_start: date,
+) -> int:
+    """Upsert clinic-month KPI rows into the reporting destination.
+
+    Input: transform result, ``run_id``, and ``month_start``.
+    Output: number of rows written to
+    ``reporting.monthly_clinic_supply_performance``.
+    """
+    init_databases()
+    return load_monthly_clinic_supply_performance(transform_result, run_id, month_start)
+
+
+@flow(name="write_monthly_clinic_supply_eval_snapshot")
+def write_monthly_clinic_supply_eval_snapshot_flow(
+    transform_result: dict[str, Any],
+    month_start: date,
+    snapshot_path: str | None = None,
+) -> str:
+    """Optional evaluation snapshot under ``data/eval/``.
+
+    Input: transform result, ``month_start``, optional snapshot path.
+    Output: filesystem path of the written snapshot.
+    Failure of this subflow must not stop extract-transform-load.
+    """
+    return write_eval_snapshot(transform_result, month_start, snapshot_path)
+
+
 def _execute_pipeline(
     *,
     month_start: date,
     trigger_type: str,
     eval_snapshot_path: str | None,
 ) -> dict[str, Any]:
+    """Coordinate run metadata and invoke the extract, transform, and load subflows."""
     init_databases()
     engine = get_engine()
     run_id = start_pipeline_run(engine, month_start, trigger_type)
@@ -293,18 +378,16 @@ def _execute_pipeline(
     records_rejected = 0
     records_loaded = 0
     try:
-        if not telemetry_events_available(engine):
-            raise SourceUnavailableError("telemetry_events table is not available")
-        events = extract_supply_performance_events(month_start)
-        transform_result = transform_monthly_clinic_aggregates(events, month_start)
-        snapshot_state = write_eval_snapshot(
+        events = extract_clinic_supply_performance_events_flow(month_start)
+        transform_result = transform_monthly_clinic_supply_kpis_flow(events, month_start)
+        snapshot_state = write_monthly_clinic_supply_eval_snapshot_flow(
             transform_result,
             month_start,
             eval_snapshot_path,
             return_state=True,
         )
         _handle_optional_snapshot_state(snapshot_state)
-        records_loaded = load_monthly_clinic_supply_performance(
+        records_loaded = load_monthly_clinic_supply_performance_flow(
             transform_result,
             run_id,
             month_start,
@@ -356,7 +439,7 @@ def monthly_clinic_supply_performance_flow(
     trigger_type: str = "scheduled",
     eval_snapshot_path: str | None = None,
 ) -> dict[str, Any]:
-    """One orchestration flow: extract, transform, load, plus an optional snapshot."""
+    """Main flow: coordinate extract, transform, and load subflows in sequence."""
     resolved_month = _parse_month_start(month_start)
     return _execute_pipeline(
         month_start=resolved_month,

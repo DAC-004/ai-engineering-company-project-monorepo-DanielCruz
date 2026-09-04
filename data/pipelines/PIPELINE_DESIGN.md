@@ -1,6 +1,6 @@
 # HealthCore Monthly Clinic Supply Performance Pipeline
 
-**Status:** Part 1 design plus Part 2 implementation contract. Prefect flows and `services/reporting/` are implemented in Part 2. The Part 3 dashboard is out of scope.
+**Status:** Part 1 design, Part 2 implementation, and Part 3 subflow / test / dashboard contract. Prefect subflows and `uis/talent-pipeline-tracker` `/backoffice/reporting` are implemented in Part 3.
 
 **Company context:** HealthCore Digital. Audience for the output is Dr. Okonkwo (CEO) and Claire Whitfield (Chief Compliance Officer).
 
@@ -610,19 +610,32 @@ The unique business key participates by making a lost race still duplicate-free.
 
 ## 11. Prefect Mapping
 
-Prefect is implemented in Part 2 as one flow with three stage-aligned tasks. `python data/pipelines/pipeline.py` and `POST /reporting/pipeline-runs` always submit `monthly_clinic_supply_performance_flow`; they do not call task `.fn()`. Local runs do not require `PREFECT_API_URL`. On Windows, if `PREFECT_HOME` is unset, the pipeline uses a short `%LOCALAPPDATA%\pf` (or `%TEMP%\pf`) directory so the ephemeral Prefect server can load Alembic files under MAX_PATH. An explicitly supplied `PREFECT_HOME` is preserved. Mapping:
+Prefect 3 is implemented as one main flow that coordinates at least three named `@flow` subflows. `python data/pipelines/pipeline.py` and `POST /reporting/pipeline-runs` always submit `monthly_clinic_supply_performance_flow`; they do not call task `.fn()`. Local runs do not require `PREFECT_API_URL`. On Windows, if `PREFECT_HOME` is unset, the pipeline uses a short `%LOCALAPPDATA%\pf` (or `%TEMP%\pf`) directory so the ephemeral Prefect server can load Alembic files under MAX_PATH. An explicitly supplied `PREFECT_HOME` is preserved.
 
-Assignment wording "Underflow, load as a minimum" is treated as garbled text, not a fifth pipeline stage. The same paragraph and the rubric require one main flow and at least three tasks aligned with extraction, transformation, and load. Those are the tasks named below. There is no underflow stage.
+Assignment wording "Underflow, load as a minimum" is treated as garbled text, not a fifth pipeline stage. There is no underflow stage.
 
 ### 11.1 Main flow
 
 `monthly_clinic_supply_performance_flow`
 
 - Parameters: `month_start: date | None`, `trigger_type: Literal["scheduled","manual"]`
-- Part 2 expectation: **one orchestration flow** (this flow), not a tree of subflows
-- Part 3: stages may split into subflows and testing expectations increase
+- Coordinates run metadata (`start_pipeline_run` / `finish_pipeline_run`) and invokes subflows in sequence
+- Does not keep extract, transform, or load logic inline
 
-### 11.2 Tasks (stage-aligned)
+### 11.2 Subflows (explicit inputs and outputs)
+
+Each subflow can be executed independently. Subflows pass data only through arguments and return values.
+
+| Subflow | Stage | Input | Output |
+| --- | --- | --- | --- |
+| `extract_clinic_supply_performance_events_flow` | Extraction | `month_start` | v1 `telemetry_events` rows for the UTC month |
+| `transform_monthly_clinic_supply_kpis_flow` | Transformation | `events`, `month_start` | clinic-month KPI aggregates |
+| `load_monthly_clinic_supply_performance_flow` | Load | `transform_result`, `run_id`, `month_start` | rows written to `reporting.monthly_clinic_supply_performance` |
+| `write_monthly_clinic_supply_eval_snapshot_flow` | Optional eval snapshot | `transform_result`, `month_start`, optional path | snapshot path; invoked with `return_state=True` |
+
+The optional snapshot was already part of the Part 2 design (`data/eval/`). It is a subflow in Part 3 so a snapshot failure cannot stop extract-transform-load.
+
+### 11.3 Tasks (stage-aligned)
 
 | Task | Stage | Planned function in `data/pipelines/` |
 | --- | --- | --- |
@@ -630,13 +643,11 @@ Assignment wording "Underflow, load as a minimum" is treated as garbled text, no
 | `transform_monthly_clinic_aggregates` | Transformation | `transform_monthly_clinic_aggregates(events)` |
 | `load_monthly_clinic_supply_performance` | Load | `load_monthly_clinic_supply_performance(aggregates, run_id)` |
 
-Optional helpers, still not subflows in Part 2: `start_pipeline_run`, `finish_pipeline_run`.
-
-### 11.3 Prefect states
+### 11.4 Prefect states
 
 Relevant states: `Pending`, `Running`, `Completed`, `Failed`. Those three terminal/operational states used in `reporting.pipeline_runs` are `Running`, `Completed`, and `Failed`.
 
-### 11.4 Blocks and credentials
+### 11.5 Blocks and credentials
 
 Repository already loads `DATABASE_URL` from environment in `app/core/config.py` (Supabase transaction pooler or SQLite in tests). Never hard-code the URI.
 
@@ -647,13 +658,13 @@ Planned Prefect blocks:
 
 Prefect Cloud/API keys belong in Prefect blocks or worker environment, not in git.
 
-### 11.5 Optional second flow
+### 11.6 Optional second flow
 
-`backfill_monthly_clinic_supply_performance_flow` may call the same three tasks in a loop. Optional in Part 1. Useful if `telemetry_events` later holds more than one month.
+`backfill_monthly_clinic_supply_performance_flow` may call the same subflows in a loop. Optional in Part 1. Useful if `telemetry_events` later holds more than one month.
 
-### 11.6 Part 3 note
+### 11.7 Part 3 optional design enhancement
 
-Part 3 introduces subflows and stronger tests. Part 2 should keep a single orchestration flow so that split is a deliberate later change.
+No additional Part 1 design-question enhancement was added in Part 3. The overlapping-run advisory lock, extract retries, transactional load retry, and transform cache were already implemented in Part 2. Inventing a heartbeat or Idempotency-Key layer would not answer an unimplemented design gap.
 
 ---
 
@@ -748,7 +759,7 @@ This is an extension of the existing mandatory event. No new event type was crea
 - Read `telemetry_events`. Do not write pipeline output into it.
 - v1 event types: only the four listed in the purpose sentence.
 - Do not replace the engineering telemetry report path.
-- Dashboard UI remains Part 3.
+- Dashboard UI remains Part 3. Implemented at `/backoffice/reporting` in `uis/talent-pipeline-tracker`, fetching `GET /reporting/monthly-clinic-supply-performance`.
 
 ---
 
