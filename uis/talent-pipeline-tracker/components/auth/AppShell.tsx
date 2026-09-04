@@ -78,6 +78,16 @@ export const AppShell = ({ children }: AppShellProps) => {
             Supply movements
           </Link>
           <Link
+            href="/backoffice/reporting"
+            className={
+              pathname.startsWith("/backoffice/reporting")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Clinic supply report
+          </Link>
+          <Link
             href="/account/profile"
             className={
               pathname.startsWith("/account/profile")
