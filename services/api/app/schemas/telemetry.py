@@ -1,8 +1,8 @@
 """Pydantic envelope for HealthCore telemetry batches.
 
 Matches docs/telemetry/telemetry-plan.md section 6.0 and event-schemas.json.
-This stub validates the envelope only. Per-event property allowlists are the
-frontend/instrumenter contract and are not persisted here.
+TelemetryEvent is the unchanged capture-phase envelope contract. Storage
+projects allowlisted properties into tags after per-event model_validate.
 """
 
 from __future__ import annotations
@@ -35,3 +35,5 @@ class TelemetryBatch(BaseModel):
 
 class TelemetryIngestResponse(BaseModel):
     received: int
+    stored: int
+    rejected: int
