@@ -1,0 +1,17 @@
+# HealthCore nightly telemetry export (Ticket #DEV-53)
+#
+# Sole production trigger: OS crontab, outside FastAPI. CRON_TZ=UTC.
+# 00:05 UTC so TARGET_DATE defaults to the completed previous UTC calendar day.
+#
+# Operator configuration:
+# Replace every occurrence of /path/to/repo with the absolute path of this
+# repository checkout (the directory that contains scripts/ and data/).
+# Do not use a container-only working directory.
+#
+# The launcher uses services/api/.venv/bin/python when present, sets PYTHONPATH,
+# loads secrets via services/api/.env inside the worker, and runs:
+#   python scripts/nightly_export.py
+#
+SHELL=/bin/sh
+CRON_TZ=UTC
+5 0 * * * /bin/sh /path/to/repo/scripts/run_nightly_export.sh >> /path/to/repo/data/raw/nightly_export.log 2>&1
