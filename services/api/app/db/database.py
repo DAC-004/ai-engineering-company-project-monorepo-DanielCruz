@@ -32,7 +32,10 @@ def get_engine():
         connect_args = {}
         engine_kwargs: dict = {"pool_pre_ping": True}
         if url.startswith("sqlite"):
+            # timeout lets a second nightly process wait for the writer's
+            # processing-status lock instead of failing with "database is locked".
             connect_args["check_same_thread"] = False
+            connect_args["timeout"] = 30
             engine_kwargs["connect_args"] = connect_args
         _engine = create_engine(url, **engine_kwargs)
     return _engine
@@ -95,13 +98,91 @@ def _ensure_inventory_capture_columns(engine) -> None:
             )
 
 
+def _ensure_telemetry_postgres_indexes(engine) -> None:
+    """Create the tags GIN index on PostgreSQL only. SQLite has no GIN."""
+    if engine.dialect.name != "postgresql":
+        return
+    from sqlalchemy import text
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_telemetry_events_tags_gin "
+                "ON telemetry_events USING GIN (tags)"
+            )
+        )
+
+
+def _ensure_job_runs_schema(engine) -> None:
+    """Create job_runs plus required indexes on databases that predate the model.
+
+    SQLModel create_all adds new tables. Existing deployments still need the
+    composite lookup index and the partial unique index that makes `processing`
+    exclusive without a second lock mechanism.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    with engine.begin() as connection:
+        if "job_runs" not in table_names:
+            if engine.dialect.name == "postgresql":
+                connection.execute(
+                    text(
+                        """
+                        CREATE TABLE job_runs (
+                          id SERIAL PRIMARY KEY,
+                          job_name TEXT NOT NULL,
+                          target_date DATE NOT NULL,
+                          status TEXT NOT NULL
+                            CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+                          started_at TIMESTAMPTZ,
+                          finished_at TIMESTAMPTZ,
+                          error_message TEXT,
+                          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                        )
+                        """
+                    )
+                )
+            else:
+                connection.execute(
+                    text(
+                        """
+                        CREATE TABLE job_runs (
+                          id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          job_name TEXT NOT NULL,
+                          target_date DATE NOT NULL,
+                          status TEXT NOT NULL
+                            CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+                          started_at TEXT,
+                          finished_at TEXT,
+                          error_message TEXT,
+                          created_at TEXT NOT NULL
+                        )
+                        """
+                    )
+                )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_job_runs_job_name_target_date "
+                "ON job_runs (job_name, target_date)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_job_runs_job_name_processing "
+                "ON job_runs (job_name) WHERE status = 'processing'"
+            )
+        )
+
+
 def init_databases() -> None:
     """
-    Open both stores and create inventory tables.
+    Open both stores and create inventory, telemetry, and job_runs tables.
 
     TinyDB is used only for users/auth. SQLModel.metadata.create_all builds
-    MedicalSupply, SupplyDelivery, and SupplyConsumption tables on the
-    DATABASE_URL engine (Supabase in the live app).
+    MedicalSupply, SupplyDelivery, SupplyConsumption, telemetry_events, and
+    job_runs on the DATABASE_URL engine (Supabase in the live app).
     """
     get_tinydb()
     # Register table models on SQLModel.metadata before create_all.
@@ -109,3 +190,5 @@ def init_databases() -> None:
 
     SQLModel.metadata.create_all(get_engine())
     _ensure_inventory_capture_columns(get_engine())
+    _ensure_telemetry_postgres_indexes(get_engine())
+    _ensure_job_runs_schema(get_engine())

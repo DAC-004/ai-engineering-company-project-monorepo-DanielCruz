@@ -6,6 +6,10 @@ node_modules/
 *.py[cod]
 .pytest_cache/
 results.csv
+data/raw/telemetry_*.csv
+data/raw/*.log
+data/eval/monthly_clinic_supply_performance_*.json
+.prefect/
 services/api/.venv/
 services/api/data/
 .env
