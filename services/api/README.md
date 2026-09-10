@@ -65,11 +65,12 @@ Instructor clarification authorizes three additional legitimate Incident Analyze
 
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
-| `POST` | `/api/incidents/analyze` | **Protected** | Pre-AUTH-01 CSV analysis |
+| `POST` | `/api/incidents/analyze` | **Protected** | Enqueues CSV analysis; `202` + `task_id` |
 | `GET` | `/api/incidents/results` | **Protected** | JSON last analysis |
 | `GET` | `/api/incidents/results/summary` | **Protected** | Aggregate operational summary |
 | `GET` | `/api/incidents/results/export` | **Protected** | Pre-AUTH-01 CSV export |
 | `DELETE` | `/api/incidents/results` | **Protected** | Clear analysis; owner/admin (403 otherwise) |
+| `GET` | `/tasks/{task_id}` | **Protected** | Celery status (`pending` / `started` / `success` / `failure`) and result |
 | `GET` | `/health` | Public | Liveness — not counted |
 
 **Qualifying protected total: 5**
@@ -99,6 +100,13 @@ HealthCore inventory routes require authentication. Catalog rows are `MedicalSup
 Seed (idempotent on empty tables): `uv run python scripts/seed_inventory.py`
 
 Validate inventory behavior: `uv run python scripts/validate_inventory.py`
+
+## Async incident analysis (Celery)
+
+`POST /api/incidents/analyze` stores the CSV under `INCIDENT_DATA_DIR` (default `services/api/data/`, gitignored), enqueues `upload_id`, and returns `202 {"task_id": "..."}`. Poll `GET /tasks/{task_id}`. Start Redis, Flower, and the worker from the repository-root README (the worker is a separate process from uvicorn).
+
+Validate: `uv run python scripts/validate_async_tasks.py`
+
 
 ## Security notes
 

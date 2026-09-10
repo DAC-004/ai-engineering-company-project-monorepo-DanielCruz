@@ -30,6 +30,46 @@ This repository is the **starter template** for transversal projects. You will w
 
 ---
 
+## HealthCore async task queue (Redis + Celery)
+
+Incident CSV analysis runs on an independent Celery worker. The API enqueues `upload_id` only (the CSV is stored under `services/api/data/`, which is gitignored) and returns `202 Accepted` with a `task_id`.
+
+### Broker and Flower
+
+From the repository root:
+
+```bash
+docker compose up -d redis flower
+docker compose down
+```
+
+- Redis: `localhost:6379` (`noeviction`). Set `REDIS_URL=redis://localhost:6379/0` in `services/api/.env` (see `.env.example`).
+- Flower: [http://127.0.0.1:5555](http://127.0.0.1:5555)
+- Stopping the FastAPI process does not stop Redis, Flower, or the worker. Messages already in Redis remain available **while the Redis container keeps running**. This compose file does not configure Redis AOF/volume persistence.
+
+### Worker (independent process)
+
+Do not start the worker inside uvicorn. From `services/api` after `uv sync`:
+
+```bash
+uv run celery -A app.celery_app:celery_app worker --loglevel=info --pool=solo -Q celery -E
+```
+
+`--pool=solo` is required on Windows. The worker consumes only the default `celery` queue so terminal failures can remain on `dead_letter`.
+
+Stop the worker with `Ctrl+C` in that terminal. Stopping the API does not stop this process.
+
+Verify the worker connected to Redis before calling `POST /api/incidents/analyze`. Then check status with `GET /tasks/{task_id}` (JWT required).
+
+### Validation
+
+```bash
+cd services/api
+uv run python scripts/validate_async_tasks.py
+```
+
+---
+
 ## HealthCore Milestone 1 — run locally
 
 From the repository root, start the static site with:

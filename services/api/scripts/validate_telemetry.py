@@ -20,6 +20,9 @@ os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
 os.environ["DATABASE_URL"] = f"sqlite:///{_sqlite_path}"
 os.environ["TELEMETRY_ENDPOINT"] = "http://localhost:8000/telemetry/events"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "true"
+os.environ["INCIDENT_DATA_DIR"] = str(Path(_tmpdir) / "incident-data")
 
 from fastapi.testclient import TestClient  # noqa: E402
 

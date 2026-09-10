@@ -16,14 +16,18 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from app.db.database import get_engine, init_databases  # noqa: E402
-from app.routers import auth, incidents, inventory, profiles, telemetry, users  # noqa: E402
+from app.celery_app import ensure_broker_connection  # noqa: E402
+from app.routers import auth, incidents, inventory, profiles, tasks, telemetry, users  # noqa: E402
 from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
+from app.storage import ensure_runtime_dirs  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Open TinyDB + Supabase engines, create inventory tables, then seed if empty."""
+    """Open stores, warm Redis, then seed inventory if empty."""
     init_databases()
+    ensure_runtime_dirs()
+    ensure_broker_connection()
     with Session(get_engine()) as session:
         seed_inventory_if_empty(session)
     yield
@@ -56,6 +60,7 @@ app.include_router(profiles.router)
 app.include_router(incidents.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
+app.include_router(tasks.router)
 
 
 @app.get("/health")

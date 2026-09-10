@@ -21,6 +21,9 @@ os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
 os.environ["DATABASE_URL"] = f"sqlite:///{(Path(_tmpdir) / 'inventory.db').resolve().as_posix()}"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "true"
+os.environ["INCIDENT_DATA_DIR"] = str(Path(_tmpdir) / "incident-data")
 
 from fastapi.testclient import TestClient  # noqa: E402
 from jose import jwt  # noqa: E402
@@ -249,7 +252,7 @@ def main() -> int:
     )
     check(
         "POST /api/incidents/analyze with token",
-        r.status_code == 200 and "total_records" in r.json(),
+        r.status_code == 202 and bool(r.json().get("task_id")),
         r.text,
     )
 
