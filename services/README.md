@@ -7,4 +7,10 @@ Each subfolder inside `services/` must correspond to **one specific service** (f
 - **Main purpose**: to centralize all the backend logic, APIs, and queue consumers that support the company's use cases.
 - **Recommendation**: document in this file (or in sub-READMEs) the services you add, their objective, the technology used, and how to run them.
 
+Current services:
+
+- `api/` — HealthCore FastAPI app (JWT, inventory, incident analysis).
+- Celery worker for `POST /api/incidents/analyze` — run from `services/api` as documented in the repository-root README (`uv run celery -A app.celery_app:celery_app worker --pool=solo -Q celery -E`). Not inside the uvicorn process.
+
+
 > _Spanish version: [README.es.md](./README.es.md)._

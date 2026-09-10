@@ -100,12 +100,17 @@ def init_databases() -> None:
     Open both stores and create inventory tables.
 
     TinyDB is used only for users/auth. SQLModel.metadata.create_all builds
-    MedicalSupply, SupplyDelivery, and SupplyConsumption tables on the
-    DATABASE_URL engine (Supabase in the live app).
+    MedicalSupply, SupplyDelivery, SupplyConsumption, and TaskFailure tables
+    on the DATABASE_URL engine (Supabase in the live app).
     """
     get_tinydb()
     # Register table models on SQLModel.metadata before create_all.
-    from app import models as _inventory_models  # noqa: F401
+    from app.models import (  # noqa: F401
+        MedicalSupply,
+        SupplyConsumption,
+        SupplyDelivery,
+        TaskFailure,
+    )
 
     SQLModel.metadata.create_all(get_engine())
     _ensure_inventory_capture_columns(get_engine())
