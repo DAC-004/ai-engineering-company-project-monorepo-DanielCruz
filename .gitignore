@@ -2,3 +2,8 @@
 node_modules/
 .backend_project_requirements/
 .project-input/
+
+__pycache__/
+*.py[cod]
+outputs/*.png
+outputs/*.json
