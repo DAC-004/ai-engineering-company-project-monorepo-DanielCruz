@@ -13,7 +13,7 @@ The pipeline uses the provided `data/raw/healthcore_sales.csv` unchanged. It val
 ## Metrics and fixed formulas
 
 - **MSE:** mean squared error between test revenue and test predictions, in USD².
-- **PSI:** training-reference versus test-monitored distribution shift for revenue, using 10 training-derived quantile bins and epsilon `1e-6`: `sum((q-p)*ln(q/p))`. It is a stability diagnostic, not accuracy.
+- **PSI:** training-reference versus test-monitored distribution shift for revenue, using 10 training-derived quantile bins and epsilon `1e-6`: `sum((q-p)*ln(q/p))`. It is a stability diagnostic, not accuracy. The verified value is 7.8416, not a calculation error: 2024–2025 revenue is strongly shifted toward the highest training-revenue bins because HealthCore's underlying annual growth compounds across the eight-year holdout boundary. With only 24 test months, several lower training bins have zero test observations; epsilon protects the log term, and those empty bins legitimately contribute large shift terms. This PSI should therefore be presented to Finance as evidence that the test period is not distribution-stable relative to 2016–2023, not as a model-accuracy score. The comparison direction is training reference → test monitored.
 - **Regression Gini:** `1 - MAE(model) / MAE(median-baseline)` on the test set. Higher is better; it can be negative when the model is worse than baseline.
 - **K2 Score:** squared Pearson correlation, `corr(y_test, prediction)^2`, on the test set. It measures association, not calibration.
 
