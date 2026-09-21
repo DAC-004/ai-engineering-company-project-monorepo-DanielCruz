@@ -27,6 +27,17 @@ def mean_squared_error_usd2(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean((actual - predicted) ** 2))
 
 
+def mean_absolute_error_usd(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Mean absolute error in USD, the typical monthly dollar miss."""
+    actual, predicted = _as_aligned_floats(y_true, y_pred)
+    return float(np.mean(np.abs(actual - predicted)))
+
+
+def root_mean_squared_error_usd(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Root mean squared error in USD, more sensitive to large monthly misses."""
+    return float(np.sqrt(mean_squared_error_usd2(y_true, y_pred)))
+
+
 def rmse_pct_of_average_monthly_revenue(
     y_true: np.ndarray,
     y_pred: np.ndarray,

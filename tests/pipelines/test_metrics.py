@@ -8,10 +8,12 @@ import pytest
 from shared.sales_forecast.exceptions import MetricComputationError
 from shared.sales_forecast.metrics import (
     dagostino_pearson_k2,
+    mean_absolute_error_usd,
     mean_squared_error_usd2,
     normalized_gini,
     population_stability_index,
     rmse_pct_of_average_monthly_revenue,
+    root_mean_squared_error_usd,
 )
 
 
@@ -23,6 +25,16 @@ def test_mse_and_rmse_percentage_are_distinct() -> None:
     assert mse == pytest.approx(100.0)
     assert rmse_pct == pytest.approx((10.0 / 200.0) * 100.0)
     assert mse != rmse_pct
+
+
+def test_mae_and_rmse_are_in_usd_and_rmse_is_larger_when_errors_vary() -> None:
+    actual = np.array([100.0, 200.0, 300.0])
+    predicted = np.array([110.0, 190.0, 330.0])
+    mae = mean_absolute_error_usd(actual, predicted)
+    rmse = root_mean_squared_error_usd(actual, predicted)
+    assert mae == pytest.approx((10.0 + 10.0 + 30.0) / 3.0)
+    assert rmse == pytest.approx(((10.0**2 + 10.0**2 + 30.0**2) / 3.0) ** 0.5)
+    assert rmse > mae
 
 
 def test_normalized_gini_is_one_for_perfect_ranking() -> None:
