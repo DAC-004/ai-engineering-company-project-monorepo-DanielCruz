@@ -1,0 +1,111 @@
+{
+  "algorithm": "RandomForestRegressor",
+  "algorithm_justification": "Small monthly sample, stakeholder need for explainability, and limited tuning time. Random Forest averages independent trees and is the assignment starting point; XGBoost was not selected.",
+  "scaling": "No feature scaling. Random Forest split selection does not depend on comparable feature magnitudes.",
+  "random_state": 42,
+  "evaluation_protocol": "Rolling one-step-ahead historical evaluation on 2024-2025. Each test month uses information available before that month. Actuals from completed earlier test months may appear only as lagged or rolling inputs to a later test month. This is not a single 24-month-ahead forecast made at the end of 2023.",
+  "dataset": {
+    "path": "C:/4geeks/Projects/Sales_Forecasting-Regression_Model/ai-engineering-company-project-monorepo-DanielCruz/data/raw/healthcore_sales.csv",
+    "raw_rows": 120,
+    "raw_train_rows": 96,
+    "raw_test_rows": 24,
+    "raw_train_start": "2016-01-01",
+    "raw_train_end": "2023-12-01",
+    "raw_test_start": "2024-01-01",
+    "raw_test_end": "2025-12-01",
+    "model_ready_train_rows": 84,
+    "model_ready_test_rows": 24,
+    "model_ready_train_start": "2017-01-01",
+    "model_ready_train_end": "2023-12-01",
+    "model_ready_test_start": "2024-01-01",
+    "model_ready_test_end": "2025-12-01",
+    "average_monthly_revenue_usd": 2877266.325083333
+  },
+  "features": {
+    "columns": [
+      "year",
+      "month_num",
+      "quarter",
+      "is_summer_low",
+      "is_flu_high",
+      "revenue_lag_1",
+      "revenue_lag_12",
+      "revenue_roll_mean_3",
+      "revenue_roll_std_3",
+      "revenue_roll_mean_12",
+      "revenue_roll_std_12",
+      "visits_lag_1",
+      "visits_lag_12"
+    ],
+    "causal_rule": "Lags and rolling statistics use only earlier months. Same-month visits_count and avg_revenue_per_visit_usd are excluded.",
+    "importances": {
+      "year": 0.004081151281361289,
+      "month_num": 0.0011411700369753654,
+      "quarter": 0.00028298977636319344,
+      "is_summer_low": 0.0007084313356624842,
+      "is_flu_high": 0.0,
+      "revenue_lag_1": 0.006123363763902814,
+      "revenue_lag_12": 0.8277494206275233,
+      "revenue_roll_mean_3": 0.002092312543562178,
+      "revenue_roll_std_3": 0.005951460092844428,
+      "revenue_roll_mean_12": 0.009864775039735662,
+      "revenue_roll_std_12": 0.008335395391645534,
+      "visits_lag_1": 0.009420706867620582,
+      "visits_lag_12": 0.12424882324280317
+    }
+  },
+  "variability": {
+    "label": "empirical residual variability range, not a confidence or prediction interval",
+    "method": "chronological expanding-window walk-forward inside the training period: fit on the first i model-ready training months, predict month i+1, for i from 24 to n-1; residual_std is the sample standard deviation of finite out-of-sample residuals",
+    "residual_std_usd": 142376.3732712177,
+    "half_width_usd": 279057.69161158666,
+    "n_residuals": 60,
+    "first_validation_month": "2019-01-01",
+    "last_validation_month": "2023-12-01",
+    "min_train_rows": 24,
+    "test_targets_used": false
+  },
+  "metrics": {
+    "evaluation_note": "MSE, normalized Gini, and D'Agostino-Pearson K2 use held-out test predictions and targets. PSI compares training versus test visits_count populations and is not a test-only accuracy metric.",
+    "mse_usd2": 44044808895.07961,
+    "rmse_pct_of_average_monthly_revenue": 7.294025917515732,
+    "rmse_pct_note": "This percentage is RMSE / average monthly revenue * 100. It is not MSE. MSE remains in USD squared.",
+    "normalized_gini": 0.8936616199527321,
+    "psi": {
+      "value": 6.596562858878336,
+      "n_bins_requested": 10,
+      "n_bins_used": 10,
+      "n_edges": 11,
+      "epsilon": 1e-06,
+      "train_n": 96,
+      "test_n": 24,
+      "train_assigned": 96,
+      "test_assigned": 24,
+      "train_share_sum_before_epsilon": 1.0,
+      "test_share_sum_before_epsilon": 0.9999999999999999,
+      "n_zero_train_bins": 0,
+      "n_zero_test_bins": 5,
+      "n_test_below_train_min": 0,
+      "n_test_above_train_max": 3,
+      "formula": "(test_share - train_share) * ln(test_share / train_share), summed over bins",
+      "binning": "10 quantile bins from training visits_count only; the same edges are applied to the test population",
+      "zero_protection": "bin proportions below 1e-06 are replaced with 1e-06 before the log term; bins are never refit on test",
+      "interpretation": "large shift (industry convention: PSI > 0.25)",
+      "population": "consolidated monthly visits_count, chronological train versus test",
+      "not_measured": "US versus UK visit mix; the supplied dataset contains only consolidated rows and no regional records were fabricated"
+    },
+    "k2": {
+      "statistic": 0.3767372371533404,
+      "p_value": 0.8283093207477161,
+      "n_residuals": 24,
+      "label": "D'Agostino-Pearson K2 residual-normality statistic",
+      "null_hypothesis": "test residuals are consistent with a normal distribution",
+      "not_a_forecast_accuracy_metric": true
+    }
+  },
+  "artifacts": {
+    "plot": "C:/4geeks/Projects/Sales_Forecasting-Regression_Model/ai-engineering-company-project-monorepo-DanielCruz/data/eval/sales_forecast_actual_vs_predicted.png",
+    "metrics_json": "C:/4geeks/Projects/Sales_Forecasting-Regression_Model/ai-engineering-company-project-monorepo-DanielCruz/data/eval/sales_forecast_metrics.json",
+    "metrics_md": "C:/4geeks/Projects/Sales_Forecasting-Regression_Model/ai-engineering-company-project-monorepo-DanielCruz/data/eval/sales_forecast_metrics.md"
+  }
+}

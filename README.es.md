@@ -49,6 +49,19 @@ Estás construyendo **una sola empresa** a lo largo de muchos hitos y proyectos.
 
 ---
 
+## Pronóstico de ventas de HealthCore
+
+El pronóstico mensual de ingresos consolidados vive en este monorepo. No crea un repositorio, dashboard o API aparte.
+
+```bash
+uv run python scripts/train_sales_forecast.py
+uv run pytest tests/pipelines -q
+```
+
+La evaluación es un chequeo histórico de un paso hacia adelante sobre 2024-2025, no un único pronóstico a 24 meses emitido a finales de 2023. Detalles en [`scripts/README.md`](scripts/README.md).
+
+---
+
 ## Estado actual de la plantilla
 
 > 💡 Actualmente el repositorio ofrece solo una **estructura base de carpetas y documentación**. Todavía no incluye aplicaciones ejecutables ni scripts globales en la raíz.

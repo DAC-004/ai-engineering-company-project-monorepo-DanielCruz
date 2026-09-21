@@ -4,3 +4,7 @@ Esta carpeta está reservada para **recursos compartidos no empaquetados** del m
 
 - **Propósito principal**: ofrecer un lugar neutral para elementos reutilizables que no encajan como aplicación (`apps/`) ni como paquete/librería (`packages/`).
 - **Recomendación**: documenta qué contiene cada subcarpeta/archivo y enlaza desde los componentes que lo consumen para mantener trazabilidad.
+
+## `sales_forecast/`
+
+Ayudas reutilizables para el pronóstico mensual de ingresos de HealthCore. Detalle en [README.md](./README.md).

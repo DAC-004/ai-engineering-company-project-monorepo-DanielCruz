@@ -95,6 +95,25 @@ After deployment, run [PageSpeed Insights](https://pagespeed.web.dev/) against y
 
 ---
 
+## HealthCore sales forecasting
+
+Monthly consolidated revenue forecasting lives in this monorepo. It does not create a separate repository, dashboard, or API.
+
+```bash
+uv run python scripts/train_sales_forecast.py
+uv run pytest tests/pipelines -q
+```
+
+- Dataset: [`data/raw/healthcore_sales.csv`](data/raw/healthcore_sales.csv) (aggregated monthly revenue only; no patient-level data)
+- Trainer: [`scripts/train_sales_forecast.py`](scripts/train_sales_forecast.py)
+- Shared logic: [`shared/sales_forecast/`](shared/sales_forecast/)
+- Split test: [`tests/pipelines/test_chronological_split.py`](tests/pipelines/test_chronological_split.py)
+- Metrics and plot: [`data/eval/sales_forecast_metrics.md`](data/eval/sales_forecast_metrics.md), [`data/eval/sales_forecast_actual_vs_predicted.png`](data/eval/sales_forecast_actual_vs_predicted.png)
+
+The model is Random Forest. Evaluation is a rolling one-step-ahead historical check of 2024-2025, not a single 24-month-ahead forecast from the end of 2023. Dependencies are managed with `uv` at the repository root. See [`scripts/README.md`](scripts/README.md) for metric definitions, the variability-band method, and the algorithm justification.
+
+---
+
 ## How to think about this monorepo
 
 You are building **one company** across many milestones and projects. Each top-level folder has a **single responsibility** — like a real engineering team repo.
