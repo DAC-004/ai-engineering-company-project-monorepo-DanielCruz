@@ -16,7 +16,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from app.db.database import get_engine, init_databases  # noqa: E402
-from app.routers import auth, incidents, inventory, knowledge, profiles, telemetry, users  # noqa: E402
+from app.routers import agent, auth, incidents, inventory, knowledge, profiles, telemetry, users  # noqa: E402
 from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
 
 
@@ -61,6 +61,7 @@ app.include_router(incidents.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
 app.include_router(knowledge.router)
+app.include_router(agent.router)
 
 
 @app.get("/health")

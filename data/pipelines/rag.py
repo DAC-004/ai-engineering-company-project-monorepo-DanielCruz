@@ -60,6 +60,16 @@ _INSUFFICIENT_INFORMATION_ANSWER = (
     "referral rules, or required documents that are not in the approved sources. "
     "Please verify with the appropriate HealthCore team before advising the caller."
 )
+
+
+def insufficient_information_answer() -> str:
+    """Return the refusal used when retrieval finds no supporting chunk.
+
+    The LangGraph no-context route returns this statement directly.
+    ``query()`` does not call this helper. An empty retrieval list still
+    goes through ``generate_answer()`` on the existing knowledge endpoint.
+    """
+    return _INSUFFICIENT_INFORMATION_ANSWER
 # Policy markers used only to detect generation that went beyond retrieved
 # text. These strings are not injected into prompts as HealthCore facts.
 _POLICY_FACT_MARKERS = (
