@@ -1,0 +1,74 @@
+[
+  {
+    "id": "q-us-commercial-insurance",
+    "question": "Which commercial insurance plans does HealthCore accept in the United States?",
+    "expected_source_document": "insurance-coverage",
+    "expected_chunk_index": 1
+  },
+  {
+    "id": "q-georgia-medicaid",
+    "question": "Is Medicaid accepted at Georgia clinics?",
+    "expected_source_document": "insurance-coverage",
+    "expected_chunk_index": 1
+  },
+  {
+    "id": "q-uk-private-insurance",
+    "question": "What private insurance do United Kingdom patients use at HealthCore?",
+    "expected_source_document": "insurance-coverage",
+    "expected_chunk_index": 2
+  },
+  {
+    "id": "q-undocumented-coverage",
+    "question": "Can I confirm coverage for an insurer that is not listed in the approved sources?",
+    "expected_source_document": "insurance-coverage",
+    "expected_chunk_index": 3
+  },
+  {
+    "id": "q-cancel-12-hours",
+    "question": "Is there a charge for cancelling 12 hours in advance?",
+    "expected_source_document": "appointment-policy",
+    "expected_chunk_index": 1
+  },
+  {
+    "id": "q-medicare-noshow",
+    "question": "Can a Medicare or Medicaid patient be charged a no-show fee?",
+    "expected_source_document": "appointment-policy",
+    "expected_chunk_index": 1
+  },
+  {
+    "id": "q-reminder-reschedule",
+    "question": "How close to the appointment can someone reschedule from the reminder link?",
+    "expected_source_document": "appointment-policy",
+    "expected_chunk_index": 2
+  },
+  {
+    "id": "q-referral-time",
+    "question": "How long does an internal referral take from creation to a confirmed appointment?",
+    "expected_source_document": "referral-process",
+    "expected_chunk_index": 1
+  },
+  {
+    "id": "q-referral-escalate",
+    "question": "When should a coordinator escalate an internal referral that has no appointment options?",
+    "expected_source_document": "referral-process",
+    "expected_chunk_index": 2
+  },
+  {
+    "id": "q-external-referral",
+    "question": "Do referrals to specialists outside the HealthCore network follow the automated process?",
+    "expected_source_document": "referral-process",
+    "expected_chunk_index": 3
+  },
+  {
+    "id": "q-first-appointment-documents",
+    "question": "What should someone bring to a first appointment?",
+    "expected_source_document": "new-patient-checklist",
+    "expected_chunk_index": 1
+  },
+  {
+    "id": "q-incomplete-history-form",
+    "question": "What happens if a new patient has not completed the medical history form before the visit?",
+    "expected_source_document": "new-patient-checklist",
+    "expected_chunk_index": 2
+  }
+]

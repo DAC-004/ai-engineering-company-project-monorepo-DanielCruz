@@ -12,3 +12,7 @@ services/api/data/
 .env.local
 **/.env.local
 services/api/.env
+services/api/*.db
+data/process/qdrant_storage/
+data/process/models/
+*.gguf

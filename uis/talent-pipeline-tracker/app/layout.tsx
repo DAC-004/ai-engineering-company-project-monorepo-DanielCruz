@@ -16,7 +16,7 @@ const body = Source_Sans_3({
 export const metadata: Metadata = {
   title: "HealthCore Internal Workspace",
   description:
-    "Authenticated HealthCore Digital workspace for medical-supply inventory, profile, and internal operations.",
+    "Authenticated HealthCore Digital workspace for medical-supply inventory, knowledge queries, profile, and internal operations.",
 };
 
 export default function RootLayout({

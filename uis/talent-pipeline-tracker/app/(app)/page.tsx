@@ -26,6 +26,9 @@ export default function HomePage() {
         <Link href="/backoffice/inventory/orders" className="btn-secondary">
           Supply movements
         </Link>
+        <Link href="/backoffice/knowledge" className="btn-secondary">
+          Knowledge assistant
+        </Link>
         <Link href="/account/profile" className="btn-secondary">
           Manage profile
         </Link>
