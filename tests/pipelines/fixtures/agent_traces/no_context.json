@@ -1,0 +1,35 @@
+{
+  "trace_id": "cd6560605f604a9995ed7db74082ad99",
+  "thread_id": "3589d49227ad4de28b0d063f3597d8bb",
+  "question": "What is the capital of France?",
+  "node_order": [
+    "receive_question",
+    "retrieve_context",
+    "respond_no_information"
+  ],
+  "nodes": [
+    {
+      "node": "receive_question",
+      "output": {
+        "question": "What is the capital of France?"
+      }
+    },
+    {
+      "node": "retrieve_context",
+      "output": {
+        "context": [],
+        "error": ""
+      }
+    },
+    {
+      "node": "respond_no_information",
+      "output": {
+        "answer": "The available HealthCore knowledge base does not contain enough information to answer that question. I cannot confirm coverage, fees, timeframes, referral rules, or required documents that are not in the approved sources. Please verify with the appropriate HealthCore team before advising the caller.",
+        "error": ""
+      }
+    }
+  ],
+  "context": [],
+  "answer": "The available HealthCore knowledge base does not contain enough information to answer that question. I cannot confirm coverage, fees, timeframes, referral rules, or required documents that are not in the approved sources. Please verify with the appropriate HealthCore team before advising the caller.",
+  "error": ""
+}

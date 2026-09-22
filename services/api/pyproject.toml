@@ -8,6 +8,8 @@ dependencies = [
     "fastapi>=0.141.1",
     "fastembed>=0.8.0",
     "httpx>=0.28.1",
+    "langgraph>=1.2.12",
+    "langgraph-checkpoint-sqlite>=3.1.1",
     "libpass[bcrypt]>=1.9.3",
     "llama-cpp-python>=0.3.35",
     "psycopg2-binary>=2.9.12",
@@ -24,4 +26,9 @@ dependencies = [
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "pytest>=9.1.1",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "../.."]
+testpaths = ["tests"]

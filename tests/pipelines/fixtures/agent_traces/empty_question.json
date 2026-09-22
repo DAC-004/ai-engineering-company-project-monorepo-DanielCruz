@@ -1,0 +1,27 @@
+{
+  "trace_id": "90662e9cea734c6286738798b74402a7",
+  "thread_id": "6ec0b1e91a2448f4b09b6fd5cd163ed0",
+  "question": "   \n\t",
+  "node_order": [
+    "receive_question",
+    "reject_question"
+  ],
+  "nodes": [
+    {
+      "node": "receive_question",
+      "output": {
+        "question": ""
+      }
+    },
+    {
+      "node": "reject_question",
+      "output": {
+        "answer": "",
+        "error": "The question is empty. Provide a HealthCore support question before retrieval."
+      }
+    }
+  ],
+  "context": [],
+  "answer": "",
+  "error": "The question is empty. Provide a HealthCore support question before retrieval."
+}
