@@ -1,0 +1,40 @@
+{
+  "trace_id": "3baed5fda45d4ebc9ffde477bcc88907",
+  "thread_id": "16c714c17e1348f09ebeecd1074633ff",
+  "question": "What is the status of incident f45414d4-d3fc-4778-a2e3-7ec967fe56b9?",
+  "node_order": [
+    "receive_question",
+    "lookup_ticket"
+  ],
+  "nodes": [
+    {
+      "node": "receive_question",
+      "output": {
+        "question": "What is the status of incident f45414d4-d3fc-4778-a2e3-7ec967fe56b9?"
+      }
+    },
+    {
+      "node": "lookup_ticket",
+      "output": {
+        "answer": "Incident f45414d4-d3fc-4778-a2e3-7ec967fe56b9 status is in_progress. Category: clinical_equipment. Origin: branch. Branch: central.",
+        "ticket_clause": "Incident f45414d4-d3fc-4778-a2e3-7ec967fe56b9 status is in_progress. Category: clinical_equipment. Origin: branch. Branch: central.",
+        "sources": [
+          "ticket_tool"
+        ],
+        "lookup_failure": "",
+        "ticket_id": "f45414d4-d3fc-4778-a2e3-7ec967fe56b9",
+        "ticket_status": "in_progress",
+        "error": ""
+      }
+    }
+  ],
+  "context": [],
+  "answer": "Incident f45414d4-d3fc-4778-a2e3-7ec967fe56b9 status is in_progress. Category: clinical_equipment. Origin: branch. Branch: central.",
+  "error": "",
+  "sources": [
+    "ticket_tool"
+  ],
+  "lookup_failure": "",
+  "ticket_id": "f45414d4-d3fc-4778-a2e3-7ec967fe56b9",
+  "ticket_status": "in_progress"
+}

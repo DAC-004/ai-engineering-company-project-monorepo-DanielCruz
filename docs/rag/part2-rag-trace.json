@@ -1,0 +1,94 @@
+{
+  "trace_id": "6bfa05d9b76f4ad89fa2c9ff7298eae9",
+  "thread_id": "6bc3a58b412948ba8356d024fdf0473f",
+  "question": "How long does an internal referral take?",
+  "node_order": [
+    "receive_question",
+    "retrieve_context",
+    "generate_from_context"
+  ],
+  "nodes": [
+    {
+      "node": "receive_question",
+      "output": {
+        "question": "How long does an internal referral take?"
+      }
+    },
+    {
+      "node": "retrieve_context",
+      "output": {
+        "context": [
+          {
+            "company": "healthcore",
+            "source_document": "referral-process",
+            "section": "Target completed-referral time: 11 days from creation to confirmed",
+            "language": "en",
+            "chunk_index": 1,
+            "text": "Target completed-referral time: 11 days from creation to confirmed\nappointment (this is the company's current average, which it is trying to\nreduce — not a published service commitment to patients)."
+          },
+          {
+            "company": "healthcore",
+            "source_document": "referral-process",
+            "section": "If a patient hasn't received appointment options within 5 business days...",
+            "language": "en",
+            "chunk_index": 2,
+            "text": "If a patient hasn't received appointment options within 5 business days of\nthe referral being created, the coordinator must escalate the case directly\nto Marcus Reid (Director of Clinical Operations)."
+          },
+          {
+            "company": "healthcore",
+            "source_document": "referral-process",
+            "section": "Referrals to specialists outside the HealthCore network do not follow th...",
+            "language": "en",
+            "chunk_index": 3,
+            "text": "Referrals to specialists outside the HealthCore network do not follow this\nautomated process; they require manual handling and can take significantly\nlonger."
+          }
+        ],
+        "error": "",
+        "sources": [
+          "rag"
+        ]
+      }
+    },
+    {
+      "node": "generate_from_context",
+      "output": {
+        "answer": "An internal referral at HealthCore typically takes 11 days from the creation of the referral to when the appointment is confirmed. If a patient hasn't received appointment options within 5 business days, the case should be escalated to Marcus Reid (Director of Clinical Operations). Referrals to specialists outside our network are handled manually and can take longer.",
+        "error": ""
+      }
+    }
+  ],
+  "context": [
+    {
+      "company": "healthcore",
+      "source_document": "referral-process",
+      "section": "Target completed-referral time: 11 days from creation to confirmed",
+      "language": "en",
+      "chunk_index": 1,
+      "text": "Target completed-referral time: 11 days from creation to confirmed\nappointment (this is the company's current average, which it is trying to\nreduce — not a published service commitment to patients)."
+    },
+    {
+      "company": "healthcore",
+      "source_document": "referral-process",
+      "section": "If a patient hasn't received appointment options within 5 business days...",
+      "language": "en",
+      "chunk_index": 2,
+      "text": "If a patient hasn't received appointment options within 5 business days of\nthe referral being created, the coordinator must escalate the case directly\nto Marcus Reid (Director of Clinical Operations)."
+    },
+    {
+      "company": "healthcore",
+      "source_document": "referral-process",
+      "section": "Referrals to specialists outside the HealthCore network do not follow th...",
+      "language": "en",
+      "chunk_index": 3,
+      "text": "Referrals to specialists outside the HealthCore network do not follow this\nautomated process; they require manual handling and can take significantly\nlonger."
+    }
+  ],
+  "answer": "An internal referral at HealthCore typically takes 11 days from the creation of the referral to when the appointment is confirmed. If a patient hasn't received appointment options within 5 business days, the case should be escalated to Marcus Reid (Director of Clinical Operations). Referrals to specialists outside our network are handled manually and can take longer.",
+  "error": "",
+  "sources": [
+    "rag"
+  ],
+  "lookup_failure": "",
+  "ticket_id": "",
+  "ticket_status": ""
+}

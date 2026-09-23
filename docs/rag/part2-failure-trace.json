@@ -1,0 +1,40 @@
+{
+  "trace_id": "db1edfb59b5d44619302636edb44afd5",
+  "thread_id": "11a54b8e64f54e92a12b5350c70cfc19",
+  "question": "What is the status of incident 55555555-5555-4555-8555-555555555555?",
+  "node_order": [
+    "receive_question",
+    "lookup_ticket"
+  ],
+  "nodes": [
+    {
+      "node": "receive_question",
+      "output": {
+        "question": "What is the status of incident 55555555-5555-4555-8555-555555555555?"
+      }
+    },
+    {
+      "node": "lookup_ticket",
+      "output": {
+        "answer": "I couldn't confirm that ticket's status right now",
+        "ticket_clause": "I couldn't confirm that ticket's status right now",
+        "sources": [
+          "ticket_tool"
+        ],
+        "lookup_failure": "missing",
+        "ticket_id": "",
+        "ticket_status": "",
+        "error": ""
+      }
+    }
+  ],
+  "context": [],
+  "answer": "I couldn't confirm that ticket's status right now",
+  "error": "",
+  "sources": [
+    "ticket_tool"
+  ],
+  "lookup_failure": "missing",
+  "ticket_id": "",
+  "ticket_status": ""
+}
