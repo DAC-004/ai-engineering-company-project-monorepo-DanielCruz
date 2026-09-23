@@ -1,0 +1,22 @@
+# Local broker and queue monitor for DEV-55.
+# Redis is in-memory for this compose file (no volume / AOF). Queued messages
+# remain available while this Redis container keeps running; a container
+# restart is not a durability guarantee.
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory-policy", "noeviction"]
+
+  flower:
+    image: mher/flower:2.0
+    command: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555", "--unauthenticated_api"]
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      FLOWER_UNAUTHENTICATED_API: "true"
+    depends_on:
+      - redis

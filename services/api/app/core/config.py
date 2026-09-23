@@ -38,6 +38,17 @@ class Settings(BaseSettings):
         alias="TELEMETRY_ENDPOINT",
         min_length=1,
     )
+    # Celery broker and result backend. Same Redis instance for API and workers.
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        alias="REDIS_URL",
+        min_length=1,
+    )
+    # Runtime uploads and last-analysis JSON (gitignored via services/api/data/).
+    incident_data_dir: Path = Field(
+        default=API_DIR / "data",
+        alias="INCIDENT_DATA_DIR",
+    )
 
 
 @lru_cache
