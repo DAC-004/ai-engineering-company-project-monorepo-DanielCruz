@@ -18,12 +18,15 @@ if str(REPO_ROOT) not in sys.path:
 from app.db.database import get_engine, init_databases  # noqa: E402
 from app.routers import auth, incidents, inventory, profiles, telemetry, users  # noqa: E402
 from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
+from data.pipelines.reporting_store import ensure_reporting_tables  # noqa: E402
+from services.reporting.router import router as reporting_router  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Open TinyDB + Supabase engines, create inventory tables, then seed if empty."""
     init_databases()
+    ensure_reporting_tables(get_engine())
     with Session(get_engine()) as session:
         seed_inventory_if_empty(session)
     yield
@@ -56,6 +59,7 @@ app.include_router(profiles.router)
 app.include_router(incidents.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
+app.include_router(reporting_router)
 
 
 @app.get("/health")
