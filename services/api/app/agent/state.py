@@ -17,3 +17,11 @@ class AgentState(TypedDict):
     context: list[dict[str, Any]]
     answer: str
     error: str
+    # Missing or any value other than True means the lookup must not call
+    # the incident service. The token and the user record are not stored.
+    caller_is_authenticated: bool
+    sources: list[str]
+    ticket_clause: str
+    lookup_failure: str
+    ticket_id: str
+    ticket_status: str

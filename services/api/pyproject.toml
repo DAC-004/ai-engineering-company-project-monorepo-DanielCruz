@@ -30,5 +30,5 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = [".", "../.."]
+pythonpath = [".", "../..", "../../packages/shared"]
 testpaths = ["tests"]
