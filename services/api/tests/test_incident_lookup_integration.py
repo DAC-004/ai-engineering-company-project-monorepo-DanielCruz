@@ -106,13 +106,15 @@ def test_typed_contract_matches_integrated_manager() -> None:
     router_source = Path(incident_manager.__file__).read_text(encoding="utf-8")
     assert "get_current_user" in router_source
     lookup_names = lookup_ticket.__code__.co_names
-    assert "get_incident" in lookup_names
-    assert "list_incidents" in lookup_names
-    assert "create_incident" not in lookup_names
-    assert "update_incident_status" not in lookup_names
+    assert "get_incident" not in lookup_names
+    assert "list_incidents" not in lookup_names
+    with pytest.raises(RuntimeError, match="Direct incident lookup is disabled"):
+        lookup_ticket(TicketLookupQuery(incident_id="00000000-0000-4000-8000-000000000099"))
 
 
-def test_unpatched_lookup_sees_a_real_status_change(isolated_stores: None) -> None:
+def test_direct_lookup_stays_disabled_while_the_service_changes_status(
+    isolated_stores: None,
+) -> None:
     created = incident_service.create_incident(
         IncidentCreate(
             title="Isolated pump alarm",
@@ -124,23 +126,22 @@ def test_unpatched_lookup_sees_a_real_status_change(isolated_stores: None) -> No
         )
     )
 
-    first_lookup = lookup_ticket(TicketLookupQuery(incident_id=created.id))
-    first_read = incident_service.get_incident(created.id)
-    assert len(first_lookup) == 1
-    assert first_lookup[0].model_dump() == first_read.model_dump()
-    assert first_lookup[0].status == "open"
+    with pytest.raises(RuntimeError, match="Direct incident lookup is disabled"):
+        lookup_ticket(TicketLookupQuery(incident_id=created.id))
 
-    listed = lookup_ticket(
-        TicketLookupQuery(status="open", origin="branch", branch="central", category="clinical_equipment")
+    first_read = incident_service.get_incident(created.id)
+    assert first_read.status == "open"
+    listed = incident_service.list_incidents(
+        status="open",
+        origin="branch",
+        branch="central",
+        category="clinical_equipment",
     )
     assert [row.id for row in listed] == [created.id]
 
     incident_service.update_incident_status(created.id, "in_progress")
-
-    second_lookup = lookup_ticket(TicketLookupQuery(incident_id=created.id))
     second_read = incident_service.get_incident(created.id)
-    assert second_lookup[0].model_dump() == second_read.model_dump()
-    assert second_lookup[0].status == "in_progress"
-    assert second_lookup[0].title == second_read.title
-    assert lookup_ticket(TicketLookupQuery(status="open")) == []
-    assert [row.id for row in lookup_ticket(TicketLookupQuery(status="in_progress"))] == [created.id]
+    assert second_read.status == "in_progress"
+    assert second_read.title == first_read.title
+    assert incident_service.list_incidents(status="open") == []
+    assert [row.id for row in incident_service.list_incidents(status="in_progress")] == [created.id]

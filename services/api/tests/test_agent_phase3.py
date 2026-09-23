@@ -123,6 +123,39 @@ def _create_incident(*, status: str = "open") -> Any:
     )
 
 
+def _patch_mcp_from_incident_store(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stand in for MCP with the local store. The graph node does not call it."""
+    from app.agent.mcp_tickets import McpTicketError, TicketSnapshot
+    from app.services.incident_service import IncidentNotFoundError
+
+    def read_tickets(query: Any) -> list[TicketSnapshot]:
+        if query.incident_id:
+            try:
+                row = incident_service.get_incident(query.incident_id)
+            except IncidentNotFoundError as exc:
+                raise McpTicketError("missing") from exc
+            rows = [row]
+        else:
+            rows = incident_service.list_incidents(
+                status=query.status,
+                origin=query.origin,
+                branch=query.branch,
+                category=query.category,
+            )
+        return [
+            TicketSnapshot(
+                id=row.id,
+                status=row.status,
+                category=row.category,
+                origin=row.origin,
+                branch=row.branch,
+            )
+            for row in rows
+        ]
+
+    monkeypatch.setattr("app.agent.mcp_tickets.read_tickets_via_mcp", read_tickets)
+
+
 def _assert_no_seeded_body(text: str) -> None:
     assert SEEDED_TITLE not in text
     assert SEEDED_DESCRIPTION not in text
@@ -159,6 +192,12 @@ def test_knowledge_only_and_empty_question_preserve_part_1(
 
     monkeypatch.setattr("app.services.incident_service.get_incident", fail_get)
     monkeypatch.setattr("app.services.incident_service.list_incidents", fail_get)
+    monkeypatch.setattr(
+        "app.agent.mcp_tickets.read_tickets_via_mcp",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("knowledge path called MCP")
+        ),
+    )
     before = handoff_count()
 
     _outcome, stored = _run(
@@ -191,7 +230,7 @@ def test_ambiguous_policy_question_uses_rag_only(
 ) -> None:
     _patch_rag(monkeypatch)
     monkeypatch.setattr(
-        "app.services.incident_service.get_incident",
+        "app.agent.mcp_tickets.read_tickets_via_mcp",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("lookup ran")),
     )
     _outcome, stored = _run(
@@ -212,6 +251,7 @@ def test_ticket_only_and_filters_read_the_real_service(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_rag(monkeypatch)
+    _patch_mcp_from_incident_store(monkeypatch)
     created = _create_incident(status="open")
     question = f"What is the status of incident {created.id}?"
     outcome, stored = _run(tmp_path, question, authenticated=True)
@@ -242,12 +282,23 @@ def test_ticket_only_and_filters_read_the_real_service(
     assert "discarded" not in listed.answer
 
 
+def test_lookup_node_does_not_call_the_incident_service() -> None:
+    lookup = __import__("app.agent.nodes", fromlist=["lookup_ticket"]).lookup_ticket
+    node_source = Path(lookup.__code__.co_filename).read_text(encoding="utf-8")
+    assert "incident_service" not in lookup.__code__.co_names
+    assert "read_tickets_via_mcp" in lookup.__code__.co_names
+    assert "incident_service.get_incident" not in node_source
+    assert "incident_service.list_incidents" not in node_source
+    assert "read_ticket_rows" not in node_source
+
+
 def test_missing_unsupported_empty_filter_and_service_error(
     isolated_stores: None,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_rag(monkeypatch)
+    _patch_mcp_from_incident_store(monkeypatch)
     missing_id = "22222222-2222-2222-2222-222222222222"
     _outcome, stored = _run(
         tmp_path,
@@ -317,6 +368,7 @@ def test_combined_success_and_combined_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_rag(monkeypatch)
+    _patch_mcp_from_incident_store(monkeypatch)
     created = _create_incident(status="in_progress")
     question = (
         f"What is the status of incident {created.id}? "
@@ -419,12 +471,12 @@ def test_graph_timeout_returns_before_the_read_finishes(
     release = threading.Event()
     entered = threading.Event()
 
-    def slow(_incident_id: str) -> None:
+    def slow(_query: object) -> None:
         entered.set()
         release.wait(timeout=30)
         raise AssertionError("the timed-out read must not become the answer")
 
-    monkeypatch.setattr("app.services.incident_service.get_incident", slow)
+    monkeypatch.setattr("app.agent.mcp_tickets.read_tickets_via_mcp", slow)
     question = "What is the status of incident 44444444-4444-4444-4444-444444444444?"
     started = time.monotonic()
     try:
@@ -497,6 +549,7 @@ def test_authenticated_routes_follow_the_question(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_rag(monkeypatch)
+    _patch_mcp_from_incident_store(monkeypatch)
     created = _create_incident(status="open")
     user = user_service.create_user(
         UserCreate(email="agent-phase3@example.com", password="TestPass123")
@@ -568,6 +621,7 @@ def test_route_and_graph_disagreement_does_not_read_the_service(
 
     monkeypatch.setattr("app.services.incident_service.get_incident", fail_get)
     monkeypatch.setattr("app.services.incident_service.list_incidents", fail_get)
+    monkeypatch.setattr("app.agent.mcp_tickets.read_tickets_via_mcp", fail_get)
     monkeypatch.setattr("app.routers.agent.classify_question", lambda _question: "knowledge")
 
     question = f"What is the status of incident {created.id}?"

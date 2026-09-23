@@ -8,13 +8,15 @@ unset. A fresh clone does not contain the ignored Qdrant index or GGUF.
 That command executes three tests and skips the live retrieval test before
 any RAG call:
 
-- ``test_ticket_eval_reads_the_real_service_twice`` reads the integrated
-  incident service. It is not patched.
+- ``test_ticket_eval_reads_the_real_service_twice`` creates and updates a
+  ticket through the Incident Manager HTTP API, then the graph reads it
+  twice through MCP. It does not patch the lookup.
 - ``test_knowledge_routing_eval_patches_retrieval_and_generation`` runs the
   compiled graph. Only ``retrieve()`` and ``generate_answer()`` are patched,
   using text from the committed referral-policy document.
-- ``test_failure_eval_finishes_without_a_fabricated_status`` reads the
-  incident service for a missing id. It is not patched.
+- ``test_failure_eval_finishes_without_a_fabricated_status`` asks MCP for a
+  UUID the API does not have. A missing ticket is ``lookup_failure``
+  ``missing``. A connection or authentication failure stays ``error``.
 
 Opt-in live retrieval, in PowerShell, still from ``services/api``:
 
@@ -30,9 +32,15 @@ from __future__ import annotations
 
 import os
 import re
+import socket
+import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
+from types import SimpleNamespace
 
+import httpx
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -149,56 +157,268 @@ def _assert_matches_read(answer: str, row: object) -> None:
     assert reported["origin"] == row.origin
 
 
-def test_ticket_eval_reads_the_real_service_twice(tmp_path: Path, monkeypatch) -> None:
-    from app.core.config import get_settings
-    from app.db.database import reset_engine_for_tests
-    from app.db.tinydb import reset_db_for_tests
-    from app.schemas.incident import IncidentCreate
-    from app.services import incident_service
+def _free_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
 
-    monkeypatch.setenv("TINYDB_PATH", str(tmp_path / "phase4-incidents.json"))
-    monkeypatch.setenv("SECRET_KEY", "isolated-phase4-secret-key-32b")
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'phase4-inventory.db').as_posix()}")
-    get_settings.cache_clear()
-    reset_db_for_tests()
-    reset_engine_for_tests()
-    try:
-        created = incident_service.create_incident(
-            IncidentCreate(
-                title="Synthetic pump alarm",
-                description="Phase 4 synthetic ticket body",
-                category="clinical_equipment",
-                status="open",
-                origin="branch",
-                branch="central",
-            )
+
+class IncidentManagerStack:
+    """API plus MCP for evals that must not read TinyDB inside the graph.
+
+    The graph process receives only an MCP bearer token. Ticket writes go to
+    the Incident Manager HTTP API. MCP then reads that same API.
+    """
+
+    def __init__(self) -> None:
+        self.temp_dir = Path(tempfile.mkdtemp(prefix="phase4-mcp-"))
+        self.api_port = _free_port()
+        self.mcp_port = _free_port()
+        self.api_base_url = f"http://127.0.0.1:{self.api_port}"
+        self.resource_url = f"http://127.0.0.1:{self.mcp_port}/mcp"
+        self.username = "phase4-mcp-reader@healthcore.com"
+        self.password = "Phase4McpEval1!"
+        self.agent_token = ""
+        self.http: httpx.Client | None = None
+        self.oidc = None
+        self.api_process: subprocess.Popen[str] | None = None
+        self.mcp_process: subprocess.Popen[str] | None = None
+        self.api_log = self.temp_dir / "api.log"
+        self.mcp_log = self.temp_dir / "mcp.log"
+        self._log_files: list[object] = []
+
+    def start(self) -> None:
+        mcp_tests = REPO_ROOT / "mcps" / "healthcore-tools" / "tests"
+        if str(mcp_tests) not in sys.path:
+            sys.path.insert(0, str(mcp_tests))
+        from oidc_fixture import start_oidc_issuer
+
+        self.oidc = start_oidc_issuer(_free_port())
+        self.agent_token = self.oidc.mint_access_token(
+            audience=self.resource_url,
+            scopes=["healthcore:mcp", "incidents:read"],
+            client_id="phase4-agent",
         )
-        question = f"What is the status of incident {created.id}?"
-        assert "knowledge base" not in question.lower()
-        assert "use the tool" not in question.lower()
+        self._start_api()
+        self.http = httpx.Client(base_url=self.api_base_url, timeout=30.0)
+        created = self.http.post(
+            "/users",
+            json={"email": self.username, "password": self.password},
+        )
+        if created.status_code not in (200, 201):
+            raise RuntimeError(f"Could not register API user: {created.status_code} {created.text}")
+        self._start_mcp()
 
-        first_outcome, first_trace = _run(question, authenticated=True)
-        first_read = incident_service.get_incident(created.id)
-        assert first_trace["sources"] == ["ticket_tool"]
-        assert "lookup_ticket" in first_trace["node_order"]
-        assert "retrieve_context" not in first_trace["node_order"]
-        _assert_matches_read(str(first_outcome.answer), first_read)
-        _assert_no_ticket_body(first_trace, created.title, created.description)
+    def stop(self) -> None:
+        if self.mcp_process is not None and self.mcp_process.poll() is None:
+            self.mcp_process.terminate()
+            self.mcp_process.wait(timeout=5)
+        if self.http is not None:
+            self.http.close()
+        if self.oidc is not None:
+            self.oidc.stop()
+        if self.api_process is not None and self.api_process.poll() is None:
+            self.api_process.terminate()
+            self.api_process.wait(timeout=5)
+        for log_file in self._log_files:
+            close = getattr(log_file, "close", None)
+            if close is not None:
+                close()
 
-        incident_service.update_incident_status(created.id, "in_progress")
-        second_outcome, second_trace = _run(question, authenticated=True)
-        second_read = incident_service.get_incident(created.id)
-        assert second_read.status == "in_progress"
-        assert second_trace["sources"] == ["ticket_tool"]
-        assert "retrieve_context" not in second_trace["node_order"]
-        _assert_matches_read(str(second_outcome.answer), second_read)
-        assert second_read.status in str(second_outcome.answer)
-        assert first_read.status not in _answer_fields(str(second_outcome.answer))["status"]
-        _assert_no_ticket_body(second_trace, created.title, created.description)
+    def authorize_graph(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Point the graph at this MCP server. The token is not written to disk."""
+        monkeypatch.setenv("MCP_RESOURCE_URL", self.resource_url)
+        monkeypatch.setenv("MCP_AGENT_ACCESS_TOKEN", self.agent_token)
+
+    def create_incident(self) -> SimpleNamespace:
+        response = self._authed(
+            "POST",
+            "/api/incidents",
+            json={
+                "title": "Synthetic pump alarm",
+                "description": "Phase 4 synthetic ticket body",
+                "category": "clinical_equipment",
+                "status": "open",
+                "origin": "branch",
+                "branch": "central",
+            },
+        )
+        return _incident_row(response.json())
+
+    def update_status(self, incident_id: str, status: str) -> SimpleNamespace:
+        response = self._authed(
+            "PATCH",
+            f"/api/incidents/{incident_id}/status",
+            json={"status": status},
+        )
+        return _incident_row(response.json())
+
+    def get_incident(self, incident_id: str) -> SimpleNamespace:
+        response = self._authed("GET", f"/api/incidents/{incident_id}")
+        return _incident_row(response.json())
+
+    def _authed(self, method: str, path: str, **kwargs: object) -> httpx.Response:
+        if self.http is None:
+            raise RuntimeError("The Incident Manager stack is not started.")
+        login = self.http.post(
+            "/auth/login",
+            data={"username": self.username, "password": self.password},
+        )
+        login.raise_for_status()
+        token = login.json()["access_token"]
+        response = self.http.request(
+            method,
+            path,
+            headers={"Authorization": f"Bearer {token}"},
+            **kwargs,
+        )
+        response.raise_for_status()
+        return response
+
+    def _start_api(self) -> None:
+        env = os.environ.copy()
+        env["SECRET_KEY"] = "phase4-mcp-secret-key-32b"
+        env["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
+        env["JWT_ALGORITHM"] = "HS256"
+        env["TINYDB_PATH"] = str(self.temp_dir / "incidents.json")
+        env["DATABASE_URL"] = f"sqlite:///{(self.temp_dir / 'inventory.db').as_posix()}"
+        self.api_process = self._popen(
+            [
+                "uv",
+                "run",
+                "uvicorn",
+                "app.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(self.api_port),
+                "--log-level",
+                "warning",
+            ],
+            cwd=API_ROOT,
+            env=env,
+            log_path=self.api_log,
+        )
+        self._wait_http(f"{self.api_base_url}/health", self.api_process, self.api_log, "API")
+
+    def _start_mcp(self) -> None:
+        if self.oidc is None:
+            raise RuntimeError("OIDC issuer is not started.")
+        env = os.environ.copy()
+        env["MCP_AUTH_ISSUER"] = self.oidc.issuer
+        env["MCP_RESOURCE_URL"] = self.resource_url
+        env["MCP_HOST"] = "127.0.0.1"
+        env["MCP_PORT"] = str(self.mcp_port)
+        env["HEALTHCORE_API_BASE_URL"] = self.api_base_url
+        env["HEALTHCORE_API_USERNAME"] = self.username
+        env["HEALTHCORE_API_PASSWORD"] = self.password
+        self.mcp_process = self._popen(
+            ["uv", "run", "healthcore-tools"],
+            cwd=REPO_ROOT / "mcps" / "healthcore-tools",
+            env=env,
+            log_path=self.mcp_log,
+        )
+        metadata = (
+            f"http://127.0.0.1:{self.mcp_port}/.well-known/oauth-protected-resource/mcp"
+        )
+        self._wait_http(metadata, self.mcp_process, self.mcp_log, "MCP")
+
+    def _popen(
+        self,
+        command: list[str],
+        *,
+        cwd: Path,
+        env: dict[str, str],
+        log_path: Path,
+    ) -> subprocess.Popen[str]:
+        log_file = log_path.open("w", encoding="utf-8")
+        self._log_files.append(log_file)
+        return subprocess.Popen(
+            command,
+            cwd=cwd,
+            env=env,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+    def _wait_http(
+        self,
+        url: str,
+        process: subprocess.Popen[str] | None,
+        log_path: Path,
+        label: str,
+    ) -> None:
+        deadline = time.time() + 40
+        last_error = "no response"
+        while time.time() < deadline:
+            if process is not None and process.poll() is not None:
+                break
+            try:
+                response = httpx.get(url, timeout=1.0)
+            except httpx.HTTPError as exc:
+                last_error = str(exc)
+                time.sleep(0.2)
+                continue
+            if response.status_code == 200:
+                return
+            last_error = f"HTTP {response.status_code}"
+            time.sleep(0.2)
+        log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.is_file() else ""
+        raise RuntimeError(f"{label} did not start ({last_error}). Log:\n{log_text[-2000:]}")
+
+
+def _incident_row(payload: dict) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=payload["id"],
+        status=payload["status"],
+        category=payload["category"],
+        origin=payload["origin"],
+        title=payload["title"],
+        description=payload["description"],
+    )
+
+
+@pytest.fixture(scope="module")
+def incident_mcp() -> object:
+    stack = IncidentManagerStack()
+    try:
+        stack.start()
+        yield stack
     finally:
-        reset_db_for_tests()
-        reset_engine_for_tests()
-        get_settings.cache_clear()
+        stack.stop()
+
+
+def test_ticket_eval_reads_the_real_service_twice(
+    incident_mcp: IncidentManagerStack,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    incident_mcp.authorize_graph(monkeypatch)
+    created = incident_mcp.create_incident()
+    question = f"What is the status of incident {created.id}?"
+    assert "knowledge base" not in question.lower()
+    assert "use the tool" not in question.lower()
+
+    first_outcome, first_trace = _run(question, authenticated=True)
+    first_read = incident_mcp.get_incident(created.id)
+    assert first_trace["sources"] == ["ticket_tool"]
+    assert "lookup_ticket" in first_trace["node_order"]
+    assert "retrieve_context" not in first_trace["node_order"]
+    assert first_trace["lookup_failure"] == ""
+    _assert_matches_read(str(first_outcome.answer), first_read)
+    _assert_no_ticket_body(first_trace, created.title, created.description)
+
+    incident_mcp.update_status(created.id, "in_progress")
+    second_outcome, second_trace = _run(question, authenticated=True)
+    second_read = incident_mcp.get_incident(created.id)
+    assert second_read.status == "in_progress"
+    assert second_trace["sources"] == ["ticket_tool"]
+    assert second_trace["lookup_failure"] == ""
+    assert "retrieve_context" not in second_trace["node_order"]
+    _assert_matches_read(str(second_outcome.answer), second_read)
+    assert second_read.status in str(second_outcome.answer)
+    assert first_read.status not in _answer_fields(str(second_outcome.answer))["status"]
+    _assert_no_ticket_body(second_trace, created.title, created.description)
 
 
 def test_knowledge_routing_eval_patches_retrieval_and_generation(monkeypatch) -> None:
@@ -315,31 +535,27 @@ def test_knowledge_eval_uses_real_retrieval_and_local_generation() -> None:
     assert stored["error"] == ""
 
 
-def test_failure_eval_finishes_without_a_fabricated_status(tmp_path: Path, monkeypatch) -> None:
-    from app.core.config import get_settings
-    from app.db.database import reset_engine_for_tests
-    from app.db.tinydb import reset_db_for_tests
+def test_failure_eval_finishes_without_a_fabricated_status(
+    incident_mcp: IncidentManagerStack,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A UUID the API does not have is missing, not an MCP transport failure.
 
-    monkeypatch.setenv("TINYDB_PATH", str(tmp_path / "phase4-missing.json"))
-    monkeypatch.setenv("SECRET_KEY", "isolated-phase4-secret-key-32b")
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'phase4-missing.db').as_posix()}")
-    get_settings.cache_clear()
-    reset_db_for_tests()
-    reset_engine_for_tests()
-    try:
-        question = "What is the status of incident 55555555-5555-4555-8555-555555555555?"
-        outcome, stored = _run(question, authenticated=True)
-        assert outcome.error == ""
-        assert stored["answer"] == HONEST_STATUS_SENTENCE
-        assert stored["lookup_failure"] == "missing"
-        assert "lookup_ticket" in stored["node_order"]
-        assert (TRACE_DIR / f"{outcome.trace_id}.json").is_file()
-        for word in STATUS_WORDS:
-            assert word not in stored["answer"]
-    finally:
-        reset_db_for_tests()
-        reset_engine_for_tests()
-        get_settings.cache_clear()
+    ``lookup_failure`` is ``missing`` only after MCP accepts the agent token
+    and the Incident Manager returns not found. Connection and authentication
+    failures remain ``error``.
+    """
+    incident_mcp.authorize_graph(monkeypatch)
+    question = "What is the status of incident 55555555-5555-4555-8555-555555555555?"
+    outcome, stored = _run(question, authenticated=True)
+    assert outcome.error == ""
+    assert stored["answer"] == HONEST_STATUS_SENTENCE
+    assert stored["lookup_failure"] == "missing"
+    assert stored["lookup_failure"] != "error"
+    assert "lookup_ticket" in stored["node_order"]
+    assert (TRACE_DIR / f"{outcome.trace_id}.json").is_file()
+    for word in STATUS_WORDS:
+        assert word not in stored["answer"]
 
 
 def _assert_no_ticket_body(stored: dict, title: str, description: str) -> None:

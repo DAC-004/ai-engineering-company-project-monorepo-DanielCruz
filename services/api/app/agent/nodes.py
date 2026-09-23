@@ -65,21 +65,22 @@ def respond_no_information(state: AgentState) -> dict[str, str]:
 
 
 def lookup_ticket(state: AgentState) -> dict[str, Any]:
-    """Read one ticket, or refuse before any incident-service call.
+    """Read tickets through MCP, or refuse before any MCP call.
 
     Authorization is this node's responsibility. The route classifier can
     disagree and still send the question here. A missing or false
-    ``caller_is_authenticated`` flag does not call ``get_incident`` or
-    ``list_incidents``. The returned fields are id, status, and a failure
-    code. Title and description are not copied into the graph state.
+    ``caller_is_authenticated`` flag does not call MCP and does not read the
+    incident service. A rejected or missing MCP credential uses the honest
+    fallback and does not fall back to ``incident_service``. Title and
+    description are not copied into the graph state.
     """
     if state.get("caller_is_authenticated") is not True:
         return _lookup_failure(state, "unauthorized")
 
     from app.agent.lookup_slot import run_bounded_read
+    from app.agent.mcp_tickets import McpTicketError, read_tickets_via_mcp
     from app.agent.routing import parse_ticket_request
-    from app.services.incident_service import IncidentNotFoundError
-    from app.services.ticket_lookup import TicketLookupQuery, lookup_ticket as read_ticket_rows
+    from app.services.ticket_lookup import TicketLookupQuery
 
     request = parse_ticket_request(state["question"])
     if request.kind == "unsupported":
@@ -92,13 +93,13 @@ def lookup_ticket(state: AgentState) -> dict[str, Any]:
         branch=request.branch,
         category=request.category,
     )
-    outcome = run_bounded_read(lambda: read_ticket_rows(query))
+    outcome = run_bounded_read(lambda: read_tickets_via_mcp(query))
     if outcome.failure == "capacity":
         return _lookup_failure(state, "capacity")
     if outcome.failure == "timeout":
         return _lookup_failure(state, "timeout")
     if outcome.failure == "error":
-        if isinstance(outcome.error, IncidentNotFoundError):
+        if isinstance(outcome.error, McpTicketError) and outcome.error.failure == "missing":
             return _lookup_failure(state, "missing")
         return _lookup_failure(state, "error")
 
