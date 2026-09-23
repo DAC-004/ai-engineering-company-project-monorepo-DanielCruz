@@ -70,6 +70,25 @@ uv run python tests/pipelines/record_agent_traces.py
 
 The recorder runs the compiled graph three times with patched `retrieve()` and `generate_answer()`. The grounding fixture copies the 11-day paragraph from the referral-process document into the retrieved context. The patched generator returns an answer only when that context contains `11 days`. Running that command does not create a real full-run export.
 
+## Part 2 routing evals
+
+Run these from `services/api` with that package's environment. A fresh clone does not contain `data/process/qdrant_storage/` or `data/process/models/qwen2.5-3b-instruct-q4_k_m.gguf`.
+
+Default command. Leave `PART2_LIVE_RAG_EVAL` unset. This runs the real incident-service ticket eval, the asset-free knowledge-routing eval, and the missing-ticket failure eval. `test_knowledge_routing_eval_patches_retrieval_and_generation` patches only `retrieve()` and `generate_answer()`. The live retrieval test is skipped before any RAG call, so this command does not download a model.
+
+```powershell
+uv run pytest --rootdir . ..\..\tests\pipelines\test_agent_phase4_evals.py -q -p no:cacheprovider --tb=short
+```
+
+Opt-in live retrieval. PowerShell:
+
+```powershell
+$env:PART2_LIVE_RAG_EVAL = "1"
+uv run pytest --rootdir . ..\..\tests\pipelines\test_agent_phase4_evals.py -q -p no:cacheprovider --tb=short -k test_knowledge_eval_uses_real_retrieval_and_local_generation
+```
+
+With that variable set, `test_knowledge_eval_uses_real_retrieval_and_local_generation` checks the local Qdrant collection file and GGUF before calling the graph. If either file is absent, the test fails and does not download a model or substitute a mock. When both files exist, it uses real `retrieve()` and local GGUF generation. The published trace for that live run is `docs/rag/part2-rag-trace.json`.
+
 ## Endpoint
 
 `POST /agent/query` is public. Request body: `{ "question": "..." }`. An empty string is valid input and is routed by the graph. Success body: `{ "answer": "...", "trace_id": "..." }`.

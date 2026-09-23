@@ -1,8 +1,9 @@
 """Phase 3 routing, timeout, and authorization checks.
 
 Timeout sleeps are allowed to replace the incident read. Success lookups in
-this file call the real incident service. RAG is patched because the GGUF
-and Qdrant assets are not in this checkout.
+this file call the real incident service. Retrieval and generation are
+patched so these tests stay asset-independent whether or not a local Qdrant
+index and GGUF happen to be present.
 """
 
 from __future__ import annotations
