@@ -1,10 +1,8 @@
 """Read-only ticket lookup over the integrated incident service.
 
-The graph does not call this module. POST /agent/query does not call it.
-A later phase owns routing, the timeout, and the authorization gate.
-
-Authentication finding for the in-process path: ``get_incident`` and
-``list_incidents`` do not read a token. The HTTP routes in
+The graph node calls ``lookup_ticket`` only after ``caller_is_authenticated``
+is true. This function itself does not accept a token. ``get_incident`` and
+``list_incidents`` do not read a token either. The HTTP routes in
 ``app.routers.incident_manager`` do require ``get_current_user``. This
 lookup does not invent a service token and does not read ``SECRET_KEY``.
 """

@@ -22,11 +22,13 @@ from langgraph.graph.state import CompiledStateGraph
 
 from app.agent.nodes import (
     generate_from_context,
+    lookup_ticket,
     receive_question,
     reject_question,
     respond_no_information,
     retrieve_context,
 )
+from app.agent.routing import classify_question
 from app.agent.state import AgentState
 from app.agent.tracing import load_trace, persist_trace, trace_directory
 from shared.healthcore_rag.config import REPO_ROOT
@@ -57,11 +59,23 @@ def checkpoint_database_path() -> Path:
 
 def route_after_question(
     state: AgentState,
-) -> Literal["retrieve_context", "reject_question"]:
-    """Empty questions end before retrieval. ``retrieve()`` would reject them."""
+) -> Literal["retrieve_context", "reject_question", "lookup_ticket"]:
+    """Empty questions end before retrieval. Ticket questions look up first."""
     if not state["question"].strip():
         return "reject_question"
+    kind = classify_question(state["question"])
+    if kind in {"ticket", "both"}:
+        return "lookup_ticket"
     return "retrieve_context"
+
+
+def route_after_lookup(
+    state: AgentState,
+) -> Literal["retrieve_context", "end"]:
+    """Combined questions retrieve after the ticket clause. Ticket-only stops."""
+    if classify_question(state["question"]) == "both":
+        return "retrieve_context"
+    return "end"
 
 
 def route_after_retrieval(
@@ -77,6 +91,7 @@ def build_support_graph() -> StateGraph[AgentState]:
     """Wire nodes and conditional edges. This does not compile or execute."""
     builder: StateGraph[AgentState] = StateGraph(AgentState)
     builder.add_node("receive_question", receive_question)
+    builder.add_node("lookup_ticket", lookup_ticket)
     builder.add_node("retrieve_context", retrieve_context)
     builder.add_node("generate_from_context", generate_from_context)
     builder.add_node("reject_question", reject_question)
@@ -88,6 +103,15 @@ def build_support_graph() -> StateGraph[AgentState]:
         {
             "retrieve_context": "retrieve_context",
             "reject_question": "reject_question",
+            "lookup_ticket": "lookup_ticket",
+        },
+    )
+    builder.add_conditional_edges(
+        "lookup_ticket",
+        route_after_lookup,
+        {
+            "retrieve_context": "retrieve_context",
+            "end": END,
         },
     )
     builder.add_conditional_edges(
@@ -126,12 +150,18 @@ def open_sqlite_checkpointer(database_path: Path) -> Iterator[SqliteSaver]:
         connection.close()
 
 
-def _initial_state(question: str) -> AgentState:
+def _initial_state(question: str, *, caller_is_authenticated: bool = False) -> AgentState:
     return {
         "question": question,
         "context": [],
         "answer": "",
         "error": "",
+        "caller_is_authenticated": caller_is_authenticated is True,
+        "sources": [],
+        "ticket_clause": "",
+        "lookup_failure": "",
+        "ticket_id": "",
+        "ticket_status": "",
     }
 
 
@@ -193,12 +223,17 @@ def _trace_payload(
         "context": context,
         "answer": str(final_state.get("answer", "")),
         "error": execution_error or str(final_state.get("error", "")),
+        "sources": list(final_state.get("sources") or []),
+        "lookup_failure": str(final_state.get("lookup_failure") or ""),
+        "ticket_id": str(final_state.get("ticket_id") or ""),
+        "ticket_status": str(final_state.get("ticket_status") or ""),
     }
 
 
 def run_support_agent(
     question: str,
     *,
+    caller_is_authenticated: bool = False,
     thread_id: str | None = None,
     checkpoint_path: Path | None = None,
     trace_dir: Path | None = None,
@@ -216,7 +251,10 @@ def run_support_agent(
     database_path = checkpoint_path or checkpoint_database_path()
     directory = trace_dir or trace_directory()
     config: dict[str, Any] = {"configurable": {"thread_id": resolved_thread_id}}
-    initial_state = _initial_state(question)
+    initial_state = _initial_state(
+        question,
+        caller_is_authenticated=caller_is_authenticated,
+    )
     node_records: list[dict[str, Any]] = []
 
     with open_sqlite_checkpointer(database_path) as checkpointer:

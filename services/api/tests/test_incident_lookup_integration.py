@@ -72,12 +72,11 @@ def test_analyzer_routes_are_registered_before_incident_id() -> None:
 
 
 def test_agent_route_does_not_call_the_incident_service() -> None:
+    """The HTTP route classifies and authenticates. It does not read incidents."""
     agent_source = Path(agent_router.__file__).read_text(encoding="utf-8")
-    graph_source = Path(compile_support_graph.__code__.co_filename).read_text(encoding="utf-8")
     assert "incident_service" not in agent_source
-    assert "lookup_ticket" not in agent_source
-    assert "incident_service" not in graph_source
-    assert "lookup_ticket" not in graph_source
+    assert "get_incident" not in agent_source
+    assert "list_incidents" not in agent_source
 
 
 def test_typed_contract_matches_integrated_manager() -> None:
