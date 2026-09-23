@@ -1,7 +1,7 @@
 """Dual-database initialization: TinyDB identity plus SQLModel/Supabase inventory.
 
 `get_db` yields one SQLModel Session per request. There is no module-level
-session. TinyDB keeps its own client in app.db.tinydb (auth only).
+session. TinyDB keeps its own client in app.db.tinydb (users, profiles, and incidents).
 """
 
 from __future__ import annotations
@@ -99,7 +99,7 @@ def init_databases() -> None:
     """
     Open both stores and create inventory tables.
 
-    TinyDB is used only for users/auth. SQLModel.metadata.create_all builds
+    TinyDB stores users, profiles, and incidents. SQLModel.metadata.create_all builds
     MedicalSupply, SupplyDelivery, and SupplyConsumption tables on the
     DATABASE_URL engine (Supabase in the live app).
     """
