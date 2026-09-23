@@ -1,4 +1,4 @@
-"""Dual-database initialization: TinyDB identity plus SQLModel/Supabase inventory.
+"""Dual-database initialization: TinyDB identity plus SQLModel/Supabase tables.
 
 `get_db` yields one SQLModel Session per request. There is no module-level
 session. TinyDB keeps its own client in app.db.tinydb (auth only).
@@ -95,13 +95,28 @@ def _ensure_inventory_capture_columns(engine) -> None:
             )
 
 
+def _ensure_telemetry_postgres_indexes(engine) -> None:
+    """Create the tags GIN index on PostgreSQL only. SQLite has no GIN."""
+    if engine.dialect.name != "postgresql":
+        return
+    from sqlalchemy import text
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_telemetry_events_tags_gin "
+                "ON telemetry_events USING GIN (tags)"
+            )
+        )
+
+
 def init_databases() -> None:
     """
-    Open both stores and create inventory tables.
+    Open both stores and create inventory plus telemetry tables.
 
     TinyDB is used only for users/auth. SQLModel.metadata.create_all builds
-    MedicalSupply, SupplyDelivery, and SupplyConsumption tables on the
-    DATABASE_URL engine (Supabase in the live app).
+    MedicalSupply, SupplyDelivery, SupplyConsumption, and telemetry_events
+    on the DATABASE_URL engine (Supabase in the live app).
     """
     get_tinydb()
     # Register table models on SQLModel.metadata before create_all.
@@ -109,3 +124,4 @@ def init_databases() -> None:
 
     SQLModel.metadata.create_all(get_engine())
     _ensure_inventory_capture_columns(get_engine())
+    _ensure_telemetry_postgres_indexes(get_engine())

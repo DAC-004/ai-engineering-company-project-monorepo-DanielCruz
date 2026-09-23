@@ -1,28 +1,35 @@
-"""Temporary telemetry receiver. Validates batches and returns HTTP 200.
+"""Telemetry ingest endpoint. Same URL as the capture stub; persistence is real.
 
-No database writes. Persistence is Phase 3. The destination URL is declared
-as TELEMETRY_ENDPOINT so later replacement of this stub does not change the
-configuration pattern.
+The outer envelope is parsed loosely so one invalid event cannot HTTP 422 the
+batch. Each item is validated with unchanged TelemetryEvent.model_validate.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import ValidationError
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlmodel import Session
 
 from app.core.config import get_settings
-from app.schemas.telemetry import TelemetryBatch, TelemetryEvent, TelemetryIngestResponse
+from app.db.database import get_db
+from app.schemas.telemetry import TelemetryIngestResponse
+from app.services.telemetry_storage import persist_telemetry_batch
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/telemetry", tags=["telemetry"])
 
 
-def _parse_batch(raw_body: bytes) -> TelemetryBatch:
-    """Parse JSON from application/json or sendBeacon text/plain bodies."""
+def _parse_events_envelope(raw_body: bytes) -> list[Any]:
+    """Parse JSON from application/json or sendBeacon text/plain bodies.
+
+    HTTP 422 is preserved for empty bodies, invalid JSON, a missing events
+    field, or a non-list events value. A parseable events list returns 200
+    even when every item is later rejected.
+    """
     if not raw_body:
         raise HTTPException(
             status_code=422,
@@ -35,31 +42,37 @@ def _parse_batch(raw_body: bytes) -> TelemetryBatch:
             status_code=422,
             detail="Body must be JSON",
         ) from exc
-    try:
-        return TelemetryBatch.model_validate(payload)
-    except ValidationError as exc:
+    if not isinstance(payload, dict) or "events" not in payload:
         raise HTTPException(
             status_code=422,
-            detail=exc.errors(),
-        ) from exc
+            detail="Body must contain an events list",
+        )
+    raw_events = payload["events"]
+    if not isinstance(raw_events, list):
+        raise HTTPException(
+            status_code=422,
+            detail="events must be a list",
+        )
+    return raw_events
 
 
 @router.post("/events", response_model=TelemetryIngestResponse)
-async def ingest_telemetry_events(request: Request) -> TelemetryIngestResponse:
-    """
-    Accept `{ "events": [TelemetryEvent, ...] }`, log counts, return received N.
+async def ingest_telemetry_events(
+    request: Request,
+    session: Session = Depends(get_db),
+) -> TelemetryIngestResponse:
+    """Accept `{ "events": [...] }`, persist valid rows in one INSERT, return counts."""
+    # Read the configured destination so the env pattern stays established. Do not log the value.
+    get_settings().telemetry_endpoint
+    logger.debug("Telemetry endpoint configuration was read")
 
-    Reads TELEMETRY_ENDPOINT so the env pattern is established now, even though
-    this stub does not redirect traffic.
-    """
-    _configured_endpoint = get_settings().telemetry_endpoint
-    logger.debug("TELEMETRY_ENDPOINT=%s", _configured_endpoint)
+    raw_events = _parse_events_envelope(await request.body())
+    received, stored, rejected = persist_telemetry_batch(session, raw_events)
 
-    batch = _parse_batch(await request.body())
-    events: list[TelemetryEvent] = batch.events
-
-    logger.info("Received %s telemetry events", len(events))
-    for event in events:
-        logger.info("event_type=%s", event.event_type)
-
-    return TelemetryIngestResponse(received=len(events))
+    logger.info(
+        "Telemetry batch received=%s stored=%s rejected=%s",
+        received,
+        stored,
+        rejected,
+    )
+    return TelemetryIngestResponse(received=received, stored=stored, rejected=rejected)

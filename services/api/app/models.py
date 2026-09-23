@@ -1,15 +1,20 @@
-"""SQLModel table models for HealthCore medical-supply inventory (Supabase).
+"""SQLModel table models for HealthCore medical-supply inventory and telemetry.
 
 Entity names and columns match CONTEXT — Milestone 5. Request/response
 shapes live in app/schemas/inventory.py and must not be returned as ORM
 objects. There is no SQLModel User table; user_uuid stores a TinyDB id.
+
+telemetry_events is write-only: eight envelope-mapped columns, no service
+column, and no surrogate id.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from typing import Any
 
-from sqlalchemy import CheckConstraint
+from sqlalchemy import CheckConstraint, Column, DateTime, JSON, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 
@@ -65,3 +70,26 @@ class SupplyConsumption(SQLModel, table=True):
     clinic_id: int = Field(ge=1, le=12, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
     user_uuid: str = Field(min_length=1, max_length=64, index=True)
+
+
+class TelemetryEventRecord(SQLModel, table=True):
+    """Immutable telemetry fact. Primary key is event_id; tags are allowlisted properties."""
+
+    __tablename__ = "telemetry_events"
+
+    event_id: str = Field(sa_column=Column(Text, primary_key=True))
+    timestamp: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
+    session_id: str = Field(sa_column=Column(Text, nullable=False))
+    user_id: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+    event_type: str = Field(sa_column=Column(Text, nullable=False, index=True))
+    schema_version: str = Field(sa_column=Column(Text, nullable=False))
+    request_id: str = Field(sa_column=Column(Text, nullable=False))
+    # JSONB on PostgreSQL; SQLite create_all uses JSON text. GIN is created only on PostgreSQL.
+    tags: dict[str, Any] = Field(
+        sa_column=Column(
+            JSON().with_variant(JSONB(), "postgresql"),
+            nullable=False,
+        )
+    )
