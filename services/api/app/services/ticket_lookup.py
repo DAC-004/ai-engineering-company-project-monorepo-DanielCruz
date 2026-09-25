@@ -1,10 +1,8 @@
-"""Read-only ticket lookup over the integrated incident service.
+"""Disabled in-process ticket lookup.
 
-The graph node calls ``lookup_ticket`` only after ``caller_is_authenticated``
-is true. This function itself does not accept a token. ``get_incident`` and
-``list_incidents`` do not read a token either. The HTTP routes in
-``app.routers.incident_manager`` do require ``get_current_user``. This
-lookup does not invent a service token and does not read ``SECRET_KEY``.
+The support-agent graph no longer calls this function. Ticket questions go
+through ``app.agent.mcp_tickets``. The query model remains so callers can
+describe an id read or a filter read without inventing a second contract.
 """
 
 from __future__ import annotations
@@ -12,7 +10,6 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.incident import IncidentPublic
-from app.services import incident_service
 
 
 class TicketLookupQuery(BaseModel):
@@ -34,13 +31,8 @@ class TicketLookupQuery(BaseModel):
 
 
 def lookup_ticket(query: TicketLookupQuery) -> list[IncidentPublic]:
-    """Return live incident rows. This function does not create or update."""
-    incident_id = (query.incident_id or "").strip()
-    if incident_id:
-        return [incident_service.get_incident(incident_id)]
-    return incident_service.list_incidents(
-        status=query.status,
-        origin=query.origin,
-        branch=query.branch,
-        category=query.category,
+    """Refuse the old in-process read. ``query`` is unused on purpose."""
+    del query
+    raise RuntimeError(
+        "Direct incident lookup is disabled. The support agent reads tickets through MCP."
     )
