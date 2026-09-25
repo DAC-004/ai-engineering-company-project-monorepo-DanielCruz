@@ -81,9 +81,15 @@ The bearer token and the upstream password are not written.
 
 ## External acceptance
 
-Playground documents an `Authorization` bearer header. It does not run the Logto authorization-code or PKCE login. Obtain a Logto client-credentials token for the acceptance application, with `resource` set to the exact API indicator, and paste only that header into Playground. Do not put the token in Git, logs, reports, or screenshots.
+An external client can test this Streamable HTTP endpoint only while the GitHub Codespace that hosts it is running and port 3001 is Public. `MCP_PORT` in `.env.example` is 3001. The client uses the Codespaces forwarded URL for that port. That URL is a temporary acceptance endpoint, not a permanent deployment. The resource URL is the forwarded origin plus exactly `/mcp`, the same identifier described under Transport. A trailing slash is a different audience.
 
-A local OIDC fixture signs tokens for automated checks. That fixture is not a Logto acceptance run. A public Codespaces Playground run is still required before the external checkpoint can pass.
+The client needs a valid Logto access token for that resource. The token must include `healthcore:mcp` plus the scope required by the tool it calls. `incidents:read` covers `query_incidents`. `incidents:write` covers `create_incident` and `update_incident_status`. `inventory:read` covers both inventory tools. Inventory modifications are rejected by design: there is no inventory write scope, and `attempt_inventory_modification` returns `inventory_write_forbidden` with `modified` false. The Scopes and Tools sections above are the full map.
+
+Playground documents an `Authorization` bearer header. It does not run the Logto authorization-code or PKCE login. Obtain a Logto client-credentials token for the acceptance application, with `resource` set to the exact API indicator, and paste only that header into Playground. Do not put an App Secret, a bearer token, or any `.env` value in Git, logs, reports, or screenshots.
+
+A local OIDC fixture signs tokens for automated checks. That fixture is not a Logto acceptance run.
+
+Screenshots and the ZIP evidence package stay in [pull request #28](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/pull/28). This README does not repeat those files.
 
 ## CSV analyzer
 
