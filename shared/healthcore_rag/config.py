@@ -31,6 +31,7 @@ SOURCE_DOCUMENT_FILES: dict[str, str] = {
     "healthcore-appointment-policy.en.md": "appointment-policy",
     "healthcore-referral-process.en.md": "referral-process",
     "healthcore-new-patient-checklist.en.md": "new-patient-checklist",
+    "healthcore-compliance-reference.en.md": "compliance-reference",
 }
 
 

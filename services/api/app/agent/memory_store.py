@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from app.agent.guardrails.text_rules import content_is_prohibited
 from app.agent.memory_policy import (
     PHI_WITHHELD,
     MemoryKind,
@@ -84,6 +85,13 @@ def memory_database_path() -> Path:
     return MEMORY_DATABASE
 
 
+def _must_withhold(text: str | None) -> bool:
+    """True when text is PHI or instruction, breach, or contract content."""
+    if not text:
+        return False
+    return appears_to_contain_phi(text) or content_is_prohibited(text)
+
+
 class MemoryStore:
     """Explicit memory interface. Reads do not append turns to a system prompt."""
 
@@ -117,7 +125,7 @@ class MemoryStore:
         audit event commit together. If the audit insert fails, the pending
         row is not kept.
         """
-        if appears_to_contain_phi(text) or appears_to_contain_phi(originating_message):
+        if _must_withhold(text) or _must_withhold(originating_message):
             return None
         self.expire_stale()
         if self.get_pending(owner_user_id, thread_id) is not None:
@@ -190,7 +198,55 @@ class MemoryStore:
             ).fetchone()
         if row is None:
             return None
-        return _pending_from_row(row)
+        pending = _pending_from_row(row)
+        # A row seeded outside stage_proposal can still hold instruction text.
+        # Blank it before a classifier or a caller can read that text.
+        if _must_withhold(pending.text):
+            self._drop_prohibited_pending(pending, actor_user_id=owner_user_id)
+            return None
+        return pending
+
+    def drop_prohibited_pending(self, owner_user_id: str, thread_id: str) -> None:
+        """Delete this owner's pending row when its text must not be kept."""
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT * FROM pending_proposals
+                WHERE owner_user_id = ? AND thread_id = ?
+                """,
+                (owner_user_id, thread_id),
+            ).fetchone()
+        if row is None:
+            return
+        pending = _pending_from_row(row)
+        if _must_withhold(pending.text):
+            self._drop_prohibited_pending(pending, actor_user_id=owner_user_id)
+
+    def _drop_prohibited_pending(
+        self,
+        pending: PendingProposal,
+        *,
+        actor_user_id: str | None,
+    ) -> None:
+        """Delete the row and write a null-body audit in one transaction."""
+        now = self._now()
+        audit = self._build_audit(
+            proposal_id=pending.proposal_id,
+            owner_user_id=pending.owner_user_id,
+            actor_user_id=actor_user_id,
+            thread_id=pending.thread_id,
+            event="blocked_pending",
+            originating_ref=None,
+            content_retained=False,
+            safe_text=None,
+            occurred_at=now,
+        )
+        with self._connect() as connection:
+            connection.execute(
+                "DELETE FROM pending_proposals WHERE proposal_id = ?",
+                (pending.proposal_id,),
+            )
+            self._insert_audit(connection, audit)
 
     def write_approved(
         self,
@@ -209,7 +265,10 @@ class MemoryStore:
         pending = self._pending_by_id(proposal_id)
         if pending is None or pending.owner_user_id != actor_user_id:
             return None
-        if appears_to_contain_phi(pending.text) or appears_to_contain_phi(originating_message):
+        if _must_withhold(pending.text):
+            self._drop_prohibited_pending(pending, actor_user_id=actor_user_id)
+            return None
+        if _must_withhold(originating_message):
             return None
         now = self._now()
         # A comparison names both countries. One approval writes the same
@@ -307,6 +366,9 @@ class MemoryStore:
                 proposal_id=pending.proposal_id,
             )
             return False
+        if content_is_prohibited(pending.text) or content_is_prohibited(originating_message):
+            self._drop_prohibited_pending(pending, actor_user_id=actor_user_id)
+            return True
         now = self._now()
         turn_id = uuid.uuid4().hex
         audit = self._build_audit(
@@ -361,6 +423,9 @@ class MemoryStore:
                 proposal_id=pending.proposal_id,
             )
             return None
+        if content_is_prohibited(revised_text) or content_is_prohibited(pending.text):
+            self._drop_prohibited_pending(pending, actor_user_id=actor_user_id)
+            return None
         now = self._now()
         turn_id = uuid.uuid4().hex
         audit = self._build_audit(
@@ -411,7 +476,9 @@ class MemoryStore:
         pending = self._require_owner(actor_user_id, proposal_id)
         if pending is None:
             return False
-        retain_message = not appears_to_contain_phi(originating_message)
+        retain_message = not _must_withhold(originating_message) and not _must_withhold(
+            pending.text
+        )
         now = self._now()
         turn_id = uuid.uuid4().hex
         audit = self._build_audit(
@@ -501,7 +568,7 @@ class MemoryStore:
         question_terms = set(normalize_memory_text(question).split())
         for row in rows:
             fact = _fact_from_row(row)
-            if appears_to_contain_phi(fact.text):
+            if _must_withhold(fact.text):
                 self._blank_fact(fact.fact_id)
                 continue
             if country_exception_excluded(fact.subject_key, question):
@@ -529,7 +596,7 @@ class MemoryStore:
             ).fetchall()
         for row in rows:
             created_at = _parse_time(row["created_at"])
-            if appears_to_contain_phi(str(row["text"])):
+            if _must_withhold(str(row["text"])):
                 self._blank_fact(str(row["fact_id"]))
                 continue
             if created_at + FACT_TTL <= now:
@@ -619,7 +686,7 @@ class MemoryStore:
                 continue
             proposal_id = str(row["proposal_id"])
             proposal_text = str(row["text"])
-            retained_text = None if appears_to_contain_phi(proposal_text) else proposal_text
+            retained_text = None if _must_withhold(proposal_text) else proposal_text
             audit = self._build_audit(
                 proposal_id=proposal_id,
                 owner_user_id=str(row["owner_user_id"]),
@@ -729,7 +796,7 @@ class MemoryStore:
         safe_text: str | None,
         occurred_at: datetime | None = None,
     ) -> AuditEvent:
-        if safe_text and appears_to_contain_phi(safe_text):
+        if safe_text and _must_withhold(safe_text):
             safe_text = None
             content_retained = False
         return AuditEvent(

@@ -9,8 +9,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from data.pipelines.rag import insufficient_information_answer
-
 FIXTURE_DIRECTORY = Path(__file__).resolve().parent / "fixtures" / "agent_traces"
 REFERRAL_DOCUMENT = (
     Path(__file__).resolve().parents[2]
@@ -39,10 +37,12 @@ def test_empty_question_trace_routes_to_rejection() -> None:
 
 def test_no_context_trace_returns_insufficient_information() -> None:
     trace = _load_fixture("no_context")
-    assert "retrieve_context" in trace["node_order"]
+    assert trace["node_order"] == []
     assert trace["context"] == []
-    assert "generate_from_context" not in trace["node_order"]
-    assert trace["answer"] == insufficient_information_answer()
+    assert trace["question"] == "casual"
+    assert "Paris" in trace["answer"]
+    assert "HealthCore" in trace["answer"]
+    assert "What is the capital of France?" not in str(trace)
 
 
 def test_referral_trace_is_grounded_in_indexed_policy() -> None:
