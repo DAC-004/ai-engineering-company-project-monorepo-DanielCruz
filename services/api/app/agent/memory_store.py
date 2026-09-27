@@ -111,7 +111,9 @@ class MemoryStore:
 
         Returns None when a proposal is already pending, the text appears to
         contain PHI, or the same text is already an active fact. Nothing is
-        written to the facts table here.
+        written to the facts table here. The pending row and its ``proposed``
+        audit event commit together. If the audit insert fails, the pending
+        row is not kept.
         """
         if appears_to_contain_phi(text) or appears_to_contain_phi(originating_message):
             return None
@@ -131,13 +133,28 @@ class MemoryStore:
             created_at=now,
             updated_at=now,
         )
-        turn_id = self._insert_turn(
+        turn_id = uuid.uuid4().hex
+        audit = self._build_audit(
+            proposal_id=proposal.proposal_id,
             owner_user_id=owner_user_id,
+            actor_user_id=owner_user_id,
             thread_id=thread_id,
-            body=originating_message,
-            withheld_reason=None,
+            event="proposed",
+            originating_ref=turn_id,
+            content_retained=True,
+            safe_text=text,
+            occurred_at=now,
         )
         with self._connect() as connection:
+            self._write_turn(
+                connection,
+                turn_id=turn_id,
+                owner_user_id=owner_user_id,
+                thread_id=thread_id,
+                body=originating_message,
+                withheld_reason=None,
+                received_at=now,
+            )
             connection.execute(
                 """
                 INSERT INTO pending_proposals (
@@ -156,16 +173,7 @@ class MemoryStore:
                     _iso(proposal.updated_at),
                 ),
             )
-        self.record_audit(
-            proposal_id=proposal.proposal_id,
-            owner_user_id=owner_user_id,
-            actor_user_id=owner_user_id,
-            thread_id=thread_id,
-            event="proposed",
-            originating_ref=turn_id,
-            content_retained=True,
-            safe_text=text,
-        )
+            self._insert_audit(connection, audit)
         return proposal
 
     def get_pending(self, owner_user_id: str, thread_id: str) -> PendingProposal | None:
@@ -193,6 +201,8 @@ class MemoryStore:
 
         A different actor cannot write the row. The claim status is always
         ``unverified``. Approval does not check that the operational claim is true.
+        The fact and its ``approved`` audit event commit together. If the audit
+        insert fails, the fact is not kept.
         """
         pending = self._pending_by_id(proposal_id)
         if pending is None or pending.owner_user_id != actor_user_id:
@@ -210,13 +220,28 @@ class MemoryStore:
             claim_status="unverified",
             created_at=now,
         )
-        turn_id = self._insert_turn(
-            owner_user_id=actor_user_id,
+        turn_id = uuid.uuid4().hex
+        audit = self._build_audit(
+            proposal_id=proposal_id,
+            owner_user_id=pending.owner_user_id,
+            actor_user_id=actor_user_id,
             thread_id=pending.thread_id,
-            body=originating_message,
-            withheld_reason=None,
+            event="approved",
+            originating_ref=turn_id,
+            content_retained=True,
+            safe_text=pending.text,
+            occurred_at=now,
         )
         with self._connect() as connection:
+            self._write_turn(
+                connection,
+                turn_id=turn_id,
+                owner_user_id=actor_user_id,
+                thread_id=pending.thread_id,
+                body=originating_message,
+                withheld_reason=None,
+                received_at=now,
+            )
             connection.execute(
                 """
                 UPDATE facts SET active = 0, superseded_at = ?
@@ -245,16 +270,7 @@ class MemoryStore:
                 "DELETE FROM pending_proposals WHERE proposal_id = ?",
                 (proposal_id,),
             )
-        self.record_audit(
-            proposal_id=proposal_id,
-            owner_user_id=pending.owner_user_id,
-            actor_user_id=actor_user_id,
-            thread_id=pending.thread_id,
-            event="approved",
-            originating_ref=turn_id,
-            content_retained=True,
-            safe_text=pending.text,
-        )
+            self._insert_audit(connection, audit)
         self.consolidate()
         return fact
 
@@ -265,7 +281,11 @@ class MemoryStore:
         proposal_id: str,
         originating_message: str,
     ) -> bool:
-        """Drop a pending proposal without inserting a fact."""
+        """Drop a pending proposal without inserting a fact.
+
+        The delete and the ``rejected`` audit event commit together. If the
+        audit insert fails, the proposal stays pending.
+        """
         pending = self._require_owner(actor_user_id, proposal_id)
         if pending is None:
             return False
@@ -277,14 +297,9 @@ class MemoryStore:
                 proposal_id=pending.proposal_id,
             )
             return False
-        turn_id = self._insert_turn(
-            owner_user_id=actor_user_id,
-            thread_id=pending.thread_id,
-            body=originating_message,
-            withheld_reason=None,
-        )
-        self._delete_pending(pending.proposal_id)
-        self.record_audit(
+        now = self._now()
+        turn_id = uuid.uuid4().hex
+        audit = self._build_audit(
             proposal_id=pending.proposal_id,
             owner_user_id=pending.owner_user_id,
             actor_user_id=actor_user_id,
@@ -293,7 +308,23 @@ class MemoryStore:
             originating_ref=turn_id,
             content_retained=True,
             safe_text=pending.text,
+            occurred_at=now,
         )
+        with self._connect() as connection:
+            self._write_turn(
+                connection,
+                turn_id=turn_id,
+                owner_user_id=actor_user_id,
+                thread_id=pending.thread_id,
+                body=originating_message,
+                withheld_reason=None,
+                received_at=now,
+            )
+            connection.execute(
+                "DELETE FROM pending_proposals WHERE proposal_id = ?",
+                (pending.proposal_id,),
+            )
+            self._insert_audit(connection, audit)
         return True
 
     def edit_pending(
@@ -304,7 +335,11 @@ class MemoryStore:
         revised_text: str,
         originating_message: str,
     ) -> PendingProposal | None:
-        """Replace pending text after a safe edit. Does not write a fact."""
+        """Replace pending text after a safe edit. Does not write a fact.
+
+        The text change and the ``edited`` audit event commit together. If the
+        audit insert fails, the pending text stays as it was.
+        """
         pending = self._require_owner(actor_user_id, proposal_id)
         if pending is None:
             return None
@@ -317,22 +352,8 @@ class MemoryStore:
             )
             return None
         now = self._now()
-        turn_id = self._insert_turn(
-            owner_user_id=actor_user_id,
-            thread_id=pending.thread_id,
-            body=originating_message,
-            withheld_reason=None,
-        )
-        with self._connect() as connection:
-            connection.execute(
-                """
-                UPDATE pending_proposals
-                SET text = ?, updated_at = ?
-                WHERE proposal_id = ?
-                """,
-                (revised_text, _iso(now), pending.proposal_id),
-            )
-        self.record_audit(
+        turn_id = uuid.uuid4().hex
+        audit = self._build_audit(
             proposal_id=pending.proposal_id,
             owner_user_id=pending.owner_user_id,
             actor_user_id=actor_user_id,
@@ -341,9 +362,28 @@ class MemoryStore:
             originating_ref=turn_id,
             content_retained=True,
             safe_text=revised_text,
+            occurred_at=now,
         )
-        updated = self._pending_by_id(pending.proposal_id)
-        return updated
+        with self._connect() as connection:
+            self._write_turn(
+                connection,
+                turn_id=turn_id,
+                owner_user_id=actor_user_id,
+                thread_id=pending.thread_id,
+                body=originating_message,
+                withheld_reason=None,
+                received_at=now,
+            )
+            connection.execute(
+                """
+                UPDATE pending_proposals
+                SET text = ?, updated_at = ?
+                WHERE proposal_id = ?
+                """,
+                (revised_text, _iso(now), pending.proposal_id),
+            )
+            self._insert_audit(connection, audit)
+        return self._pending_by_id(pending.proposal_id)
 
     def discard_pending(
         self,
@@ -353,19 +393,18 @@ class MemoryStore:
         originating_message: str,
         event: str = "discarded_ambiguous",
     ) -> bool:
-        """Close a proposal because the reply was not a clear decision."""
+        """Close a proposal because the reply was not a clear decision.
+
+        The delete and the discard audit event commit together. If the audit
+        insert fails, the proposal stays pending.
+        """
         pending = self._require_owner(actor_user_id, proposal_id)
         if pending is None:
             return False
         retain_message = not appears_to_contain_phi(originating_message)
-        turn_id = self._insert_turn(
-            owner_user_id=actor_user_id,
-            thread_id=pending.thread_id,
-            body=originating_message if retain_message else None,
-            withheld_reason=None if retain_message else "phi",
-        )
-        self._delete_pending(pending.proposal_id)
-        self.record_audit(
+        now = self._now()
+        turn_id = uuid.uuid4().hex
+        audit = self._build_audit(
             proposal_id=pending.proposal_id,
             owner_user_id=pending.owner_user_id,
             actor_user_id=actor_user_id,
@@ -374,7 +413,23 @@ class MemoryStore:
             originating_ref=turn_id,
             content_retained=retain_message,
             safe_text=pending.text if retain_message else None,
+            occurred_at=now,
         )
+        with self._connect() as connection:
+            self._write_turn(
+                connection,
+                turn_id=turn_id,
+                owner_user_id=actor_user_id,
+                thread_id=pending.thread_id,
+                body=originating_message if retain_message else None,
+                withheld_reason=None if retain_message else "phi",
+                received_at=now,
+            )
+            connection.execute(
+                "DELETE FROM pending_proposals WHERE proposal_id = ?",
+                (pending.proposal_id,),
+            )
+            self._insert_audit(connection, audit)
         return True
 
     def record_phi_rejection(
@@ -385,15 +440,14 @@ class MemoryStore:
         thread_id: str,
         proposal_id: str | None = None,
     ) -> str:
-        """Audit a PHI refusal. The message body and proposal text are not stored."""
+        """Audit a PHI refusal. The message body and proposal text are not stored.
+
+        The tombstone turn and the ``rejected_phi`` audit event commit together.
+        """
         resolved_proposal_id = proposal_id or uuid.uuid4().hex
-        turn_id = self._insert_turn(
-            owner_user_id=owner_user_id,
-            thread_id=thread_id,
-            body=None,
-            withheld_reason="phi",
-        )
-        self.record_audit(
+        now = self._now()
+        turn_id = uuid.uuid4().hex
+        audit = self._build_audit(
             proposal_id=resolved_proposal_id,
             owner_user_id=owner_user_id,
             actor_user_id=actor_user_id,
@@ -402,7 +456,19 @@ class MemoryStore:
             originating_ref=turn_id,
             content_retained=False,
             safe_text=None,
+            occurred_at=now,
         )
+        with self._connect() as connection:
+            self._write_turn(
+                connection,
+                turn_id=turn_id,
+                owner_user_id=owner_user_id,
+                thread_id=thread_id,
+                body=None,
+                withheld_reason="phi",
+                received_at=now,
+            )
+            self._insert_audit(connection, audit)
         return resolved_proposal_id
 
     def read_relevant(self, owner_user_id: str, question: str, *, limit: int = 5) -> list[ApprovedFact]:
@@ -507,42 +573,18 @@ class MemoryStore:
         safe_text: str | None,
     ) -> AuditEvent:
         """Append one decision. PHI text must already have been removed by the caller."""
-        if safe_text and appears_to_contain_phi(safe_text):
-            safe_text = None
-            content_retained = False
-        event_row = AuditEvent(
-            audit_id=uuid.uuid4().hex,
+        event_row = self._build_audit(
             proposal_id=proposal_id,
             owner_user_id=owner_user_id,
             actor_user_id=actor_user_id,
             thread_id=thread_id,
             event=event,
-            occurred_at=self._now(),
             originating_ref=originating_ref,
             content_retained=content_retained,
             safe_text=safe_text,
         )
         with self._connect() as connection:
-            connection.execute(
-                """
-                INSERT INTO audit_events (
-                    audit_id, proposal_id, owner_user_id, actor_user_id, thread_id,
-                    event, occurred_at, originating_ref, content_retained, safe_text
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    event_row.audit_id,
-                    event_row.proposal_id,
-                    event_row.owner_user_id,
-                    event_row.actor_user_id,
-                    event_row.thread_id,
-                    event_row.event,
-                    _iso(event_row.occurred_at),
-                    event_row.originating_ref,
-                    1 if event_row.content_retained else 0,
-                    event_row.safe_text,
-                ),
-            )
+            self._insert_audit(connection, event_row)
         return event_row
 
     def database_text(self) -> str:
@@ -564,17 +606,25 @@ class MemoryStore:
             if updated_at + PENDING_TTL > now:
                 continue
             proposal_id = str(row["proposal_id"])
-            self.record_audit(
+            proposal_text = str(row["text"])
+            retained_text = None if appears_to_contain_phi(proposal_text) else proposal_text
+            audit = self._build_audit(
                 proposal_id=proposal_id,
                 owner_user_id=str(row["owner_user_id"]),
                 actor_user_id=None,
                 thread_id=str(row["thread_id"]),
                 event="expired_unanswered",
                 originating_ref=None,
-                content_retained=True,
-                safe_text=str(row["text"]) if not appears_to_contain_phi(str(row["text"])) else None,
+                content_retained=retained_text is not None,
+                safe_text=retained_text,
+                occurred_at=now,
             )
-            self._delete_pending(proposal_id)
+            with self._connect() as connection:
+                self._insert_audit(connection, audit)
+                connection.execute(
+                    "DELETE FROM pending_proposals WHERE proposal_id = ?",
+                    (proposal_id,),
+                )
             expired += 1
         return expired
 
@@ -654,6 +704,57 @@ class MemoryStore:
                 (proposal_id,),
             )
 
+    def _build_audit(
+        self,
+        *,
+        proposal_id: str,
+        owner_user_id: str | None,
+        actor_user_id: str | None,
+        thread_id: str,
+        event: str,
+        originating_ref: str | None,
+        content_retained: bool,
+        safe_text: str | None,
+        occurred_at: datetime | None = None,
+    ) -> AuditEvent:
+        if safe_text and appears_to_contain_phi(safe_text):
+            safe_text = None
+            content_retained = False
+        return AuditEvent(
+            audit_id=uuid.uuid4().hex,
+            proposal_id=proposal_id,
+            owner_user_id=owner_user_id,
+            actor_user_id=actor_user_id,
+            thread_id=thread_id,
+            event=event,
+            occurred_at=occurred_at or self._now(),
+            originating_ref=originating_ref,
+            content_retained=content_retained,
+            safe_text=safe_text,
+        )
+
+    def _insert_audit(self, connection: sqlite3.Connection, event_row: AuditEvent) -> None:
+        connection.execute(
+            """
+            INSERT INTO audit_events (
+                audit_id, proposal_id, owner_user_id, actor_user_id, thread_id,
+                event, occurred_at, originating_ref, content_retained, safe_text
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                event_row.audit_id,
+                event_row.proposal_id,
+                event_row.owner_user_id,
+                event_row.actor_user_id,
+                event_row.thread_id,
+                event_row.event,
+                _iso(event_row.occurred_at),
+                event_row.originating_ref,
+                1 if event_row.content_retained else 0,
+                event_row.safe_text,
+            ),
+        )
+
     def _insert_turn(
         self,
         *,
@@ -663,19 +764,40 @@ class MemoryStore:
         withheld_reason: str | None,
     ) -> str:
         turn_id = uuid.uuid4().hex
+        with self._connect() as connection:
+            self._write_turn(
+                connection,
+                turn_id=turn_id,
+                owner_user_id=owner_user_id,
+                thread_id=thread_id,
+                body=body,
+                withheld_reason=withheld_reason,
+                received_at=self._now(),
+            )
+        return turn_id
+
+    def _write_turn(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        turn_id: str,
+        owner_user_id: str | None,
+        thread_id: str,
+        body: str | None,
+        withheld_reason: str | None,
+        received_at: datetime,
+    ) -> None:
         if body and appears_to_contain_phi(body):
             body = None
             withheld_reason = "phi"
-        with self._connect() as connection:
-            connection.execute(
-                """
-                INSERT INTO turn_records (
-                    turn_id, owner_user_id, thread_id, received_at, body, withheld_reason
-                ) VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (turn_id, owner_user_id, thread_id, _iso(self._now()), body, withheld_reason),
-            )
-        return turn_id
+        connection.execute(
+            """
+            INSERT INTO turn_records (
+                turn_id, owner_user_id, thread_id, received_at, body, withheld_reason
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (turn_id, owner_user_id, thread_id, _iso(received_at), body, withheld_reason),
+        )
 
     def _now(self) -> datetime:
         current = self._clock()

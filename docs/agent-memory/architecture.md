@@ -15,7 +15,7 @@ Ruled out:
 
 ## What can never be remembered
 
-HIPAA and UK GDPR both apply. The same appearance check covers US and UK clinics. There is no country allow path. The check looks for a patient name, medical record number, date of birth, diagnosis, insurance or NHS number, clinical note, lab result, or visit content such as a named patient cancelling an appointment. A staff name in an operational preference, such as Diane Foster, is not by itself patient information.
+HIPAA and UK GDPR both apply. The same appearance check covers US and UK clinics. There is no country allow path. The check looks for a patient name, including a full name followed by "is a patient", a medical record number, date of birth, diagnosis, insurance or NHS number, clinical note, lab result, or visit content such as a named patient cancelling an appointment. A staff name in an operational preference, such as Diane Foster, is not by itself patient information.
 
 The check rejects a proposal that appears to contain patient information before the user is asked to remember it. It is not a guarantee that every PHI phrase will be found.
 
@@ -29,7 +29,7 @@ The user decision for the required example is: accept `Patient Johnson cancelled
 
 After a safe answer, an explicit criterion can add one `memory_proposal` to that same response. The fact is not written yet. The criterion allows a proposal only when the turn states a new or corrected clinic protocol, patient-free incident pattern, or staff presentation preference, nothing equivalent is already stored, and no proposal is still pending.
 
-The next message is classified against that proposal as `approve`, `reject`, `edit`, or `unclear`. The classifier reads a structured label. It does not search the message for the word yes. Low confidence or invalid output is `unclear`.
+The next message is classified against that proposal as `approve`, `reject`, `edit`, or `unclear`. The classifier reads a structured label. It does not search the message for the word yes. Low confidence, invalid output, or a generation-model failure is `unclear`. That result discards the proposal.
 
 - `approve` writes the pending text for that owner and records `approved`.
 - `reject` writes no fact and records `rejected`.
@@ -39,6 +39,8 @@ The next message is classified against that proposal as `approve`, `reject`, `ed
 A message can approve and ask another question. The proposal is resolved, then the existing graph answers the other question.
 
 Each of those events has its own `occurred_at`, an `originating_ref` for the user turn, and the outcome. Safe text is stored. Patient content is not.
+
+Staging, approval, rejection, edit, ambiguous discard, unanswered expiry, and a PHI tombstone each commit the change and its audit event in one transaction. If the audit insert fails, that change is rolled back. An approved fact cannot remain without its `approved` row, a pending proposal cannot remain without its `proposed` row, and a rejection, edit, discard, or expiry cannot change the proposal without its audit row.
 
 ## Forgetting
 
@@ -66,9 +68,11 @@ Self-evaluation is one criterion and one optional `memory_proposal` field on the
 
 Memorable:
 
-1. At the Manchester clinic, internal referrals now go through the coordinator before the specialist.
-2. The high no-show alert at the Austin clinic was because of a road closure that week, not a real problem with the reminder programme.
-3. The weekly report for Diane Foster needs vacancies broken down by role, not just by clinic.
+1. At the Manchester clinic, internal referrals now go through the coordinator before the specialist — that changed last quarter.
+2. That high no-show alert at the Austin clinic was because of a road closure that week, not a real problem with the reminder programme.
+3. The weekly report for Diane Foster needs vacancies broken down by role, not just by clinic — she asked for that two weeks ago.
+
+The referral system failing on Monday mornings because of the overnight batch job is an incident pattern. "patient Smith had a failed referral" is not.
 
 Not memorable:
 

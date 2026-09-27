@@ -34,6 +34,12 @@ _CLINICS = (
     "manchester",
 )
 _PATIENT_NAME = re.compile(r"\bpatients?\s+[A-Za-z][A-Za-z'-]+\b", re.IGNORECASE)
+# "John Smith is a patient" names the person before the word patient.
+# "patient Johnson" is covered above. A staff name with no patient role is not.
+_NAMED_AS_PATIENT = re.compile(
+    r"\b[A-Za-z][A-Za-z'-]+\s+[A-Za-z][A-Za-z'-]+\s+is\s+a\s+patient\b",
+    re.IGNORECASE,
+)
 _PHI_TERMS = re.compile(
     r"\b("
     r"medical record|mrn|date of birth|\bdob\b|diagnosis|diagnosed|"
@@ -61,7 +67,7 @@ _PROTOCOL = re.compile(
     re.IGNORECASE,
 )
 _INCIDENT = re.compile(
-    r"\b(road closure|overnight batch|monday morning)\b",
+    r"\b(road closure|overnight batch|monday mornings?)\b",
     re.IGNORECASE,
 )
 _STAFF = re.compile(r"\bdiane foster\b", re.IGNORECASE)
@@ -97,7 +103,7 @@ def appears_to_contain_phi(text: str) -> bool:
     """
     if not text or not text.strip():
         return False
-    if _PATIENT_NAME.search(text):
+    if _PATIENT_NAME.search(text) or _NAMED_AS_PATIENT.search(text):
         return True
     if _PHI_TERMS.search(text):
         return True
@@ -128,7 +134,10 @@ def evaluate_memorable(text: str) -> MemoryCandidate | None:
 
     lowered = cleaned.casefold()
     clinic = _named_clinic(lowered)
-    if _INCIDENT.search(cleaned) and (clinic or "no-show" in lowered or "noshow" in lowered):
+    # Incident phrases are memorable without a clinic name. "Monday mornings"
+    # plus the overnight batch is the HealthCore incident example. A patient
+    # name is already refused above, including "patient Smith had a failed referral".
+    if _INCIDENT.search(cleaned):
         subject = f"{clinic or 'network'}_incident_pattern"
         return MemoryCandidate(
             kind="incident_pattern",
@@ -178,8 +187,9 @@ def classify_pending_intent(
 ) -> IntentDecision:
     """Classify a reply to one pending proposal from structured model output.
 
-    Invalid JSON, an unknown label, or confidence below the floor becomes
-    ``unclear``. The message text is not searched for approval words.
+    Invalid JSON, an unknown label, confidence below the floor, or any
+    generation-model failure becomes ``unclear``. The caller discards the
+    proposal on that result. The message text is not searched for approval words.
     """
     completer = model if model is not None else _model_completer
     try:
@@ -189,7 +199,9 @@ def classify_pending_intent(
             raise ValueError("Intent output must be a JSON object.")
         label = parsed.get("label")
         confidence = float(parsed.get("confidence", 0))
-    except (TypeError, ValueError, json.JSONDecodeError):
+    except Exception:
+        # A missing model, a transport error, or unusable output is not a
+        # decision. Leave approval unassumed so the pending proposal is discarded.
         return IntentDecision(label="unclear", confidence=0.0)
     if label not in {"approve", "reject", "edit", "unclear"} or confidence < CONFIDENCE_FLOOR:
         return IntentDecision(label="unclear", confidence=confidence if label else 0.0)
@@ -206,8 +218,8 @@ def classify_pending_intent(
 def _model_completer(message: str, pending_text: str) -> str:
     """Ask the existing generator for one JSON intent object.
 
-    Any failure, including a missing local model, is raised to the caller and
-    becomes ``unclear``. This function does not decide the label itself.
+    This function does not decide the label. ``classify_pending_intent`` turns
+    a raised generation failure into ``unclear``.
     """
     from data.pipelines.rag import _run_generation_model
 

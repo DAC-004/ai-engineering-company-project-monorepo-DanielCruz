@@ -37,6 +37,9 @@ Actor A receives a proposal for the Austin road-closure explanation and rejects 
 - A safe edit is audited as `edited` and does not write a fact until a later approval.
 - An edit message that names a patient is `rejected_phi`, with a null body, and the previous safe pending text stays.
 - The Johnson appointment sentence is refused without that name in the response, trace, checkpoint, or memory database.
+- A memorable Manchester referral sentence that also says "John Smith is a patient" is refused. That name is not proposed, returned, or retained. The check still does not guarantee every PHI phrase.
+- A generation-model failure while a proposal is pending is classified as unclear and discards the proposal. The word "yes" in that message does not approve a write.
+- If the audit insert fails, approval does not leave a fact, staging does not leave a proposal, and rejection, edit, discard, and expiry do not change the pending proposal.
 - A topic change discards the pending proposal.
 - A second proposal is not staged while one is still pending.
 - An approved false referral duration does not replace a retrieved 11-day knowledge answer and is not visible to another user.

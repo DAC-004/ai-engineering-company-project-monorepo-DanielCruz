@@ -42,7 +42,7 @@ from app.routers.agent import router  # noqa: E402
 
 MANCHESTER = (
     "At the Manchester clinic, internal referrals now go through the coordinator "
-    "before the specialist. That changed last quarter."
+    "before the specialist — that changed last quarter."
 )
 AUSTIN = (
     "That high no-show alert at the Austin clinic was because of a road closure "
@@ -50,8 +50,12 @@ AUSTIN = (
 )
 DIANE = (
     "The weekly report for Diane Foster needs vacancies broken down by role, "
-    "not just by clinic."
+    "not just by clinic — she asked for that two weeks ago."
 )
+BATCH_INCIDENT = (
+    "the referral system fails on Monday mornings because of the overnight batch job"
+)
+PATIENT_SMITH = "patient Smith had a failed referral"
 JOHNSON = "Patient Johnson cancelled tomorrow's appointment, note that down."
 FALSE_CORRECTION = "Internal referrals now take 1 day."
 REFERRAL_CONTEXT = [
@@ -160,6 +164,10 @@ def test_six_healthcore_examples_match_the_criterion() -> None:
     assert evaluate_memorable(JOHNSON) is None
     assert appears_to_contain_phi(JOHNSON) is True
     assert appears_to_contain_phi(DIANE) is False
+    batch = evaluate_memorable(BATCH_INCIDENT)
+    assert batch is not None and batch.kind == "incident_pattern"
+    assert appears_to_contain_phi(PATIENT_SMITH) is True
+    assert evaluate_memorable(PATIENT_SMITH) is None
 
 
 def test_intent_classifier_uses_structured_output_not_the_word_yes() -> None:
@@ -180,6 +188,32 @@ def test_intent_classifier_uses_structured_output_not_the_word_yes() -> None:
         return json.dumps({"label": "approve", "confidence": 0.2})
 
     assert classify_pending_intent("store it", pending, model=_low).label == "unclear"
+
+
+def test_generation_model_failure_discards_the_pending_proposal(
+    tmp_path: Path,
+    patched_rag: None,
+) -> None:
+    clock = _Clock(datetime(2026, 3, 1, 1, tzinfo=UTC))
+    proposed = _run(tmp_path, MANCHESTER, actor=ACTOR_A, clock=clock)
+    assert proposed.memory_proposal == MANCHESTER
+
+    def _missing_model(_message: str, _pending_text: str) -> str:
+        raise FileNotFoundError("local generation model file is not available")
+
+    def _classify(message: str, pending_text: str) -> IntentDecision:
+        return classify_pending_intent(message, pending_text, model=_missing_model)
+
+    outcome = _run(tmp_path, "yes", actor=ACTOR_A, classifier=_classify, clock=clock)
+    store = _store(tmp_path, clock)
+    assert store.get_pending(ACTOR_A, THREAD) is None
+    assert store.list_active_facts(ACTOR_A) == []
+    assert outcome.memory_proposal is None
+    assert "I'll store that" not in outcome.answer
+    discarded = [row for row in store.list_audit() if row.event == "discarded_ambiguous"]
+    assert len(discarded) == 1
+    assert discarded[0].actor_user_id == ACTOR_A
+    assert [row for row in store.list_audit() if row.event == "approved"] == []
 
 
 def test_approved_cycle_is_visible_only_to_the_authorizing_user(
@@ -367,6 +401,137 @@ def test_endpoint_accepts_phi_example_and_does_not_echo_it(
     assert body["answer"] == PHI_REFUSAL
     assert body["memory_proposal"] is None
     assert "Johnson" not in response.text
+
+
+def test_named_patient_in_a_memorable_sentence_is_not_retained(
+    tmp_path: Path,
+    patched_rag: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sentence = f"{MANCHESTER} John Smith is a patient."
+    assert evaluate_memorable(MANCHESTER) is not None
+    assert appears_to_contain_phi(sentence) is True
+    assert evaluate_memorable(sentence) is None
+    assert appears_to_contain_phi(DIANE) is False
+
+    def _fail_retrieve(*_args: object, **_kwargs: object) -> list[dict[str, str]]:
+        raise AssertionError("retrieve() must not see patient content")
+
+    monkeypatch.setattr("data.pipelines.rag.retrieve", _fail_retrieve)
+    outcome = _run(tmp_path, sentence, actor=ACTOR_A)
+    assert outcome.answer == PHI_REFUSAL
+    assert outcome.memory_proposal is None
+    assert "John Smith" not in outcome.answer
+    assert "Smith" not in outcome.answer
+    stored = load_trace(outcome.trace_id, tmp_path / "traces")
+    assert stored["question"] == PHI_WITHHELD
+    assert "Smith" not in json.dumps(stored)
+    store = _store(tmp_path)
+    assert "Smith" not in store.database_text()
+    assert store.get_pending(ACTOR_A, THREAD) is None
+    assert store.list_active_facts(ACTOR_A) == []
+
+
+def _abort_audit_inserts(store: MemoryStore) -> None:
+    connection = sqlite3.connect(store.database_path)
+    connection.execute(
+        """
+        CREATE TRIGGER abort_audit_insert
+        BEFORE INSERT ON audit_events
+        BEGIN
+            SELECT RAISE(ABORT, 'audit insert failed');
+        END
+        """
+    )
+    connection.commit()
+    connection.close()
+
+
+def test_audit_failure_does_not_keep_an_unaudited_change(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    _abort_audit_inserts(store)
+    with pytest.raises(sqlite3.IntegrityError, match="audit insert failed"):
+        store.stage_proposal(
+            owner_user_id=ACTOR_A,
+            thread_id=THREAD,
+            text=MANCHESTER,
+            kind="clinic_protocol",
+            subject_key="manchester_internal_referrals",
+            originating_message=MANCHESTER,
+        )
+    assert store.get_pending(ACTOR_A, THREAD) is None
+    assert store.list_audit() == []
+    assert store.list_active_facts(ACTOR_A) == []
+
+    staged = MemoryStore(tmp_path / "decisions.sqlite")
+    pending = staged.stage_proposal(
+        owner_user_id=ACTOR_A,
+        thread_id=THREAD,
+        text=MANCHESTER,
+        kind="clinic_protocol",
+        subject_key="manchester_internal_referrals",
+        originating_message=MANCHESTER,
+    )
+    assert pending is not None
+    _abort_audit_inserts(staged)
+    with pytest.raises(sqlite3.IntegrityError, match="audit insert failed"):
+        staged.write_approved(
+            actor_user_id=ACTOR_A,
+            proposal_id=pending.proposal_id,
+            originating_message="Store the pending operational note.",
+        )
+    assert staged.get_pending(ACTOR_A, THREAD) is not None
+    assert staged.get_pending(ACTOR_A, THREAD).proposal_id == pending.proposal_id
+    assert staged.list_active_facts(ACTOR_A) == []
+    assert [row for row in staged.list_audit() if row.event == "approved"] == []
+
+    with pytest.raises(sqlite3.IntegrityError, match="audit insert failed"):
+        staged.reject_pending(
+            actor_user_id=ACTOR_A,
+            proposal_id=pending.proposal_id,
+            originating_message="Do not store that note.",
+        )
+    assert staged.get_pending(ACTOR_A, THREAD) is not None
+    assert staged.list_active_facts(ACTOR_A) == []
+    assert [row for row in staged.list_audit() if row.event == "rejected"] == []
+    proposed_rows = [row for row in staged.list_audit() if row.event == "proposed"]
+    assert len(proposed_rows) == 1
+    with pytest.raises(sqlite3.IntegrityError, match="audit insert failed"):
+        staged.edit_pending(
+            actor_user_id=ACTOR_A,
+            proposal_id=pending.proposal_id,
+            revised_text="At the Manchester clinic, internal referrals now go through the coordinator on weekdays.",
+            originating_message="Change the note so the coordinator step is weekdays.",
+        )
+    assert staged.get_pending(ACTOR_A, THREAD).text == MANCHESTER
+    assert [row for row in staged.list_audit() if row.event == "edited"] == []
+    with pytest.raises(sqlite3.IntegrityError, match="audit insert failed"):
+        staged.discard_pending(
+            actor_user_id=ACTOR_A,
+            proposal_id=pending.proposal_id,
+            originating_message="What's this week's no-show rate?",
+        )
+    assert staged.get_pending(ACTOR_A, THREAD) is not None
+    assert [row for row in staged.list_audit() if row.event == "discarded_ambiguous"] == []
+
+    start = datetime(2026, 4, 1, tzinfo=UTC)
+    expiring = MemoryStore(tmp_path / "expiry.sqlite", clock=lambda: start)
+    expiring_pending = expiring.stage_proposal(
+        owner_user_id=ACTOR_A,
+        thread_id=THREAD,
+        text=AUSTIN,
+        kind="incident_pattern",
+        subject_key="austin_incident_pattern",
+        originating_message=AUSTIN,
+    )
+    assert expiring_pending is not None
+    later = start + PENDING_TTL + timedelta(minutes=1)
+    aged = MemoryStore(tmp_path / "expiry.sqlite", clock=lambda: later)
+    _abort_audit_inserts(aged)
+    with pytest.raises(sqlite3.IntegrityError, match="audit insert failed"):
+        aged.expire_stale()
+    assert aged.get_pending(ACTOR_A, THREAD) is not None
+    assert [row for row in aged.list_audit() if row.event == "expired_unanswered"] == []
 
 
 def test_topic_change_discards_pending_proposal(tmp_path: Path, patched_rag: None) -> None:
