@@ -121,7 +121,8 @@ h2,
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   border: 1px solid var(--hc-line);
   border-radius: 0.75rem;
@@ -131,18 +132,25 @@ h2,
   font: inherit;
 }
 
+.field textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
 .field select {
   appearance: auto;
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   outline: 2px solid color-mix(in srgb, var(--hc-accent) 45%, white);
   border-color: var(--hc-accent);
 }
 
 .field input:disabled,
-.field select:disabled {
+.field select:disabled,
+.field textarea:disabled {
   background: #eef3f5;
   color: var(--hc-muted);
 }
@@ -440,5 +448,81 @@ h2,
 
   .app-header {
     align-items: start;
+  }
+}
+
+.knowledge-panel {
+  width: min(100%, 52rem);
+}
+
+.knowledge-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.knowledge-status {
+  margin: 0;
+  font-weight: 650;
+}
+
+.knowledge-status--loading {
+  color: var(--hc-accent-deep);
+}
+
+.knowledge-answer {
+  border: 1px solid var(--hc-line);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  background: color-mix(in srgb, var(--hc-accent-soft) 35%, var(--hc-panel));
+}
+
+.knowledge-answer p:last-child {
+  margin: 0.65rem 0 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hc-ink: #e7f1f3;
+    --hc-muted: #9bb4bb;
+    --hc-line: #2a4148;
+    --hc-surface: #0d171a;
+    --hc-panel: #142226;
+    --hc-accent: #6ec4cc;
+    --hc-accent-deep: #9ad7dc;
+    --hc-accent-soft: #1a3b40;
+    --hc-danger: #ffb4b4;
+    --hc-danger-soft: #3d1c1c;
+    --hc-success: #8ee0b5;
+    --hc-success-soft: #163427;
+    --hc-warning: #f0c36a;
+    --hc-warning-soft: #3a2c12;
+    --hc-glow: rgba(110, 196, 204, 0.22);
+    --background: var(--hc-surface);
+    --foreground: var(--hc-ink);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(110, 196, 204, 0.12), transparent 42%),
+      linear-gradient(160deg, #0d171a 0%, #122024 48%, #0f1b1e 100%);
+  }
+
+  .field input,
+  .field select,
+  .field textarea,
+  .table-wrap,
+  .stock-panel {
+    background: #102024;
+    color: var(--hc-ink);
+  }
+
+  .data-table th {
+    background: #15272c;
+  }
+
+  .app-header {
+    background: color-mix(in srgb, #142226 88%, transparent);
   }
 }

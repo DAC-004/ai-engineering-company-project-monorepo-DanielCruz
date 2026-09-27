@@ -106,3 +106,29 @@ Validate inventory behavior: `uv run python scripts/validate_inventory.py`
 - JWT: `python-jose` (assignment requirement; ignore stale `pyjwt[crypto]` setup snippet)
 - `SECRET_KEY`, `JWT_ALGORITHM`, and `ACCESS_TOKEN_EXPIRE_MINUTES` come from environment / `.env`
 - Operational `user_id` vs `user_uuid` naming for future SQL modules remains unresolved in source material; AUTH-01 does not invent those fields
+
+## Support agent graph
+
+`POST /agent/query` is public, like `POST /knowledge/query`. The knowledge route still calls `query()` and is unchanged.
+
+`POST /agent/query` accepts `{ "question": "..." }`, including an empty string, and on success returns `{ "answer": "...", "trace_id": "..." }`. The handler only invokes the compiled LangGraph graph in `app/agent/graph.py` and translates the result:
+
+- An empty or whitespace-only question becomes HTTP 400.
+- An unexpected node failure is logged on the server and returned as HTTP 502 with `The knowledge assistant could not generate an answer right now.`
+- The response never includes a traceback.
+
+Checkpoints are written to `data/process/agent_checkpoints/support_agent.sqlite` after each node. Runtime traces are written to `data/process/agent_traces/<trace_id>.json`. Both directories are gitignored.
+
+From the repository root, the fixture evals are:
+
+```bash
+uv run pytest tests/pipelines/test_agent_evals.py -q
+```
+
+Regenerate the reviewed fixtures and `docs/rag/sample-agent-trace.json` with:
+
+```bash
+uv run python tests/pipelines/record_agent_traces.py
+```
+
+That command runs the compiled graph with patched retrieval and generation. It does not call the live generation model. See `docs/rag/langgraph-agent.md`.

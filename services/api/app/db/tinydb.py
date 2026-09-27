@@ -1,4 +1,4 @@
-"""TinyDB persistence for authentication Users and Profiles."""
+"""TinyDB persistence for authentication Users/Profiles and incidents."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ _db: TinyDB | None = None
 
 
 def get_db() -> TinyDB:
-    """Return the shared TinyDB instance used only for User/Profile identity data."""
+    """Return the shared TinyDB instance for identity data and incidents."""
     global _db
     if _db is None:
         path = Path(get_settings().tinydb_path)
@@ -27,6 +27,15 @@ def users_table():
 
 def profiles_table():
     return get_db().table("profiles")
+
+
+def incidents_table():
+    return get_db().table("incidents")
+
+
+def incident_seed_keys_table():
+    """Derived seed markers only. Never stores a raw CSV incident_id."""
+    return get_db().table("incident_seed_keys")
 
 
 def reset_db_for_tests() -> None:

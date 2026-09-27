@@ -114,6 +114,12 @@ The model is Random Forest. Evaluation is a rolling one-step-ahead historical ch
 
 ---
 
+## HealthCore MCP
+
+External clients test the Streamable HTTP server in [`mcps/healthcore-tools`](mcps/healthcore-tools/README.md) while the Codespace is running. Connection requirements, scopes, and the temporary Codespaces acceptance endpoint are documented there. Screenshots and the evidence package stay in [pull request #28](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/pull/28).
+
+---
+
 ## How to think about this monorepo
 
 You are building **one company** across many milestones and projects. Each top-level folder has a **single responsibility** — like a real engineering team repo.
