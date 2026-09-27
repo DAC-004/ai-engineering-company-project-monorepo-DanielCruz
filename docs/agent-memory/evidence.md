@@ -45,3 +45,5 @@ Actor A receives a proposal for the Austin road-closure explanation and rejects 
 - An approved false referral duration does not replace a retrieved 11-day knowledge answer and is not visible to another user.
 - Consolidation supersedes by key, expires old facts, caps active rows, and blanks patient content.
 - The memory path does not call the Qdrant client.
+- A UK-versus-US administrative exception with no city name is proposed and not written until approval. The same correction with a patient name is refused. A question about the exception is not proposed.
+- Separate UK and US administrative exceptions both stay active. Approving a sentence that compares both countries updates each country key. A later UK correction replaces only the UK note, and a UK-clinics question does not return the US note.

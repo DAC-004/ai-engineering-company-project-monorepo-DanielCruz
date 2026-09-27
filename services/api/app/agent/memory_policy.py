@@ -72,6 +72,14 @@ _INCIDENT = re.compile(
 )
 _STAFF = re.compile(r"\bdiane foster\b", re.IGNORECASE)
 _PREFERENCE = re.compile(r"\b(vacanc(?:y|ies)|by role|weekly report)\b", re.IGNORECASE)
+# Country scope is "UK clinics" or "US clinics", not the pronoun "us".
+_UK_CLINICS = re.compile(r"\buk\s+clinics\b", re.IGNORECASE)
+_US_CLINICS = re.compile(r"\b(?:us|u\.s\.)\s+clinics\b", re.IGNORECASE)
+_COUNTRY_CLINICS = re.compile(r"\b(?:uk|u\.s\.|us)\s+clinics\b", re.IGNORECASE)
+_ADMIN_EXCEPTION = re.compile(r"\badministrative exceptions?\b", re.IGNORECASE)
+UK_ADMINISTRATIVE_EXCEPTION = "uk_administrative_exception"
+US_ADMINISTRATIVE_EXCEPTION = "us_administrative_exception"
+BOTH_ADMINISTRATIVE_EXCEPTION = "uk_us_administrative_exception"
 
 
 @dataclass(frozen=True)
@@ -152,6 +160,25 @@ def evaluate_memorable(text: str) -> MemoryCandidate | None:
             proposal_text=cleaned,
             reason="Staff preference for how operational information is presented.",
         )
+    # A UK note and a US note use different keys, so approving one does not
+    # supersede the other. A sentence that names both countries is one proposal
+    # whose approval updates each country's key.
+    country_keys = administrative_exception_keys(cleaned)
+    if (
+        country_keys
+        and _ADMIN_EXCEPTION.search(cleaned)
+        and _CHANGE.search(cleaned)
+        and not _is_bare_question(cleaned)
+    ):
+        subject_key = (
+            country_keys[0] if len(country_keys) == 1 else BOTH_ADMINISTRATIVE_EXCEPTION
+        )
+        return MemoryCandidate(
+            kind="clinic_protocol",
+            subject_key=subject_key,
+            proposal_text=cleaned,
+            reason="Recurring administrative exception that differs by country.",
+        )
     protocol_change = _PROTOCOL.search(cleaned) and _CHANGE.search(cleaned)
     if protocol_change and (clinic or "referral" in lowered) and not _is_bare_question(cleaned):
         subject = f"{clinic or 'network'}_operational_protocol"
@@ -164,6 +191,32 @@ def evaluate_memorable(text: str) -> MemoryCandidate | None:
             reason="Recurring operational correction for a clinic process.",
         )
     return None
+
+
+def administrative_exception_keys(text: str) -> tuple[str, ...]:
+    """Return one key per country named in an administrative-exception sentence.
+
+    UK and US stay distinct. A comparison names both keys; the caller stores
+    one fact per key so a later correction for one country does not remove the
+    other country's note.
+    """
+    keys: list[str] = []
+    if _UK_CLINICS.search(text):
+        keys.append(UK_ADMINISTRATIVE_EXCEPTION)
+    if _US_CLINICS.search(text):
+        keys.append(US_ADMINISTRATIVE_EXCEPTION)
+    return tuple(keys)
+
+
+def country_exception_excluded(subject_key: str, question: str) -> bool:
+    """Hide the other country's exception when the question names only one."""
+    asks_uk = _UK_CLINICS.search(question) is not None
+    asks_us = _US_CLINICS.search(question) is not None
+    if subject_key == UK_ADMINISTRATIVE_EXCEPTION and asks_us and not asks_uk:
+        return True
+    if subject_key == US_ADMINISTRATIVE_EXCEPTION and asks_uk and not asks_us:
+        return True
+    return False
 
 
 def proposal_prompt(proposal_text: str) -> str:

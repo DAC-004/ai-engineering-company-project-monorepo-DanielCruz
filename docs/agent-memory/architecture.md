@@ -4,7 +4,7 @@ The support agent keeps a curated store of operational notes. RAG stays a read-o
 
 ## Why this store
 
-Memorable HealthCore facts are few and exact: a clinic protocol, a patient-free incident pattern, or a staff preference for how operational information is presented. Lookup is by owner, subject key, and terms in the current question.
+Memorable HealthCore facts are few and exact: a clinic protocol, a country-level administrative exception, a patient-free incident pattern, or a staff preference for how operational information is presented. Lookup is by owner, subject key, and terms in the current question.
 
 Ruled out:
 
@@ -73,6 +73,8 @@ Memorable:
 3. The weekly report for Diane Foster needs vacancies broken down by role, not just by clinic — she asked for that two weeks ago.
 
 The referral system failing on Monday mornings because of the overnight batch job is an incident pattern. "patient Smith had a failed referral" is not.
+
+A country-level administrative correction does not need a city name. A UK correction is stored as `uk_administrative_exception` and a US correction as `us_administrative_exception`, so approving one does not supersede the other. A later correction for the same country supersedes that country's note. One sentence that compares both countries is a single proposal; approving it updates both country keys and leaves no third shared key. A question about the exception, and the same sentence with a patient name, are not proposals.
 
 Not memorable:
 

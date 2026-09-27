@@ -18,7 +18,9 @@ from pathlib import Path
 from app.agent.memory_policy import (
     PHI_WITHHELD,
     MemoryKind,
+    administrative_exception_keys,
     appears_to_contain_phi,
+    country_exception_excluded,
     normalize_memory_text,
 )
 from shared.healthcore_rag.config import REPO_ROOT
@@ -210,16 +212,23 @@ class MemoryStore:
         if appears_to_contain_phi(pending.text) or appears_to_contain_phi(originating_message):
             return None
         now = self._now()
-        fact = ApprovedFact(
-            fact_id=uuid.uuid4().hex,
-            owner_user_id=pending.owner_user_id,
-            authorized_by_user_id=actor_user_id,
-            kind=pending.kind,
-            subject_key=pending.subject_key,
-            text=pending.text,
-            claim_status="unverified",
-            created_at=now,
-        )
+        # A comparison names both countries. One approval writes the same
+        # sentence under each country key and supersedes only those keys.
+        subject_keys = _approved_subject_keys(pending.subject_key, pending.text)
+        facts = [
+            ApprovedFact(
+                fact_id=uuid.uuid4().hex,
+                owner_user_id=pending.owner_user_id,
+                authorized_by_user_id=actor_user_id,
+                kind=pending.kind,
+                subject_key=subject_key,
+                text=pending.text,
+                claim_status="unverified",
+                created_at=now,
+            )
+            for subject_key in subject_keys
+        ]
+        fact = facts[0]
         turn_id = uuid.uuid4().hex
         audit = self._build_audit(
             proposal_id=proposal_id,
@@ -242,30 +251,31 @@ class MemoryStore:
                 withheld_reason=None,
                 received_at=now,
             )
-            connection.execute(
-                """
-                UPDATE facts SET active = 0, superseded_at = ?
-                WHERE owner_user_id = ? AND subject_key = ? AND active = 1
-                """,
-                (_iso(now), fact.owner_user_id, fact.subject_key),
-            )
-            connection.execute(
-                """
-                INSERT INTO facts (
-                    fact_id, owner_user_id, authorized_by_user_id, kind,
-                    subject_key, text, claim_status, active, created_at, superseded_at
-                ) VALUES (?, ?, ?, ?, ?, ?, 'unverified', 1, ?, NULL)
-                """,
-                (
-                    fact.fact_id,
-                    fact.owner_user_id,
-                    fact.authorized_by_user_id,
-                    fact.kind,
-                    fact.subject_key,
-                    fact.text,
-                    _iso(fact.created_at),
-                ),
-            )
+            for stored in facts:
+                connection.execute(
+                    """
+                    UPDATE facts SET active = 0, superseded_at = ?
+                    WHERE owner_user_id = ? AND subject_key = ? AND active = 1
+                    """,
+                    (_iso(now), stored.owner_user_id, stored.subject_key),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO facts (
+                        fact_id, owner_user_id, authorized_by_user_id, kind,
+                        subject_key, text, claim_status, active, created_at, superseded_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'unverified', 1, ?, NULL)
+                    """,
+                    (
+                        stored.fact_id,
+                        stored.owner_user_id,
+                        stored.authorized_by_user_id,
+                        stored.kind,
+                        stored.subject_key,
+                        stored.text,
+                        _iso(stored.created_at),
+                    ),
+                )
             connection.execute(
                 "DELETE FROM pending_proposals WHERE proposal_id = ?",
                 (proposal_id,),
@@ -493,6 +503,8 @@ class MemoryStore:
             fact = _fact_from_row(row)
             if appears_to_contain_phi(fact.text):
                 self._blank_fact(fact.fact_id)
+                continue
+            if country_exception_excluded(fact.subject_key, question):
                 continue
             fact_terms = set(normalize_memory_text(fact.text).split()) | set(
                 fact.subject_key.split("_")
@@ -867,6 +879,17 @@ class MemoryStore:
             );
             """
         )
+
+
+def _approved_subject_keys(subject_key: str, text: str) -> tuple[str, ...]:
+    """Expand a both-country proposal into the UK key and the US key."""
+    if subject_key == "uk_us_administrative_exception" or subject_key.endswith(
+        "_administrative_exception"
+    ):
+        keys = administrative_exception_keys(text)
+        if keys:
+            return keys
+    return (subject_key,)
 
 
 def _iso(value: datetime) -> str:

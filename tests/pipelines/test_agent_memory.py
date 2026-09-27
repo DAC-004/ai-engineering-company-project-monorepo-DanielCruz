@@ -56,6 +56,10 @@ BATCH_INCIDENT = (
     "the referral system fails on Monday mornings because of the overnight batch job"
 )
 PATIENT_SMITH = "patient Smith had a failed referral"
+COUNTRY_ADMIN = (
+    "For UK clinics, the administrative exception changed last quarter: "
+    "front-desk sign-off is no longer required; US clinics still require it."
+)
 JOHNSON = "Patient Johnson cancelled tomorrow's appointment, note that down."
 FALSE_CORRECTION = "Internal referrals now take 1 day."
 REFERRAL_CONTEXT = [
@@ -168,6 +172,107 @@ def test_six_healthcore_examples_match_the_criterion() -> None:
     assert batch is not None and batch.kind == "incident_pattern"
     assert appears_to_contain_phi(PATIENT_SMITH) is True
     assert evaluate_memorable(PATIENT_SMITH) is None
+
+
+def test_country_administrative_exception_is_proposed_without_a_named_clinic(
+    tmp_path: Path,
+    patched_rag: None,
+) -> None:
+    candidate = evaluate_memorable(COUNTRY_ADMIN)
+    assert candidate is not None
+    assert candidate.kind == "clinic_protocol"
+    assert candidate.subject_key == "uk_us_administrative_exception"
+    assert evaluate_memorable("What's the administrative exception for UK clinics?") is None
+    assert evaluate_memorable("What's this week's no-show rate?") is None
+
+    proposed = _run(tmp_path, COUNTRY_ADMIN, actor=ACTOR_A)
+    store = _store(tmp_path)
+    assert proposed.memory_proposal == COUNTRY_ADMIN
+    assert "Want me to remember this for next time?" in proposed.answer
+    assert store.list_active_facts(ACTOR_A) == []
+    assert store.get_pending(ACTOR_A, THREAD) is not None
+
+    phi_sentence = f"{COUNTRY_ADMIN} Patient Johnson cancelled tomorrow's appointment."
+    assert appears_to_contain_phi(phi_sentence) is True
+    assert evaluate_memorable(phi_sentence) is None
+    refused = _run(tmp_path, phi_sentence, actor=ACTOR_A, thread_id="thread-phi-country")
+    assert refused.answer == PHI_REFUSAL
+    assert refused.memory_proposal is None
+    assert "Johnson" not in refused.answer
+    assert "Johnson" not in store.database_text()
+
+
+def test_uk_and_us_administrative_exceptions_stay_distinct(tmp_path: Path) -> None:
+    uk_text = (
+        "For UK clinics, the administrative exception changed: "
+        "front-desk sign-off is no longer required."
+    )
+    us_text = (
+        "For US clinics, the administrative exception changed: "
+        "front-desk sign-off is still required."
+    )
+    uk_later = (
+        "For UK clinics, the administrative exception changed: "
+        "front-desk sign-off is required again."
+    )
+    uk_candidate = evaluate_memorable(uk_text)
+    us_candidate = evaluate_memorable(us_text)
+    assert uk_candidate is not None and uk_candidate.subject_key == "uk_administrative_exception"
+    assert us_candidate is not None and us_candidate.subject_key == "us_administrative_exception"
+
+    store = _store(tmp_path, _Clock(datetime(2026, 5, 1, tzinfo=UTC)))
+
+    def _approve(candidate_text: str, candidate, thread_id: str) -> None:
+        pending = store.stage_proposal(
+            owner_user_id=ACTOR_A,
+            thread_id=thread_id,
+            text=candidate_text,
+            kind=candidate.kind,
+            subject_key=candidate.subject_key,
+            originating_message=candidate_text,
+        )
+        assert pending is not None
+        assert (
+            store.write_approved(
+                actor_user_id=ACTOR_A,
+                proposal_id=pending.proposal_id,
+                originating_message="Store that country exception.",
+            )
+            is not None
+        )
+
+    _approve(uk_text, uk_candidate, "thread-uk")
+    _approve(us_text, us_candidate, "thread-us")
+    active = {fact.subject_key: fact.text for fact in store.list_active_facts(ACTOR_A)}
+    assert active == {
+        "uk_administrative_exception": uk_text,
+        "us_administrative_exception": us_text,
+    }
+
+    both = evaluate_memorable(COUNTRY_ADMIN)
+    assert both is not None and both.subject_key == "uk_us_administrative_exception"
+    _approve(COUNTRY_ADMIN, both, "thread-both")
+    compared = {fact.subject_key: fact.text for fact in store.list_active_facts(ACTOR_A)}
+    assert compared == {
+        "uk_administrative_exception": COUNTRY_ADMIN,
+        "us_administrative_exception": COUNTRY_ADMIN,
+    }
+    assert len([row for row in store.list_audit() if row.event == "approved"]) == 3
+
+    later = evaluate_memorable(uk_later)
+    assert later is not None
+    _approve(uk_later, later, "thread-uk-later")
+    current = {fact.subject_key: fact.text for fact in store.list_active_facts(ACTOR_A)}
+    assert current == {
+        "uk_administrative_exception": uk_later,
+        "us_administrative_exception": COUNTRY_ADMIN,
+    }
+    uk_notes = store.read_relevant(
+        ACTOR_A,
+        "What should UK clinics follow for the administrative exception?",
+    )
+    assert [fact.subject_key for fact in uk_notes] == ["uk_administrative_exception"]
+    assert uk_notes[0].text == uk_later
 
 
 def test_intent_classifier_uses_structured_output_not_the_word_yes() -> None:
