@@ -39,15 +39,19 @@ def agent_query(
     """
     route_kind = classify_question(body.question)
     caller_is_authenticated = False
+    actor_user_id = None
     if credentials is not None:
-        get_current_user(credentials.credentials)
+        current_user = get_current_user(credentials.credentials)
         caller_is_authenticated = True
+        actor_user_id = current_user.id
     elif route_kind in {"ticket", "both"}:
         raise CREDENTIALS_EXCEPTION
     try:
         outcome = run_support_agent(
             body.question,
             caller_is_authenticated=caller_is_authenticated,
+            actor_user_id=actor_user_id,
+            thread_id=body.thread_id,
         )
     except Exception:
         logger.exception("HealthCore support agent query failed")
@@ -60,4 +64,9 @@ def agent_query(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=outcome.error,
         )
-    return AgentQueryResponse(answer=outcome.answer, trace_id=outcome.trace_id)
+    return AgentQueryResponse(
+        answer=outcome.answer,
+        trace_id=outcome.trace_id,
+        thread_id=outcome.thread_id,
+        memory_proposal=outcome.memory_proposal,
+    )

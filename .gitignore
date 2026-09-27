@@ -17,4 +17,5 @@ data/process/qdrant_storage/
 data/process/models/
 data/process/agent_checkpoints/
 data/process/agent_traces/
+data/process/agent_memory/
 *.gguf

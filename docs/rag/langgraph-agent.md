@@ -137,7 +137,7 @@ With that variable set, `test_knowledge_eval_uses_real_retrieval_and_local_gener
 
 ## Endpoint
 
-`POST /agent/query` accepts `{ "question": "..." }`. Success body: `{ "answer": "...", "trace_id": "..." }`.
+`POST /agent/query` accepts `{ "question": "...", "thread_id": "..." }`. `thread_id` is optional. Success body: `{ "answer": "...", "trace_id": "...", "thread_id": "...", "memory_proposal": null }`. `memory_proposal` is the pending operational note when the agent is asking to remember one, and null otherwise. Curated memory is documented in `docs/agent-memory/architecture.md`. It is not written to `healthcore_knowledge`.
 
 A missing bearer is allowed for a knowledge-only question and for an empty question. Those requests run the graph. A ticket-only or combined question with no bearer returns HTTP 401 `Could not validate credentials` before `run_support_agent`. A present bearer is accepted only by `get_current_user`. An invalid bearer returns the same 401. The route does not store the token. `lookup_ticket` checks `caller_is_authenticated` again and does not call `get_incident` or `list_incidents` unless that flag is true.
 

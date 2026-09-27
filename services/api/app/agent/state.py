@@ -25,3 +25,6 @@ class AgentState(TypedDict):
     lookup_failure: str
     ticket_id: str
     ticket_status: str
+    # Screened operational notes for this actor. Empty when the caller is anonymous.
+    # These strings are not a transcript and they are not RAG chunks.
+    approved_memory: list[str]

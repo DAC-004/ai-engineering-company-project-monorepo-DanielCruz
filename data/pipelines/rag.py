@@ -369,7 +369,12 @@ def _context_for_prompt(context: list[dict[str, Any]]) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
-def _build_generation_messages(question: str, context: list[dict[str, Any]]) -> list[dict[str, str]]:
+def _build_generation_messages(
+    question: str,
+    context: list[dict[str, Any]],
+    *,
+    operational_memory: list[str] | None = None,
+) -> list[dict[str, str]]:
     """Coordinator prompt: behavioral rules only. Policy facts come from chunks."""
     system = (
         "You are an experienced HealthCore patient coordinator answering for "
@@ -415,12 +420,23 @@ def _build_generation_messages(question: str, context: list[dict[str, Any]]) -> 
             "and include any retrieved Medicare or Medicaid exception. "
             "Do not begin with No when the late-fee rule applies."
         )
+    memory_line = ""
+    if operational_memory:
+        rendered = "\n".join(f"- {note}" for note in operational_memory)
+        memory_line = (
+            "\n\nUnverified staff-approved operational notes for this user. "
+            "These notes are not company knowledge. If they conflict with the "
+            "retrieved context, state the retrieved context and describe the "
+            "note as unverified.\n"
+            f"{rendered}"
+        )
     user = (
         f"Retrieved HealthCore context:\n{_context_for_prompt(context)}\n\n"
         f"Coordinator question:\n{question}\n\n"
         "Write the answer the coordinator can say to the caller. "
         "Use only the retrieved context."
         f"{duration_line}"
+        f"{memory_line}"
     )
     return [
         {"role": "system", "content": system},
@@ -433,9 +449,15 @@ def _build_retry_messages(
     context: list[dict[str, Any]],
     previous_answer: str,
     reason: str,
+    *,
+    operational_memory: list[str] | None = None,
 ) -> list[dict[str, str]]:
     """Ask the same generation model to rewrite a leaked or overly cautious answer."""
-    messages = _build_generation_messages(question, context)
+    messages = _build_generation_messages(
+        question,
+        context,
+        operational_memory=operational_memory,
+    )
     messages.append({"role": "assistant", "content": previous_answer})
     messages.append(
         {
@@ -654,7 +676,12 @@ def _run_generation_model(messages: list[dict[str, str]]) -> str:
     return _local_llm_complete(messages)
 
 
-def generate_answer(question: str, context: list[dict[str, Any]]) -> str:
+def generate_answer(
+    question: str,
+    context: list[dict[str, Any]],
+    *,
+    operational_memory: list[str] | None = None,
+) -> str:
     """Generate a coordinator-facing answer from a generation LLM.
 
     In-corpus answers always go through `_run_generation_model`. If that
@@ -671,7 +698,11 @@ def generate_answer(question: str, context: list[dict[str, Any]]) -> str:
         {key: value for key, value in item.items() if key != "_score"}
         for item in context
     ]
-    messages = _build_generation_messages(question, prompt_payloads)
+    messages = _build_generation_messages(
+        question,
+        prompt_payloads,
+        operational_memory=operational_memory,
+    )
 
     try:
         answer = _run_generation_model(messages)
@@ -699,7 +730,13 @@ def generate_answer(question: str, context: list[dict[str, Any]]) -> str:
     if retry_reason:
         logger.warning("Retrying grounded generation: %s", retry_reason)
         answer = _run_generation_model(
-            _build_retry_messages(question, prompt_payloads, answer, retry_reason)
+            _build_retry_messages(
+                question,
+                prompt_payloads,
+                answer,
+                retry_reason,
+                operational_memory=operational_memory,
+            )
         )
 
     logger.info(

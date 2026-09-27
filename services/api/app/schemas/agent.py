@@ -15,6 +15,7 @@ class AgentQueryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     question: str
+    thread_id: str | None = None
 
 
 class AgentQueryResponse(BaseModel):
@@ -22,3 +23,5 @@ class AgentQueryResponse(BaseModel):
 
     answer: str
     trace_id: str
+    thread_id: str
+    memory_proposal: str | None = None

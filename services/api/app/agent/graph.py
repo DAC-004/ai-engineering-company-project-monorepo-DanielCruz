@@ -20,6 +20,13 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from app.agent.memory_store import MemoryStore
+from app.agent.memory_turn import (
+    IntentClassifier,
+    append_unverified_notes,
+    finish_turn,
+    prepare_turn,
+)
 from app.agent.nodes import (
     generate_from_context,
     lookup_ticket,
@@ -50,6 +57,7 @@ class AgentRun:
     error: str
     trace_id: str
     thread_id: str
+    memory_proposal: str | None = None
 
 
 def checkpoint_database_path() -> Path:
@@ -150,7 +158,12 @@ def open_sqlite_checkpointer(database_path: Path) -> Iterator[SqliteSaver]:
         connection.close()
 
 
-def _initial_state(question: str, *, caller_is_authenticated: bool = False) -> AgentState:
+def _initial_state(
+    question: str,
+    *,
+    caller_is_authenticated: bool = False,
+    approved_memory: list[str] | None = None,
+) -> AgentState:
     return {
         "question": question,
         "context": [],
@@ -162,6 +175,7 @@ def _initial_state(question: str, *, caller_is_authenticated: bool = False) -> A
         "lookup_failure": "",
         "ticket_id": "",
         "ticket_status": "",
+        "approved_memory": list(approved_memory or []),
     }
 
 
@@ -234,9 +248,13 @@ def run_support_agent(
     question: str,
     *,
     caller_is_authenticated: bool = False,
+    actor_user_id: str | None = None,
     thread_id: str | None = None,
     checkpoint_path: Path | None = None,
     trace_dir: Path | None = None,
+    memory_path: Path | None = None,
+    intent_classifier: IntentClassifier | None = None,
+    clock: Any = None,
 ) -> AgentRun:
     """Compile the graph, run one question, and persist a queryable trace.
 
@@ -250,10 +268,40 @@ def run_support_agent(
     trace_id = uuid.uuid4().hex
     database_path = checkpoint_path or checkpoint_database_path()
     directory = trace_dir or trace_directory()
+    store = MemoryStore(memory_path, clock=clock) if actor_user_id else None
+    preparation = prepare_turn(
+        store,
+        actor_user_id=actor_user_id,
+        thread_id=resolved_thread_id,
+        message=question,
+        intent_classifier=intent_classifier,
+    )
+    if preparation.skip_graph:
+        answer = preparation.direct_answer
+        persist_trace(
+            _trace_payload(
+                trace_id=trace_id,
+                thread_id=resolved_thread_id,
+                question=preparation.trace_question,
+                node_records=[],
+                final_state={"answer": answer, "error": "", "context": []},
+                execution_error="",
+            ),
+            directory,
+        )
+        return AgentRun(
+            answer=answer,
+            error="",
+            trace_id=trace_id,
+            thread_id=resolved_thread_id,
+            memory_proposal=preparation.memory_proposal,
+        )
+
     config: dict[str, Any] = {"configurable": {"thread_id": resolved_thread_id}}
     initial_state = _initial_state(
-        question,
+        preparation.graph_question,
         caller_is_authenticated=caller_is_authenticated,
+        approved_memory=preparation.approved_notes,
     )
     node_records: list[dict[str, Any]] = []
 
@@ -268,7 +316,7 @@ def run_support_agent(
                 _trace_payload(
                     trace_id=trace_id,
                     thread_id=resolved_thread_id,
-                    question=question,
+                    question=preparation.trace_question,
                     node_records=node_records,
                     final_state=collected_state,
                     execution_error=GRAPH_EXECUTION_FAILED,
@@ -281,11 +329,29 @@ def run_support_agent(
             )
             raise
 
+    answer = str(final_state.get("answer", ""))
+    memory_proposal = preparation.memory_proposal
+    if not final_state.get("error"):
+        if preparation.answer_prefix:
+            prefix = preparation.answer_prefix.rstrip()
+            answer = f"{prefix}\n\n{answer}" if answer else prefix
+        answer = append_unverified_notes(answer, preparation.approved_notes)
+        answer, staged_proposal = finish_turn(
+            store,
+            actor_user_id=actor_user_id,
+            thread_id=resolved_thread_id,
+            source_message=preparation.graph_question,
+            answer=answer,
+            preparation=preparation,
+        )
+        if staged_proposal:
+            memory_proposal = staged_proposal
+    final_state["answer"] = answer
     persist_trace(
         _trace_payload(
             trace_id=trace_id,
             thread_id=resolved_thread_id,
-            question=question,
+            question=preparation.trace_question,
             node_records=node_records,
             final_state=final_state,
             execution_error="",
@@ -298,4 +364,5 @@ def run_support_agent(
         error=str(stored.get("error", "")),
         trace_id=trace_id,
         thread_id=resolved_thread_id,
+        memory_proposal=memory_proposal,
     )

@@ -42,7 +42,19 @@ def generate_from_context(state: AgentState) -> dict[str, str]:
         raise RuntimeError(
             "generate_from_context requires retrieval context and does not search again."
         )
-    answer = rag_pipeline.generate_answer(state["question"], state["context"])
+    notes = [
+        note
+        for note in state.get("approved_memory") or []
+        if isinstance(note, str) and note.strip()
+    ]
+    if notes:
+        answer = rag_pipeline.generate_answer(
+            state["question"],
+            state["context"],
+            operational_memory=notes,
+        )
+    else:
+        answer = rag_pipeline.generate_answer(state["question"], state["context"])
     return {"answer": _with_ticket_clause(state, answer), "error": ""}
 
 
