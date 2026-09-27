@@ -11,6 +11,11 @@ from typing import Any
 
 from data.pipelines import rag as rag_pipeline
 
+from app.agent.guardrails.audit import record
+from app.agent.guardrails.input_scope import BREACH_REFUSAL
+from app.agent.guardrails.output_validation import output_failure, safe_output
+from app.agent.guardrails.tickets import partition_rows
+from app.agent.guardrails.untrusted_content import keep_chunks
 from app.agent.state import AgentState
 
 EMPTY_QUESTION_ERROR = (
@@ -28,7 +33,7 @@ def receive_question(state: AgentState) -> dict[str, str]:
 def retrieve_context(state: AgentState) -> dict[str, Any]:
     """Call ``retrieve()`` and store its payloads. Do not generate."""
     # Default k and min_score stay inside retrieve(), including the 0.45 floor.
-    payloads = rag_pipeline.retrieve(state["question"])
+    payloads = keep_chunks(rag_pipeline.retrieve(state["question"]))
     return {"context": payloads, "error": "", "sources": _append_source(state, "rag")}
 
 
@@ -55,7 +60,11 @@ def generate_from_context(state: AgentState) -> dict[str, str]:
         )
     else:
         answer = rag_pipeline.generate_answer(state["question"], state["context"])
-    return {"answer": _with_ticket_clause(state, answer), "error": ""}
+    failure = output_failure(answer)
+    released = safe_output(answer)
+    if failure:
+        record("output_validation", "block", failure)
+    return {"answer": _with_ticket_clause(state, released), "error": ""}
 
 
 def reject_question(_state: AgentState) -> dict[str, str]:
@@ -113,6 +122,8 @@ def lookup_ticket(state: AgentState) -> dict[str, Any]:
     if outcome.failure == "error":
         if isinstance(outcome.error, McpTicketError) and outcome.error.failure == "missing":
             return _lookup_failure(state, "missing")
+        if isinstance(outcome.error, McpTicketError) and outcome.error.failure == "withheld":
+            return _lookup_withheld(state)
         return _lookup_failure(state, "error")
 
     rows = outcome.rows if isinstance(outcome.rows, list) else []
@@ -149,10 +160,32 @@ def _lookup_failure(state: AgentState, failure: str) -> dict[str, Any]:
     }
 
 
+def _lookup_withheld(state: AgentState) -> dict[str, Any]:
+    """Return a fixed non-confirmation. Do not copy ticket fields."""
+    record("ticket_lookup", "block", "content")
+    return {
+        "answer": BREACH_REFUSAL,
+        "ticket_clause": "",
+        "sources": _append_source(state, "ticket_tool"),
+        "lookup_failure": "withheld",
+        "ticket_id": "",
+        "ticket_status": "",
+        "error": "",
+    }
+
+
 def _lookup_success(state: AgentState, rows: list[Any]) -> dict[str, Any]:
-    clause = "\n".join(_row_clause(row) for row in rows)
-    ticket_ids = ", ".join(str(getattr(row, "id", "")) for row in rows)
-    ticket_statuses = ", ".join(str(getattr(row, "status", "")) for row in rows)
+    allowed, withheld, malformed = partition_rows(rows)
+    if malformed:
+        record("ticket_lookup", "block", "structural")
+        return _lookup_failure(state, "error")
+    if not allowed:
+        return _lookup_withheld(state) if withheld else _lookup_failure(state, "missing")
+    if withheld:
+        record("ticket_lookup", "block", "content")
+    clause = "\n".join(_row_clause(row) for row in allowed)
+    ticket_ids = ", ".join(str(getattr(row, "id", "")) for row in allowed)
+    ticket_statuses = ", ".join(str(getattr(row, "status", "")) for row in allowed)
     return {
         "answer": clause,
         "ticket_clause": clause,

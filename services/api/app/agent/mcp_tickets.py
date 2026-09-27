@@ -145,10 +145,19 @@ def _snapshots_from_payload(payload: dict[str, Any]) -> list[TicketSnapshot]:
     incidents = payload.get("incidents")
     if not isinstance(incidents, list):
         raise McpTicketError("error")
+    from app.agent.guardrails.tickets import row_verdict
+
     snapshots: list[TicketSnapshot] = []
+    withheld = False
     for incident in incidents:
         if not isinstance(incident, dict):
             raise McpTicketError("error")
+        verdict = row_verdict(incident)
+        if verdict == "malformed":
+            raise McpTicketError("error")
+        if verdict == "withhold":
+            withheld = True
+            continue
         snapshots.append(
             TicketSnapshot(
                 id=str(incident.get("id", "")),
@@ -158,4 +167,6 @@ def _snapshots_from_payload(payload: dict[str, Any]) -> list[TicketSnapshot]:
                 branch=str(incident.get("branch", "")),
             )
         )
+    if not snapshots and withheld:
+        raise McpTicketError("withheld")
     return snapshots

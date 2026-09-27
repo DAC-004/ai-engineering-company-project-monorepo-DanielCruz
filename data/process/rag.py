@@ -127,7 +127,7 @@ def chunk_markdown_document(text: str, source_document: str) -> list[dict[str, A
 
 
 def load_source_documents(knowledge_dir: Path | None = None) -> list[tuple[str, str]]:
-    """Read the four authorized HealthCore markdown files in stable order."""
+    """Read the authorized HealthCore markdown files in stable order."""
     directory = knowledge_dir or KNOWLEDGE_BASE_DIR
     documents: list[tuple[str, str]] = []
     missing: list[str] = []

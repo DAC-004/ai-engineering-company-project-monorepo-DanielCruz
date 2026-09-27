@@ -107,9 +107,11 @@ def record_reviewed_traces(fixture_dir: Path, export_path: Path) -> dict[str, di
             ),
             "no_context": _run_case(
                 NO_CONTEXT_QUESTION,
-                retrieve_impl=lambda *_args, **_kwargs: [],
+                retrieve_impl=lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                    AssertionError("retrieve() ran for a casual question")
+                ),
                 generate_impl=lambda *_args, **_kwargs: (_ for _ in ()).throw(
-                    AssertionError("generate_answer() ran without retrieved context")
+                    AssertionError("generate_answer() ran for a casual question")
                 ),
                 checkpoint_path=checkpoint_path,
                 trace_dir=trace_dir,

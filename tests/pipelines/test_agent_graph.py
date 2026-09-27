@@ -122,12 +122,14 @@ def test_no_context_skips_generation(
     )
 
     stored = load_trace(outcome.trace_id, trace_dir)
-    assert calls["retrieve"] == 1
+    assert calls["retrieve"] == 0
     assert calls["generate"] == 0
     assert stored["context"] == []
-    assert "retrieve_context" in stored["node_order"]
-    assert "generate_from_context" not in stored["node_order"]
-    assert outcome.answer == insufficient_information_answer()
+    assert stored["node_order"] == []
+    assert stored["question"] == "casual"
+    assert "Paris" in outcome.answer
+    assert "HealthCore" in outcome.answer
+    assert "What is the capital of France?" not in str(stored)
     assert outcome.error == ""
 
 
@@ -250,13 +252,13 @@ def test_no_context_checkpoints_stop_before_generation(
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("generate ran")),
     )
     database_path, trace_dir = _paths(tmp_path)
+    question = "How long does an internal referral take?"
     outcome = run_support_agent(
-        "What is the capital of France?",
+        question,
         checkpoint_path=database_path,
         trace_dir=trace_dir,
     )
     history = _checkpoint_history(database_path, outcome.thread_id)
-    question = "What is the capital of France?"
 
     assert _has_state(
         history,
@@ -427,7 +429,7 @@ def test_trace_can_be_loaded_by_trace_id(
     )
     database_path, trace_dir = _paths(tmp_path)
     outcome = run_support_agent(
-        "What is the capital of France?",
+        "How long does an internal referral take?",
         checkpoint_path=database_path,
         trace_dir=trace_dir,
     )
@@ -435,7 +437,7 @@ def test_trace_can_be_loaded_by_trace_id(
     stored = load_trace(outcome.trace_id, trace_dir)
     assert stored["trace_id"] == outcome.trace_id
     assert stored["thread_id"] == outcome.thread_id
-    assert stored["question"] == "What is the capital of France?"
+    assert stored["question"] == "How long does an internal referral take?"
     assert isinstance(stored["node_order"], list)
     assert stored["context"] == []
     assert stored["answer"] == insufficient_information_answer()

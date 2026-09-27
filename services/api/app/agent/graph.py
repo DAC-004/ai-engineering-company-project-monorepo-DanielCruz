@@ -20,6 +20,9 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from app.agent.guardrails.assembly import release_assembled
+from app.agent.guardrails.audit import record
+from app.agent.guardrails.input_scope import screen_question
 from app.agent.memory_store import MemoryStore
 from app.agent.memory_turn import (
     IntentClassifier,
@@ -269,6 +272,28 @@ def run_support_agent(
     database_path = checkpoint_path or checkpoint_database_path()
     directory = trace_dir or trace_directory()
     store = MemoryStore(memory_path, clock=clock) if actor_user_id else None
+    decision = screen_question(question)
+    if not decision.allowed:
+        if decision.action in {"block", "redirect"}:
+            record(decision.guardrail, decision.action, decision.failure_type)
+        persist_trace(
+            _trace_payload(
+                trace_id=trace_id,
+                thread_id=resolved_thread_id,
+                question=decision.trace_label,
+                node_records=[],
+                final_state={"answer": decision.response, "error": "", "context": []},
+                execution_error="",
+            ),
+            directory,
+        )
+        return AgentRun(
+            answer=decision.response,
+            error="",
+            trace_id=trace_id,
+            thread_id=resolved_thread_id,
+            memory_proposal=None,
+        )
     preparation = prepare_turn(
         store,
         actor_user_id=actor_user_id,
@@ -277,7 +302,13 @@ def run_support_agent(
         intent_classifier=intent_classifier,
     )
     if preparation.skip_graph:
-        answer = preparation.direct_answer
+        answer, memory_proposal = release_assembled(
+            store,
+            actor_user_id=actor_user_id,
+            thread_id=resolved_thread_id,
+            answer=preparation.direct_answer,
+            memory_proposal=preparation.memory_proposal,
+        )
         persist_trace(
             _trace_payload(
                 trace_id=trace_id,
@@ -294,7 +325,7 @@ def run_support_agent(
             error="",
             trace_id=trace_id,
             thread_id=resolved_thread_id,
-            memory_proposal=preparation.memory_proposal,
+            memory_proposal=memory_proposal,
         )
 
     config: dict[str, Any] = {"configurable": {"thread_id": resolved_thread_id}}
@@ -346,6 +377,13 @@ def run_support_agent(
         )
         if staged_proposal:
             memory_proposal = staged_proposal
+    answer, memory_proposal = release_assembled(
+        store,
+        actor_user_id=actor_user_id,
+        thread_id=resolved_thread_id,
+        answer=answer,
+        memory_proposal=memory_proposal,
+    )
     final_state["answer"] = answer
     persist_trace(
         _trace_payload(

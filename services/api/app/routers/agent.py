@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.agent.graph import run_support_agent
+from app.agent.guardrails.audit import summary as guardrail_summary
 from app.agent.routing import classify_question
 from app.core.deps import CREDENTIALS_EXCEPTION, get_current_user
 from app.schemas.agent import AgentQueryRequest, AgentQueryResponse
@@ -23,6 +24,12 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 
 AGENT_FAILURE_DETAIL = "The knowledge assistant could not generate an answer right now."
 optional_bearer = HTTPBearer(auto_error=False)
+
+
+@router.get("/guardrails/summary")
+def agent_guardrail_summary() -> dict[str, dict[str, int]]:
+    """Return in-process guardrail counts. The body has no question text."""
+    return guardrail_summary()
 
 
 @router.post("/query", response_model=AgentQueryResponse)
