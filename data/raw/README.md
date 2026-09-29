@@ -15,4 +15,8 @@ Supplied HealthCore monthly consolidated revenue file used for sales forecasting
 - Aggregated monthly figures only: no patient identifiers, diagnoses, or clinical records
 - Do not generate, simulate, or edit values in a way that would break the documented growth or seasonality pattern
 
+## `rfp_intake/`
+
+Clean RFP PDFs are written here only after the intake PHI screen finds no labeled patient fields. The filename is `{ticket_id}.pdf`. A PDF that fails that screen is not written. These files are gitignored.
+
 > _Spanish version: [README.es.md](./README.es.md)._

@@ -14,6 +14,10 @@ cp .env.example .env   # then set SECRET_KEY and DATABASE_URL
 
 `DATABASE_URL` must be the Supabase **transaction pooler** URI (Connect → Direct → Transaction pooler → URI). Do not commit `.env`.
 
+This API uses Python 3.13. `markitdown[pdf]` depends on `onnxruntime`, which does not publish a Python 3.14 wheel. `services/api/.python-version` pins 3.13 so `uv` does not recreate the environment on the system default.
+
+RFP intake also needs the local file `qwen2.5-3b-instruct-q4_k_m.gguf` at `data/process/models/` (or in the directory named by `RAG_MODELS_DIR`). Part 1 does not download that file and does not call a remote chat API. Without the file, an upload stays `analyzing` with `processing_failed` and code `model_asset_missing`.
+
 Do not use `pip install` or Poetry for dependency changes.
 
 ## Run
@@ -93,6 +97,17 @@ HealthCore inventory routes require authentication. Catalog rows are `MedicalSup
 | `POST` | `/inventory/orders/inbound` | Protected |
 | `POST` | `/inventory/orders/outbound` | Protected |
 | `GET` | `/inventory/orders` | Protected |
+
+## RFP intake routes (`/rfp`)
+
+Part 1 intake runs in this same API process. The agents live under `data/pipelines/rfp_intake/`. Tickets, metadata, department key aspects, and the Part 2 handoff are SQLModel tables on `DATABASE_URL`.
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `POST` | `/rfp/tickets` | Protected. PDF only. Returns 202 with `ticket_id` and status `analyzing`. |
+| `GET` | `/rfp/tickets/{ticket_id}` | Protected. Poll until `intake_complete`, `discarded`, or `processing_failed`. |
+
+A caught pipeline failure stays `analyzing` with `processing_failed` and a code. It does not become a successful intake. A process that dies is reported as `stalled` on the GET response when `updated_at` is older than 15 minutes and the ticket is not running in this process. The stored status is not rewritten to success.
 
 `current_stock` is computed as `SUM(SupplyDelivery.quantity) - SUM(SupplyConsumption.quantity)` for each `MedicalSupply`. A consumption that would make that stock negative returns HTTP 400 with `Insufficient stock for supply '{name}'. Available: {available}, requested: {quantity}.` and is not persisted.
 

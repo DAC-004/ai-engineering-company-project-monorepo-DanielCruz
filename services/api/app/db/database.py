@@ -106,6 +106,7 @@ def init_databases() -> None:
     get_tinydb()
     # Register table models on SQLModel.metadata before create_all.
     from app import models as _inventory_models  # noqa: F401
+    from app import rfp_models as _rfp_models  # noqa: F401
 
     SQLModel.metadata.create_all(get_engine())
     _ensure_inventory_capture_columns(get_engine())
