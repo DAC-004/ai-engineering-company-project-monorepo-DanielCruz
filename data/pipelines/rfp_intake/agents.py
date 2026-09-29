@@ -38,6 +38,7 @@ ORCHESTRATOR_ROLE = (
     "When the document states more than one deadline qualifier, keep every qualifier. "
     "Do not add a year the document does not state. "
     "A clinic staffing schedule belongs in the clinical extract. "
+    "A stated contract duration and renewal option belongs in the revenue extract. "
     "Use null for a missing budget, headcount, or deadline. "
     "unknown_departments lists names outside revenue, clinical, and compliance. "
     "Return JSON with keys client_name, client_country, program_type, covered_population, deadline, "
@@ -52,6 +53,7 @@ WORKER_ROLES = {
         "You see shared metadata and the revenue extract only. "
         "Return JSON with keys aspects and open_questions, both arrays of strings. "
         "If budget or payment terms are absent, add an open question. Do not invent amounts. "
+        "If the extract states a contract duration or an option to renew, include that term as a key aspect. "
     "Do not say Revenue Cycle is staffed, scheduled, or sized from a clinic or program fact "
     "unless the revenue extract itself states that. "
     "Do not ask whether Revenue Cycle has a staffing requirement because a clinic is staffed. "
@@ -79,7 +81,9 @@ WORKER_ROLES = {
 SYNTHESIZER_ROLE = (
     "You are the HealthCore synthesizer agent. "
     "You see worker results and the fixed contacts only. You do not read the original document. "
-    "Write a Revenue Cycle summary of what to ask whom. "
+    "Write one Sales summary that names every department contact and states what to ask that contact. "
+    "When budget or payment terms are missing, say the source request did not state them. "
+    "Do not say a department contact failed to provide a figure the source request omitted. "
     "If two workers state conflicting figures or facts, keep both and mark that disagreement unresolved. "
     "A missing budget, headcount, deadline, or payment term is an open question, not a disagreement. "
     "Do not say Revenue Cycle is staffed on a schedule unless the revenue section states that schedule. "
@@ -98,10 +102,17 @@ def _complete(messages: list[dict[str, str]], complete_fn: ChatComplete | None) 
 
 
 def _parse_object(raw: str) -> dict[str, Any]:
-    """Parse a JSON object. The failure carries a code, not the model text."""
+    """Parse the first JSON object. Trailing model prose is ignored.
+
+    The local model sometimes closes the object and then adds a sentence.
+    The agents still supply the object. The extra sentence is not a second result.
+    """
     cleaned = _FENCE.sub("", raw.strip())
+    start = cleaned.find("{")
+    if start < 0:
+        raise PipelineFailure("model_output_invalid")
     try:
-        parsed = json.loads(cleaned)
+        parsed, _end = json.JSONDecoder().raw_decode(cleaned[start:])
     except json.JSONDecodeError as exc:
         raise PipelineFailure("model_output_invalid") from exc
     if not isinstance(parsed, dict):
@@ -317,10 +328,17 @@ def synthesize_findings(
         complete_fn,
     )
     parsed = _parse_object(raw)
-    summary = _optional_text(parsed.get("summary")) or ""
+    summary_value = parsed.get("summary")
+    disagreement_value = parsed.get("unresolved_disagreements", [])
+    # A parsed object can still have the wrong shape. Coercing it would hide a bad completion.
+    if not isinstance(summary_value, str) or not isinstance(disagreement_value, list):
+        raise PipelineFailure("model_output_invalid")
+    if any(not isinstance(item, str) for item in disagreement_value):
+        raise PipelineFailure("model_output_invalid")
+    summary = summary_value.strip()
     summary = _scrub_summary(summary, sections)
     disagreements = [
-        item for item in _string_list(parsed.get("unresolved_disagreements")) if _is_actual_contradiction(item)
+        item for item in _string_list(disagreement_value) if _is_actual_contradiction(item)
     ]
     rule = country_rule(metadata.get("client_country"))
     if rule not in summary:

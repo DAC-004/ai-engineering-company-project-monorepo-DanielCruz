@@ -2,9 +2,13 @@
 
 The workers and synthesizer can drop a stated clinic schedule, assign that
 schedule to revenue, keep only one deadline qualifier, or call a deadline
-reasonable. This module repairs those cases from the screened document.
-It does not invent a year, a budget, or a department fact the document
-does not state. Equivalent paraphrases are left as the model wrote them.
+reasonable. They can also drop a stated contract term, summarize only one
+department, or blame a contact for a budget the source never stated. This
+module repairs those cases from the screened document and the worker
+sections. It does not invent a year, a budget, or a department fact the
+document does not state. Equivalent paraphrases are left as the model wrote
+them. The synthesizer text is kept; missing contacts are added from the
+sections rather than replaced with a fixed sample paragraph.
 """
 
 from __future__ import annotations
@@ -40,6 +44,15 @@ _REASONABLE_CLAUSE = re.compile(
     re.IGNORECASE,
 )
 _WORD_FIGURE = {"two": "2", "three": "3", "four": "4", "five": "5"}
+_CONTRACT_TERM = re.compile(
+    r"\b(?:contract term:\s*)?\d+\s+months?,?\s+with (?:an )?option to renew\b",
+    re.IGNORECASE,
+)
+_CONTACT_WITHHELD_BUDGET = re.compile(
+    r"\b(?:has not|have not|did not|hasn't|didn't|failed to|does not|do not|doesn't|don't)\s+"
+    r"(?:provid\w*|includ\w*|stat\w*|suppl\w*|giv\w*)\b",
+    re.IGNORECASE,
+)
 
 
 def _collapsed(text: str) -> str:
@@ -250,6 +263,188 @@ def _align_deadline_statement(text: str, source: str) -> str:
     return " ".join(aligned)
 
 
+def contract_term_clause(source: str) -> str | None:
+    """Return a stated duration plus renewal option, or None when the source has neither."""
+    match = _CONTRACT_TERM.search(_collapsed(source))
+    if match is None:
+        return None
+    clause = match.group(0).strip(" -")
+    if not clause.lower().startswith("contract term"):
+        clause = f"Contract term: {clause}"
+    if clause[-1] not in ".!?":
+        clause = f"{clause}."
+    return clause[0].upper() + clause[1:]
+
+
+def _states_contract_term(text: str, clause: str) -> bool:
+    """An equivalent paraphrase keeps the duration figure and the renewal option."""
+    figure = re.search(r"\d+", clause)
+    if figure is None or figure.group(0) not in text:
+        return False
+    return re.search(r"\brenew", text, re.IGNORECASE) is not None
+
+
+def _ensure_contract_term(source: str, sections: list[dict[str, Any]]) -> None:
+    """Keep a stated contract term on Revenue Cycle when every worker dropped it.
+
+    Duration and renewal are commercial terms. Clinical and compliance do not
+    receive a copy. A section that already states the same figure and renewal
+    is left unchanged.
+    """
+    clause = contract_term_clause(source)
+    if clause is None:
+        return
+    for section in sections:
+        if section.get("department_id") != "revenue":
+            continue
+        aspects = [str(aspect) for aspect in section.get("aspects") or []]
+        if any(_states_contract_term(aspect, clause) for aspect in aspects):
+            return
+        section["aspects"] = [*aspects, clause]
+        return
+
+
+def _budget_was_not_stated(metadata: dict[str, Any]) -> bool:
+    budget = metadata.get("budget_range")
+    return not (isinstance(budget, str) and budget.strip())
+
+
+def _sentence_blames_revenue_for_missing_budget(sentence: str, contacts: list[str]) -> bool:
+    """True when the sentence says the revenue contact withheld a budget the source omitted."""
+    if _CONTACT_WITHHELD_BUDGET.search(sentence) is None:
+        return False
+    if re.search(r"\b(?:budget|payment)\b", sentence, re.IGNORECASE) is None:
+        return False
+    lowered = sentence.lower()
+    if "revenue cycle contact" in lowered or re.search(r"\brevenue contact\b", lowered):
+        return True
+    return any(contact.lower() in lowered for contact in contacts)
+
+
+def _reattribute_missing_budget(
+    summary: str,
+    metadata: dict[str, Any],
+    sections: list[dict[str, Any]],
+) -> str:
+    """A missing budget belongs to the source request, not to the department contact."""
+    if not _budget_was_not_stated(metadata):
+        return summary
+    contacts = [
+        str(section.get("contact_name")).strip()
+        for section in sections
+        if section.get("department_id") == "revenue" and str(section.get("contact_name") or "").strip()
+    ]
+    if not contacts:
+        return summary
+    sentences = re.split(r"(?<=[.!?])\s+|\n+", summary.strip())
+    kept: list[str] = []
+    replaced = False
+    for sentence in sentences:
+        stripped = sentence.strip()
+        if not stripped:
+            continue
+        blames_contact = _sentence_blames_revenue_for_missing_budget(stripped, contacts)
+        if blames_contact:
+            if not replaced:
+                kept.append("The source request did not state a budget or payment terms.")
+                replaced = True
+            continue
+        kept.append(stripped)
+    return " ".join(kept)
+
+
+def _coverage_sentence(section: dict[str, Any]) -> str | None:
+    """One ask built from the worker section. No sample paragraph is substituted."""
+    contact = str(section.get("contact_name") or "").strip()
+    if not contact:
+        return None
+    department = str(section.get("department_name") or section.get("department_id") or "").strip()
+    aspects = [str(aspect).strip().rstrip(".") for aspect in section.get("aspects") or [] if str(aspect).strip()]
+    questions = [
+        str(question).strip().rstrip(".")
+        for question in section.get("open_questions") or []
+        if str(question).strip()
+    ]
+    # Prefer the contract term when this section carries it, then other stated aspects.
+    contract_aspects = [aspect for aspect in aspects if re.search(r"\bcontract term\b", aspect, re.IGNORECASE)]
+    points = (contract_aspects or aspects)[:2] or questions[:1]
+    detail = "; ".join(points) if points else "the points recorded for this department"
+    label = f"{contact} ({department})" if department else contact
+    return f"Ask {label} about {detail}."
+
+
+_POINT_WORD = re.compile(r"[a-z0-9]{5,}")
+_POINT_STOP_WORDS = frozenset(
+    {"about", "which", "there", "their", "would", "should", "other", "these", "those", "being"}
+)
+
+
+def _section_point_words(section: dict[str, Any]) -> set[str]:
+    """Words that identify a department finding. Contact labels are not findings."""
+    texts = [
+        str(item)
+        for item in [*(section.get("aspects") or []), *(section.get("open_questions") or [])]
+        if str(item).strip()
+    ]
+    words: set[str] = set()
+    for text in texts:
+        words.update(
+            word for word in _POINT_WORD.findall(text.lower()) if word not in _POINT_STOP_WORDS
+        )
+    return words
+
+
+def _sentence_links_contact_to_finding(sentence: str, contact: str, point_words: set[str]) -> bool:
+    """A contact name in its own sentence is not a department synthesis."""
+    if not point_words or contact.lower() not in sentence.lower():
+        return False
+    sentence_words = set(_POINT_WORD.findall(sentence.lower()))
+    return any(word in sentence_words for word in point_words)
+
+
+def _summary_sentences(summary: str) -> list[str]:
+    """Split sentences without treating an abbreviated title such as Dr. as the end."""
+    protected = re.sub(
+        r"\b(Dr|Mr|Mrs|Ms)\.",
+        lambda match: match.group(0).replace(".", "\u0000"),
+        summary.strip(),
+    )
+    parts = re.split(r"(?<=[.!?])\s+|\n+", protected)
+    return [part.replace("\u0000", ".").strip() for part in parts if part.strip()]
+
+
+def _summary_synthesizes_section(summary: str, section: dict[str, Any]) -> bool:
+    contact = str(section.get("contact_name") or "").strip()
+    if not contact:
+        return True
+    point_words = _section_point_words(section)
+    if not point_words:
+        return contact.lower() in summary.lower()
+    return any(
+        _sentence_links_contact_to_finding(sentence, contact, point_words)
+        for sentence in _summary_sentences(summary)
+    )
+
+
+def _ensure_department_coverage(summary: str, sections: list[dict[str, Any]]) -> str:
+    """Add what to ask each contact when the summary never ties that person to a finding."""
+    additions: list[str] = []
+    current = summary
+    for section in sections:
+        if _summary_synthesizes_section(current, section):
+            continue
+        sentence = _coverage_sentence(section)
+        if sentence is None:
+            continue
+        additions.append(sentence)
+        current = f"{current} {sentence}"
+    if not additions:
+        return summary
+    base = summary.strip()
+    extra = " ".join(additions)
+    return f"{base}\n{extra}".strip() if base else extra
+
+
 def _ensure_missing_budget_question(metadata: dict[str, Any], sections: list[dict[str, Any]]) -> None:
     """A missing budget stays an open question even when the revenue worker omits it."""
     budget = metadata.get("budget_range")
@@ -320,7 +515,10 @@ def apply_source_grounding(
                 section["aspects"] = [*section["aspects"], schedule]
 
     _ensure_missing_budget_question(grounded_metadata, grounded_sections)
+    _ensure_contract_term(source, grounded_sections)
 
     grounded_summary = _without_revenue_staffing(summary, source)
     grounded_summary = _align_deadline_statement(grounded_summary, source)
+    grounded_summary = _reattribute_missing_budget(grounded_summary, grounded_metadata, grounded_sections)
+    grounded_summary = _ensure_department_coverage(grounded_summary, grounded_sections)
     return grounded_metadata, grounded_sections, grounded_summary
