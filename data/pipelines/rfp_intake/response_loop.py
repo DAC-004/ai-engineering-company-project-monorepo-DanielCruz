@@ -10,7 +10,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
 
-from data.pipelines.rfp_intake.departments import DEPARTMENT_IDS
+from data.pipelines.rfp_intake.departments import DEPARTMENT_IDS, DEPARTMENTS
 from data.pipelines.rfp_intake.evaluators import evaluate_in_parallel
 from data.pipelines.rfp_intake.generation import ChatComplete
 from data.pipelines.rfp_intake.generators import (
@@ -55,6 +55,8 @@ def run_department(
     complete_fn: ChatComplete,
     *,
     on_progress: ProgressCallback | None = None,
+    on_node: ProgressCallback | None = None,
+    feedback: str | None = None,
 ) -> dict[str, Any]:
     """Revise one section at most three times. The last safe draft is kept."""
     generator = _GENERATORS[department_id]
@@ -62,13 +64,23 @@ def run_department(
     aspects = _aspects(section)
     client_name = metadata.get("client_name")
     allowed_names = (client_name,) if isinstance(client_name, str) and client_name.strip() else ()
-    feedback: str | None = None
+    revision_feedback = feedback
     last_draft = ""
+    agent = DEPARTMENTS[department_id]["contact_name"]
     last_evaluation: dict[str, Any] = {}
     for attempt in range(1, MAX_ATTEMPTS + 1):
         if on_progress is not None:
             on_progress({"department_id": department_id, "phase": "drafting", "attempt": attempt})
-        raw_draft = generator(metadata, key_aspects, complete_fn, feedback=feedback)
+        raw_draft = generator(metadata, key_aspects, complete_fn, feedback=revision_feedback)
+        if on_node is not None:
+            on_node(
+                {
+                    "node": "generate",
+                    "agent": agent,
+                    "input": {"department_id": department_id, "attempt": attempt},
+                    "output": {"draft_content": raw_draft},
+                }
+            )
         screened = screen_generated(raw_draft, allowed_names=allowed_names)
         if on_progress is not None:
             on_progress({"department_id": department_id, "phase": "under_evaluation", "attempt": attempt})
@@ -90,6 +102,15 @@ def run_department(
                 if isinstance(rule_ids, list) and "HC-NO-PHI" not in rule_ids:
                     rule_ids.append("HC-NO-PHI")
             evaluation["overall_pass"] = False
+        if on_node is not None:
+            on_node(
+                {
+                    "node": "evaluate",
+                    "agent": agent,
+                    "input": {"department_id": department_id, "attempt": attempt},
+                    "output": evaluation,
+                }
+            )
         last_draft = screened.text
         last_evaluation = evaluation
         if evaluation.get("overall_pass") and not screened.detected:
@@ -101,7 +122,7 @@ def run_department(
                 "attempt_count": attempt,
             }
         feedback_text = evaluation.get("feedback_for_generator")
-        feedback = feedback_text if isinstance(feedback_text, str) else None
+        revision_feedback = feedback_text if isinstance(feedback_text, str) else None
     return {
         "department_id": department_id,
         "draft_content": last_draft,
@@ -147,6 +168,7 @@ def run_response_generation(
     *,
     on_progress: ProgressCallback | None = None,
     on_department_done: Callable[[dict[str, Any]], None] | None = None,
+    on_node: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Run the three department loops together, then build the Part 3 handoff."""
     metadata = handoff.get("metadata") if isinstance(handoff.get("metadata"), dict) else {}
@@ -163,6 +185,7 @@ def run_response_generation(
             sections[department_id],
             complete_fn,
             on_progress=on_progress,
+            on_node=on_node,
         )
         if on_department_done is not None:
             on_department_done(outcome)

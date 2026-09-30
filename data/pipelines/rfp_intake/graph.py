@@ -17,6 +17,7 @@ from data.pipelines.rfp_intake.agents import (
 from data.pipelines.rfp_intake.grounding import apply_source_grounding
 from data.pipelines.rfp_intake.departments import DEPARTMENT_IDS
 from data.pipelines.rfp_intake.generation import ChatComplete
+from data.pipelines.rfp_intake.node_trace import screened_record
 
 _complete_fn: contextvars.ContextVar[ChatComplete | None] = contextvars.ContextVar(
     "rfp_complete_fn",
@@ -34,10 +35,19 @@ class IntakeState(TypedDict):
     summary: str
     unresolved_disagreements: list[str]
     output_phi: bool
+    node_trace: Annotated[list[dict[str, Any]], operator.add]
+
+
+def _trace(node: str, agent: str, node_input: object, node_output: object) -> dict[str, Any]:
+    return screened_record(node, agent, node_input, node_output, sequence=0)
 
 
 def _classify(state: IntakeState) -> dict[str, Any]:
-    return {"classification": classify_rfp(state["screened_markdown"], _complete_fn.get())}
+    classification = classify_rfp(state["screened_markdown"], _complete_fn.get())
+    return {
+        "classification": classification,
+        "node_trace": [_trace("classify", "classifier", {"source": "screened_markdown"}, classification)],
+    }
 
 
 def _route_after_classify(state: IntakeState) -> str:
@@ -57,10 +67,14 @@ def _orchestrate(state: IntakeState) -> dict[str, Any]:
         "budget_range": decomposed["budget_range"],
         "departments_needed": list(DEPARTMENT_IDS),
     }
-    return {
+    update = {
         "metadata": metadata,
         "extracts": decomposed["extracts"],
         "unknown_departments": decomposed["unknown_departments"],
+    }
+    return {
+        **update,
+        "node_trace": [_trace("orchestrate", "orchestrator", {"source": "screened_markdown"}, metadata)],
     }
 
 
@@ -75,7 +89,17 @@ def _worker(department_id: str):
         if department_id == "revenue" and state["unknown_departments"]:
             note = "Unrecognized department name: " + ", ".join(state["unknown_departments"])
             section["open_questions"] = [*section["open_questions"], note]
-        return {"worker_results": [section]}
+        return {
+            "worker_results": [section],
+            "node_trace": [
+                _trace(
+                    f"{department_id}_worker",
+                    section.get("contact_name") or department_id,
+                    {"department_id": department_id},
+                    section,
+                )
+            ],
+        }
 
     return run
 
@@ -83,15 +107,20 @@ def _worker(department_id: str):
 def _synthesize(state: IntakeState) -> dict[str, Any]:
     # defer=True waits until revenue, clinical, and compliance have all written.
     result = synthesize_findings(state["metadata"], state["worker_results"], _complete_fn.get())
-    return {
+    update = {
         "summary": result["summary"],
         "unresolved_disagreements": result["unresolved_disagreements"],
         "output_phi": result["phi_detected"],
     }
+    return {
+        **update,
+        "node_trace": [_trace("synthesize", "synthesizer", {"departments": list(DEPARTMENT_IDS)}, update)],
+    }
 
 
-def _stop(_state: IntakeState) -> dict[str, Any]:
-    return {}
+def _stop(state: IntakeState) -> dict[str, Any]:
+    reason = state.get("classification", {}).get("reason_code")
+    return {"node_trace": [_trace("stop", "classifier", {"reason_code": reason}, {"stopped": True})]}
 
 
 def build_intake_graph():
@@ -139,8 +168,11 @@ def run_intake_graph(screened_markdown: str, complete_fn: ChatComplete | None = 
                 "summary": "",
                 "unresolved_disagreements": [],
                 "output_phi": False,
+                "node_trace": [],
             }
         )
+        for index, record in enumerate(state.get("node_trace") or [], start=1):
+            record["sequence"] = index
     finally:
         _complete_fn.reset(token)
     # The synthesizer has already written. Repair placement and deadline wording

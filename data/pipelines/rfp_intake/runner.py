@@ -37,6 +37,7 @@ class IntakeRun:
     summary: str | None = None
     handoff: dict[str, Any] | None = None
     reason_code: str | None = None
+    node_trace: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _failed(
@@ -116,6 +117,7 @@ def process_pdf(
             raw_pdf_path=raw_pdf_path,
             readability=metrics,
             reason_code=classification["reason_code"],
+            node_trace=list(state.get("node_trace") or []),
         )
 
     payload = {
@@ -165,4 +167,5 @@ def process_pdf(
         summary=summary,
         handoff=screened_handoff if isinstance(screened_handoff, dict) else None,
         reason_code=classification["reason_code"],
+        node_trace=list(state.get("node_trace") or []),
     )

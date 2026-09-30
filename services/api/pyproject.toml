@@ -7,6 +7,7 @@ dependencies = [
     "email-validator>=2.3.0",
     "fastapi>=0.141.1",
     "langgraph>=1.2.12",
+    "langgraph-checkpoint-sqlite>=3.1.1",
     "libpass[bcrypt]>=1.9.3",
     "llama-cpp-python>=0.3.35",
     "markitdown[pdf]>=0.1.8",

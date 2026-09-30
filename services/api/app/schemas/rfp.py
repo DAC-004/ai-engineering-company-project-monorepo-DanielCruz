@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -21,6 +21,13 @@ class DepartmentSectionPublic(BaseModel):
     draft_content: str | None = None
     evaluation_results: dict[str, Any] | None = None
     needs_human_review: bool = False
+    approval_status: str | None = None
+    approver: str | None = None
+    approved_at: datetime | None = None
+    approved_content_sha256: str | None = None
+    submitted_by_user_id: str | None = None
+    approval_revision_count: int = 0
+    iteration_limit_reached: bool = False
 
 
 class RfpMetadataPublic(BaseModel):
@@ -51,3 +58,18 @@ class RfpTicketPublic(BaseModel):
     synthesizer_summary: str | None
     part2_handoff: dict[str, Any] | None
     part3_handoff: dict[str, Any] | None = None
+    node_trace: list[dict[str, Any]] | None = None
+    arbitration_state: dict[str, Any] | None = None
+
+
+class DepartmentDecision(BaseModel):
+    decision: Literal["approve", "reject", "request_changes"] | None = None
+    note: str | None = None
+    resolution: Literal["reduce_covered_population", "add_sites"] | None = None
+
+
+class FinalDocumentPublic(BaseModel):
+    ticket_id: str
+    sections: list[dict[str, Any]]
+    currency: str | None
+    generated_at: datetime
