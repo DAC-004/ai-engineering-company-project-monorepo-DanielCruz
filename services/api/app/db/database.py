@@ -7,6 +7,7 @@ session. TinyDB keeps its own client in app.db.tinydb (auth only).
 from __future__ import annotations
 
 from collections.abc import Generator
+from urllib.parse import quote, urlsplit
 
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -17,10 +18,39 @@ _engine = None
 
 
 def _normalize_database_url(url: str) -> str:
-    """Accept postgres:// URIs and map them to the SQLAlchemy postgresql scheme."""
+    """Accept postgres:// URIs and keep password characters from splitting the host.
+
+    A raw ``#`` in a Supabase password is a URI fragment, so the host never
+    resolves. Quote the password only when it still contains those reserved
+    characters. An already encoded password is left unchanged.
+    """
+    url = url.strip()
+    # A pasted dashboard URI can leave the example scheme in front of the real URI.
+    lowered = url.lower()
+    for prefix in ("postgresql:", "postgres:"):
+        remainder = lowered[len(prefix) :]
+        if lowered.startswith(prefix) and remainder.startswith(("postgresql://", "postgres://")):
+            url = url[len(prefix) :]
+            lowered = url.lower()
+            break
     if url.startswith("postgres://"):
-        return "postgresql://" + url[len("postgres://") :]
-    return url
+        url = "postgresql://" + url[len("postgres://") :]
+    if "://" not in url or "@" not in url:
+        return url
+    scheme, rest = url.split("://", 1)
+    userinfo, hostpart = rest.rsplit("@", 1)
+    if ":" not in userinfo:
+        return f"{scheme}://{userinfo}@{hostpart}"
+    user, password = userinfo.split(":", 1)
+    if any(character in password for character in "#@:/? "):
+        password = quote(password, safe="")
+    # The transaction-pooler port does not accept connections on the direct
+    # Supabase host. That host serves the database on 5432.
+    parsed = urlsplit(f"{scheme}://{user}:{password}@{hostpart}")
+    hostname = parsed.hostname or ""
+    if hostname.startswith("db.") and hostname.endswith(".supabase.co") and parsed.port == 6543:
+        hostpart = hostpart.replace(":6543", ":5432", 1)
+    return f"{scheme}://{user}:{password}@{hostpart}"
 
 
 def get_engine():
@@ -95,6 +125,43 @@ def _ensure_inventory_capture_columns(engine) -> None:
             )
 
 
+def _ensure_rfp_response_columns(engine) -> None:
+    """Add Part 2 columns when the RFP tables already exist.
+
+    create_all does not alter a database created by Part 1. New databases
+    receive the columns from the models. This only fills a missing column.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    statements: list[str] = []
+    boolean_default = "FALSE" if engine.dialect.name == "postgresql" else "0"
+
+    if "rfp_ticket" in table_names:
+        ticket_columns = {column["name"] for column in inspector.get_columns("rfp_ticket")}
+        if "part3_handoff" not in ticket_columns:
+            statements.append("ALTER TABLE rfp_ticket ADD COLUMN part3_handoff JSON")
+
+    if "rfp_department_section" in table_names:
+        section_columns = {column["name"] for column in inspector.get_columns("rfp_department_section")}
+        if "draft_content" not in section_columns:
+            statements.append("ALTER TABLE rfp_department_section ADD COLUMN draft_content TEXT")
+        if "evaluation_results" not in section_columns:
+            statements.append("ALTER TABLE rfp_department_section ADD COLUMN evaluation_results JSON")
+        if "needs_human_review" not in section_columns:
+            statements.append(
+                "ALTER TABLE rfp_department_section "
+                f"ADD COLUMN needs_human_review BOOLEAN NOT NULL DEFAULT {boolean_default}"
+            )
+
+    if not statements:
+        return
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
 def init_databases() -> None:
     """
     Open both stores and create inventory tables.
@@ -110,3 +177,4 @@ def init_databases() -> None:
 
     SQLModel.metadata.create_all(get_engine())
     _ensure_inventory_capture_columns(get_engine())
+    _ensure_rfp_response_columns(get_engine())

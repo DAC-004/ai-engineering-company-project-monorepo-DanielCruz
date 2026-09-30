@@ -454,3 +454,230 @@ def test_pipeline_exception_stays_analyzing_without_logging_the_message(caplog) 
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert PATIENT_NAME not in log_text
     assert "boom" not in log_text
+
+
+def _ready_handoff(ticket_id: str) -> dict:
+    return {
+        "ticket_id": ticket_id,
+        "metadata": {"client_name": "Meridian Manufacturing", "client_country": "US"},
+        "sections": [
+            {
+                "department_id": "revenue",
+                "key_aspects": {"aspects": ["Contract term is twelve months."], "open_questions": []},
+            },
+            {
+                "department_id": "clinical",
+                "key_aspects": {"aspects": ["Austin clinic capacity."], "open_questions": []},
+            },
+            {
+                "department_id": "compliance",
+                "key_aspects": {"aspects": ["Business Associate Agreement clause."], "open_questions": []},
+            },
+        ],
+    }
+
+
+def test_response_entry_drafts_from_the_handoff_without_parsing_the_pdf(monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests.pipelines.test_rfp_evaluator import PASSING_DRAFT
+
+    def refuse_pdf(*_args, **_kwargs):
+        raise AssertionError("Part 2 must not parse the PDF")
+
+    def complete(messages: list[dict[str, str]]) -> str:
+        payload = json.loads(messages[-1]["content"])
+        department_id = payload["department_id"]
+        if department_id == "clinical":
+            return PASSING_DRAFT + " Austin clinic capacity covers the stated workforce."
+        if department_id == "compliance":
+            return PASSING_DRAFT + " The compliance section includes a Business Associate Agreement clause."
+        return PASSING_DRAFT
+
+    monkeypatch.setattr("app.services.rfp_service.process_pdf", refuse_pdf)
+    monkeypatch.setattr("data.pipelines.rfp_intake.convert.pdf_bytes_to_markdown", refuse_pdf)
+    rfp_service.complete_override_fn = complete
+    try:
+        with TestClient(app) as client:
+            headers = _auth_header(client)
+            with Session(get_engine()) as session:
+                ticket = RfpTicket(
+                    ticket_id="ready-ticket-1",
+                    status="intake_complete",
+                    raw_pdf_path="data/raw/rfp_intake/ready-ticket-1.pdf",
+                    part2_handoff=_ready_handoff("ready-ticket-1"),
+                )
+                session.add(ticket)
+                session.commit()
+            started = client.post("/rfp/tickets/ready-ticket-1/response", headers=headers)
+            loaded = client.get("/rfp/tickets/ready-ticket-1", headers=headers)
+    finally:
+        rfp_service.complete_override_fn = None
+
+    body = loaded.json()
+    assert started.status_code == 202
+    assert started.json()["status"] == "drafting"
+    assert body["status"] == "under_evaluation"
+    assert body["part2_handoff"]["ticket_id"] == "ready-ticket-1"
+    assert body["raw_pdf_path"] == "data/raw/rfp_intake/ready-ticket-1.pdf"
+    assert body["part3_handoff"]["response_complete"] is True
+    assert {section["department_id"] for section in body["sections"]} == {"revenue", "clinical", "compliance"}
+    assert all(section["draft_content"] for section in body["sections"])
+    assert all(section["evaluation_results"]["overall_pass"] is True for section in body["sections"])
+    assert all(section["needs_human_review"] is False for section in body["sections"])
+
+
+def test_exhausted_revenue_section_sets_ticket_needs_human_review(monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests.pipelines.test_rfp_evaluator import PASSING_DRAFT
+
+    def refuse_pdf(*_args, **_kwargs):
+        raise AssertionError("Part 2 must not parse the PDF")
+
+    def complete(messages: list[dict[str, str]]) -> str:
+        payload = json.loads(messages[-1]["content"])
+        department_id = payload["department_id"]
+        if department_id == "revenue":
+            return "This quote uses GBP."
+        if department_id == "clinical":
+            return PASSING_DRAFT + " Austin clinic capacity covers the stated workforce."
+        return PASSING_DRAFT + " The compliance section includes a Business Associate Agreement clause."
+
+    monkeypatch.setattr("app.services.rfp_service.process_pdf", refuse_pdf)
+    monkeypatch.setattr("data.pipelines.rfp_intake.convert.pdf_bytes_to_markdown", refuse_pdf)
+    rfp_service.complete_override_fn = complete
+    try:
+        with TestClient(app) as client:
+            headers = _auth_header(client)
+            with Session(get_engine()) as session:
+                session.add(
+                    RfpTicket(
+                        ticket_id="exhausted-ticket-1",
+                        status="intake_complete",
+                        part2_handoff=_ready_handoff("exhausted-ticket-1"),
+                    )
+                )
+                session.commit()
+            started = client.post("/rfp/tickets/exhausted-ticket-1/response", headers=headers)
+            loaded = client.get("/rfp/tickets/exhausted-ticket-1", headers=headers)
+    finally:
+        rfp_service.complete_override_fn = None
+
+    body = loaded.json()
+    sections = {section["department_id"]: section for section in body["sections"]}
+    revenue = sections["revenue"]
+
+    assert started.status_code == 202
+    assert started.json()["status"] == "drafting"
+    assert body["status"] == "needs_human_review"
+    assert body["status"] not in {"waiting_for_approval", "done"}
+    assert body["part3_handoff"]["response_complete"] is True
+    assert [section["department_id"] for section in body["part3_handoff"]["sections"]] == [
+        "revenue",
+        "clinical",
+        "compliance",
+    ]
+    assert revenue["needs_human_review"] is True
+    assert revenue["draft_content"] == "This quote uses GBP."
+    assert revenue["evaluation_results"]["overall_pass"] is False
+    assert "HC-CURRENCY" in revenue["evaluation_results"]["compliance"]["rule_ids"]
+    assert revenue["evaluation_results"]["feedback_for_generator"]
+    assert sections["clinical"]["needs_human_review"] is False
+    assert sections["clinical"]["evaluation_results"]["overall_pass"] is True
+    assert sections["compliance"]["needs_human_review"] is False
+    assert sections["compliance"]["evaluation_results"]["overall_pass"] is True
+    with TestClient(app) as client:
+        headers = _auth_header(client)
+        with Session(get_engine()) as session:
+            session.add(RfpTicket(ticket_id="discarded-ticket", status="discarded"))
+            session.add(
+                RfpTicket(
+                    ticket_id="analyzing-ticket",
+                    status="analyzing",
+                    part2_handoff=_ready_handoff("analyzing-ticket"),
+                )
+            )
+            session.commit()
+        discarded = client.post("/rfp/tickets/discarded-ticket/response", headers=headers)
+        analyzing = client.post("/rfp/tickets/analyzing-ticket/response", headers=headers)
+        missing = client.post("/rfp/tickets/missing-ticket/response", headers=headers)
+
+    assert discarded.status_code == 409
+    assert discarded.json()["detail"] == "not_intake_complete"
+    assert analyzing.status_code == 409
+    assert analyzing.json()["detail"] == "not_intake_complete"
+    assert missing.status_code == 404
+
+
+def test_existing_rfp_tables_gain_part2_columns() -> None:
+    from sqlalchemy import create_engine, inspect, text
+
+    from app.db.database import _ensure_rfp_response_columns
+
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        connection.execute(
+            text("CREATE TABLE rfp_ticket (ticket_id VARCHAR(36) PRIMARY KEY, status VARCHAR(32))")
+        )
+        connection.execute(
+            text(
+                "CREATE TABLE rfp_department_section "
+                "(id INTEGER PRIMARY KEY, ticket_id VARCHAR(36), department_id VARCHAR(32))"
+            )
+        )
+    _ensure_rfp_response_columns(engine)
+    inspector = inspect(engine)
+    ticket_columns = {column["name"] for column in inspector.get_columns("rfp_ticket")}
+    section_columns = {column["name"] for column in inspector.get_columns("rfp_department_section")}
+
+    assert "part3_handoff" in ticket_columns
+    assert {"draft_content", "evaluation_results", "needs_human_review"} <= section_columns
+
+
+def test_database_url_quotes_a_reserved_character_in_the_password() -> None:
+    from urllib.parse import unquote, urlsplit
+
+    from app.db.database import _normalize_database_url
+
+    raw = "postgresql:postgresql://postgres.project:abc#def@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+    normalized = _normalize_database_url(raw)
+    parts = urlsplit(normalized)
+
+    assert parts.hostname == "aws-0-us-east-1.pooler.supabase.com"
+    assert parts.port == 6543
+    assert unquote(parts.password or "") == "abc#def"
+    assert "%23" in normalized
+    assert parts.path == "/postgres"
+
+    direct = urlsplit(
+        _normalize_database_url("postgresql://postgres:secret@db.example.supabase.co:6543/postgres")
+    )
+    assert direct.hostname == "db.example.supabase.co"
+    assert direct.port == 5432
+
+
+def test_database_url_preserves_valid_ports_and_an_encoded_password() -> None:
+    from urllib.parse import urlsplit
+
+    from app.db.database import _normalize_database_url
+
+    direct = urlsplit(
+        _normalize_database_url("postgresql://postgres:secret@db.example.supabase.co:5432/postgres")
+    )
+    pooler = urlsplit(
+        _normalize_database_url(
+            "postgresql://postgres.project:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+        )
+    )
+    encoded = _normalize_database_url(
+        "postgresql://postgres:abc%23def@db.example.supabase.co:5432/postgres"
+    )
+    encoded_parts = urlsplit(encoded)
+
+    assert direct.port == 5432
+    assert direct.password == "secret"
+    assert direct.path == "/postgres"
+    assert pooler.hostname == "aws-0-us-east-1.pooler.supabase.com"
+    assert pooler.port == 6543
+    assert pooler.username == "postgres.project"
+    assert pooler.password == "secret"
+    assert encoded_parts.port == 5432
+    assert encoded_parts.password == "abc%23def"
+    assert "%2523" not in encoded

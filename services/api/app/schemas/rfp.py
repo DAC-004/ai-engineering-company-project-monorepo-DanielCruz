@@ -18,6 +18,9 @@ class DepartmentSectionPublic(BaseModel):
     department_name: str | None = None
     contact_name: str | None = None
     key_aspects: dict[str, Any]
+    draft_content: str | None = None
+    evaluation_results: dict[str, Any] | None = None
+    needs_human_review: bool = False
 
 
 class RfpMetadataPublic(BaseModel):
@@ -47,3 +50,4 @@ class RfpTicketPublic(BaseModel):
     sections: list[DepartmentSectionPublic]
     synthesizer_summary: str | None
     part2_handoff: dict[str, Any] | None
+    part3_handoff: dict[str, Any] | None = None
