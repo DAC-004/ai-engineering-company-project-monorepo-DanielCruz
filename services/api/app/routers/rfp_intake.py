@@ -39,6 +39,34 @@ async def create_rfp_ticket(
     return RfpTicketCreated(ticket_id=ticket.ticket_id, status=ticket.status)
 
 
+def _run_response_in_background(ticket_id: str) -> None:
+    """Open a new session. The request session is already closed."""
+    with Session(get_engine()) as session:
+        rfp_service.run_response(session, ticket_id)
+
+
+@router.post(
+    "/tickets/{ticket_id}/response",
+    response_model=RfpTicketCreated,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def start_rfp_response(
+    ticket_id: str,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_db),
+    _current_user: UserInDB = Depends(get_current_user),
+) -> RfpTicketCreated:
+    """Start Part 2 from the stored handoff. This route does not read the PDF."""
+    try:
+        ticket = rfp_service.begin_response(session, ticket_id)
+    except rfp_service.ResponseNotReady as exc:
+        if exc.code == "ticket_missing":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.") from exc
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=exc.code) from exc
+    background_tasks.add_task(_run_response_in_background, ticket.ticket_id)
+    return RfpTicketCreated(ticket_id=ticket.ticket_id, status=ticket.status)
+
+
 @router.get("/tickets/{ticket_id}", response_model=RfpTicketPublic)
 def read_rfp_ticket(
     ticket_id: str,

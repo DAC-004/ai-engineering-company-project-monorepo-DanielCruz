@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { ApiError } from "@/lib/auth/types";
-import { getRfpTicket, type RfpTicket } from "@/lib/rfp";
+import { getRfpTicket, startRfpResponse, type RfpTicket } from "@/lib/rfp";
 
 const readabilityReason = (ticket: RfpTicket): string | null => {
   const handoff = ticket.part2_handoff;
@@ -19,12 +19,18 @@ const readabilityReason = (ticket: RfpTicket): string | null => {
   return typeof reason === "string" && reason.trim() ? reason : null;
 };
 
-const isSettled = (ticket: RfpTicket): boolean => {
-  return (
-    ticket.status === "intake_complete" ||
-    ticket.status === "discarded" ||
-    ticket.processing_failed
-  );
+const responseComplete = (ticket: RfpTicket): boolean => {
+  return ticket.part3_handoff?.response_complete === true;
+};
+
+const shouldPoll = (ticket: RfpTicket, watchGeneration: boolean): boolean => {
+  if (ticket.processing_failed || ticket.status === "discarded" || responseComplete(ticket)) {
+    return false;
+  }
+  if (ticket.status === "intake_complete") {
+    return watchGeneration;
+  }
+  return true;
 };
 
 type RfpTicketPanelProps = {
@@ -34,6 +40,8 @@ type RfpTicketPanelProps = {
 export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
   const [ticket, setTicket] = useState<RfpTicket | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [watchGeneration, setWatchGeneration] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,7 +55,7 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
         }
         setTicket(nextTicket);
         setLoadError(null);
-        if (!isSettled(nextTicket)) {
+        if (shouldPoll(nextTicket, watchGeneration)) {
           timer = window.setTimeout(() => {
             void load();
           }, 2000);
@@ -68,7 +76,18 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
         window.clearTimeout(timer);
       }
     };
-  }, [ticketId]);
+  }, [ticketId, watchGeneration]);
+
+  const handleGenerate = async () => {
+    setGenerationError(null);
+    try {
+      await startRfpResponse(ticketId);
+      setWatchGeneration(true);
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Proposal generation could not be started.";
+      setGenerationError(message);
+    }
+  };
 
   if (loadError) {
     return <p className="form-error">{loadError}</p>;
@@ -89,6 +108,17 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
         <p>This ticket is still analyzing and has not been updated recently.</p>
       ) : null}
       {ticket.status === "discarded" ? <p>This request was discarded. No department work was stored.</p> : null}
+      {ticket.status === "intake_complete" && !responseComplete(ticket) ? (
+        <p>
+          <button type="button" onClick={() => void handleGenerate()}>
+            Generate proposal sections
+          </button>
+        </p>
+      ) : null}
+      {generationError ? <p className="form-error">{generationError}</p> : null}
+      {responseComplete(ticket) && ticket.status === "under_evaluation" ? (
+        <p>Evaluation is complete. This ticket is ready for Part 3 review.</p>
+      ) : null}
       {ticket.compliance_review_required ? (
         <p>Compliance review is required before this ticket can continue.</p>
       ) : null}
@@ -122,6 +152,26 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
               <li>None recorded.</li>
             )}
           </ul>
+          {section.needs_human_review ? (
+            <p>Provisional draft. This section needs human review. The other departments still stay on this ticket.</p>
+          ) : null}
+          {section.draft_content ? (
+            <>
+              <h3>Draft</h3>
+              <p>{section.draft_content}</p>
+            </>
+          ) : null}
+          {section.evaluation_results ? (
+            <>
+              <h3>Evaluation</h3>
+              <p>
+                {section.evaluation_results.overall_pass ? "Passed evaluation." : "Evaluation did not pass."}
+                {section.evaluation_results.feedback_for_generator
+                  ? ` ${section.evaluation_results.feedback_for_generator}`
+                  : ""}
+              </p>
+            </>
+          ) : null}
           <h3>Open questions</h3>
           <ul>
             {section.key_aspects.open_questions.length > 0 ? (

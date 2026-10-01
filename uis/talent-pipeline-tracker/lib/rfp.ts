@@ -10,6 +10,12 @@ export type RfpTicketCreated = {
   status: string;
 };
 
+export type RfpEvaluationResult = {
+  overall_pass?: boolean;
+  contains_phi?: boolean;
+  feedback_for_generator?: string;
+};
+
 export type RfpDepartmentSection = {
   department_id: string;
   department_name: string | null;
@@ -18,6 +24,9 @@ export type RfpDepartmentSection = {
     aspects: string[];
     open_questions: string[];
   };
+  draft_content: string | null;
+  evaluation_results: RfpEvaluationResult | null;
+  needs_human_review: boolean;
 };
 
 export type RfpMetadata = {
@@ -47,6 +56,7 @@ export type RfpTicket = {
   sections: RfpDepartmentSection[];
   synthesizer_summary: string | null;
   part2_handoff: Record<string, unknown> | null;
+  part3_handoff: { response_complete?: boolean } | null;
 };
 
 export const createRfpTicket = async (file: File): Promise<RfpTicketCreated> => {
@@ -63,6 +73,13 @@ export const createRfpTicket = async (file: File): Promise<RfpTicketCreated> => 
 export const getRfpTicket = async (ticketId: string): Promise<RfpTicket> => {
   return apiFetch<RfpTicket>(`/rfp/tickets/${ticketId}`, {
     method: "GET",
+    auth: true,
+  });
+};
+
+export const startRfpResponse = async (ticketId: string): Promise<RfpTicketCreated> => {
+  return apiFetch<RfpTicketCreated>(`/rfp/tickets/${ticketId}/response`, {
+    method: "POST",
     auth: true,
   });
 };

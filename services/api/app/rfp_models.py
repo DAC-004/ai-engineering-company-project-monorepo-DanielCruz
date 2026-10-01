@@ -29,6 +29,7 @@ class RfpTicket(SQLModel, table=True):
     phi_detected: bool = Field(default=False)
     compliance_review_required: bool = Field(default=False)
     part2_handoff: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    part3_handoff: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
 
 
 class RfpMetadata(SQLModel, table=True):
@@ -50,7 +51,7 @@ class RfpMetadata(SQLModel, table=True):
 
 
 class DepartmentSection(SQLModel, table=True):
-    """Per-department key aspects for Part 1. Later-part draft fields are not stored."""
+    """Per-department key aspects, and later the Part 2 draft and evaluation."""
 
     __tablename__ = "rfp_department_section"
 
@@ -58,3 +59,6 @@ class DepartmentSection(SQLModel, table=True):
     ticket_id: str = Field(foreign_key="rfp_ticket.ticket_id", index=True, max_length=36)
     department_id: str = Field(max_length=32, index=True)
     key_aspects: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    draft_content: str | None = Field(default=None)
+    evaluation_results: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    needs_human_review: bool = Field(default=False)
