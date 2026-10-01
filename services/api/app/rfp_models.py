@@ -20,6 +20,9 @@ class RfpTicket(SQLModel, table=True):
     __tablename__ = "rfp_ticket"
 
     ticket_id: str = Field(primary_key=True, max_length=36)
+    # Assigned when classification accepts the upload. Distinct from ticket_id.
+    # Null on a raw upload and on a discarded upload.
+    rfp_id: str | None = Field(default=None, max_length=36, unique=True, index=True)
     status: str = Field(max_length=32, index=True)
     raw_pdf_path: str | None = Field(default=None, max_length=500)
     created_at: datetime = Field(default_factory=utc_now, index=True)
