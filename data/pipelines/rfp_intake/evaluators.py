@@ -17,6 +17,8 @@ READABILITY_LOW = 8.0
 READABILITY_HIGH = 14.0
 _TOKEN = re.compile(r"[a-z0-9]+")
 _VOLUME = re.compile(r"\b\d{2,}\s+(?:employees|students|people|lives)\b", re.IGNORECASE)
+_SENTENCE_SPLIT = re.compile(r"[.!?]+")
+_NEGATION = re.compile(r"\b(?:not|no|never|without|isn't|aren't|doesn't|don't|cannot|can't)\b")
 _STOPWORDS = frozenset(
     {
         "about",
@@ -114,6 +116,21 @@ def evaluate_relevance(draft: str, aspects: list[str]) -> dict[str, Any]:
     return {"pass": True, "missing_aspects": []}
 
 
+def asserts_uk_gdpr_instrument(text: str) -> bool:
+    """True when a sentence adopts UK GDPR rather than rejecting it.
+
+    A US draft may say the other country's instrument does not apply. That
+    sentence is not a UK GDPR agreement. An affirmative mention still is.
+    """
+    folded = text.casefold()
+    if "uk gdpr" not in folded:
+        return False
+    for sentence in _SENTENCE_SPLIT.split(folded):
+        if "uk gdpr" in sentence and _NEGATION.search(sentence) is None:
+            return True
+    return False
+
+
 def evaluate_compliance(
     draft: str,
     department_id: str,
@@ -156,7 +173,7 @@ def evaluate_compliance(
         if "HC-CURRENCY" not in rule_ids:
             rule_ids.append("HC-CURRENCY")
         violations.append("The draft quotes USD. A UK client must be quoted in GBP.")
-    if country == "US" and department_id == "compliance" and "uk gdpr" in text:
+    if country == "US" and department_id == "compliance" and asserts_uk_gdpr_instrument(text):
         if "HC-US-BAA" not in rule_ids:
             rule_ids.append("HC-US-BAA")
         violations.append("A US client must use a Business Associate Agreement, not a UK GDPR instrument.")

@@ -87,6 +87,24 @@ def test_us_compliance_fails_when_gbp_replaces_the_baa_clause() -> None:
     assert "HC-CURRENCY" in result["rule_ids"]
 
 
+def test_us_compliance_allows_a_sentence_that_rejects_uk_gdpr() -> None:
+    rejected = evaluate_compliance(
+        "Meridian Manufacturing, Inc. requires a Business Associate Agreement, not a Data Processing Agreement related to UK GDPR.",
+        "compliance",
+        {"client_country": "US", "covered_population": "800 employees"},
+    )
+    adopted = evaluate_compliance(
+        "The compliance section uses a Business Associate Agreement and also applies UK GDPR.",
+        "compliance",
+        {"client_country": "US", "covered_population": "800 employees"},
+    )
+
+    assert rejected["pass"] is True
+    assert rejected["rule_ids"] == []
+    assert adopted["pass"] is False
+    assert "HC-US-BAA" in adopted["rule_ids"]
+
+
 def test_missing_population_rejects_an_invented_headcount() -> None:
     result = evaluate_compliance(
         "The program covers 800 employees.",

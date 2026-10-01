@@ -30,6 +30,8 @@ class RfpTicket(SQLModel, table=True):
     compliance_review_required: bool = Field(default=False)
     part2_handoff: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
     part3_handoff: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    node_trace: list[dict[str, Any]] | None = Field(default=None, sa_column=Column(JSON))
+    arbitration_state: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
 
 
 class RfpMetadata(SQLModel, table=True):
@@ -62,3 +64,31 @@ class DepartmentSection(SQLModel, table=True):
     draft_content: str | None = Field(default=None)
     evaluation_results: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
     needs_human_review: bool = Field(default=False)
+    approval_status: str | None = Field(default=None, max_length=32)
+    approver: str | None = Field(default=None, max_length=200)
+    approved_at: datetime | None = Field(default=None)
+    approved_content_sha256: str | None = Field(default=None, max_length=64)
+    submitted_by_user_id: str | None = Field(default=None, max_length=36)
+    approval_revision_count: int = Field(default=0)
+    iteration_limit_reached: bool = Field(default=False)
+
+
+class RfpDepartmentAccount(SQLModel, table=True):
+    """Binds one demonstration account id to one CONTEXT department owner."""
+
+    __tablename__ = "rfp_department_account"
+
+    department_id: str = Field(primary_key=True, max_length=32)
+    user_id: str = Field(index=True, max_length=36)
+    owner_name: str = Field(max_length=200)
+
+
+class RfpFinalDocument(SQLModel, table=True):
+    """CONTEXT final document. Stored in the same commit that sets status to done."""
+
+    __tablename__ = "rfp_final_document"
+
+    ticket_id: str = Field(primary_key=True, foreign_key="rfp_ticket.ticket_id", max_length=36)
+    sections: list[dict[str, Any]] = Field(sa_column=Column(JSON))
+    currency: str | None = Field(default=None, max_length=8)
+    generated_at: datetime = Field(default_factory=utc_now)

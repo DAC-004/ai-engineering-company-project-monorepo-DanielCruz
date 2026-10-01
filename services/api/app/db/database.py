@@ -154,6 +154,33 @@ def _ensure_rfp_response_columns(engine) -> None:
                 "ALTER TABLE rfp_department_section "
                 f"ADD COLUMN needs_human_review BOOLEAN NOT NULL DEFAULT {boolean_default}"
             )
+        if "approval_status" not in section_columns:
+            statements.append("ALTER TABLE rfp_department_section ADD COLUMN approval_status VARCHAR(32)")
+        if "approver" not in section_columns:
+            statements.append("ALTER TABLE rfp_department_section ADD COLUMN approver VARCHAR(200)")
+        if "approved_at" not in section_columns:
+            statements.append("ALTER TABLE rfp_department_section ADD COLUMN approved_at TIMESTAMP")
+        if "approved_content_sha256" not in section_columns:
+            statements.append("ALTER TABLE rfp_department_section ADD COLUMN approved_content_sha256 VARCHAR(64)")
+        if "submitted_by_user_id" not in section_columns:
+            statements.append("ALTER TABLE rfp_department_section ADD COLUMN submitted_by_user_id VARCHAR(36)")
+        if "approval_revision_count" not in section_columns:
+            statements.append(
+                "ALTER TABLE rfp_department_section "
+                "ADD COLUMN approval_revision_count INTEGER NOT NULL DEFAULT 0"
+            )
+        if "iteration_limit_reached" not in section_columns:
+            statements.append(
+                "ALTER TABLE rfp_department_section "
+                f"ADD COLUMN iteration_limit_reached BOOLEAN NOT NULL DEFAULT {boolean_default}"
+            )
+
+    if "rfp_ticket" in table_names:
+        ticket_columns = {column["name"] for column in inspector.get_columns("rfp_ticket")}
+        if "node_trace" not in ticket_columns:
+            statements.append("ALTER TABLE rfp_ticket ADD COLUMN node_trace JSON")
+        if "arbitration_state" not in ticket_columns:
+            statements.append("ALTER TABLE rfp_ticket ADD COLUMN arbitration_state JSON")
 
     if not statements:
         return

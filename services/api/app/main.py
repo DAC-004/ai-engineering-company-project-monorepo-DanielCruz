@@ -18,6 +18,7 @@ if str(REPO_ROOT) not in sys.path:
 from app.db.database import get_engine, init_databases  # noqa: E402
 from app.routers import auth, incidents, inventory, profiles, rfp_intake, telemetry, users  # noqa: E402
 from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
+from app.services.rfp_demonstration_accounts import ensure_demonstration_accounts  # noqa: E402
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     init_databases()
     with Session(get_engine()) as session:
         seed_inventory_if_empty(session)
+        ensure_demonstration_accounts(session)
     yield
 
 

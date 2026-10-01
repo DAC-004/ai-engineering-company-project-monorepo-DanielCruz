@@ -15,4 +15,5 @@ services/api/.env
 data/raw/rfp_intake/*.pdf
 data/process/models/
 data/process/nltk_data/
+data/process/rfp_checkpoints/
 *.gguf

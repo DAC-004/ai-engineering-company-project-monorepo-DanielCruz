@@ -27,6 +27,12 @@ export type RfpDepartmentSection = {
   draft_content: string | null;
   evaluation_results: RfpEvaluationResult | null;
   needs_human_review: boolean;
+  approval_status: string | null;
+  approver: string | null;
+  approved_at: string | null;
+  submitted_by_user_id: string | null;
+  approval_revision_count: number;
+  iteration_limit_reached: boolean;
 };
 
 export type RfpMetadata = {
@@ -56,8 +62,30 @@ export type RfpTicket = {
   sections: RfpDepartmentSection[];
   synthesizer_summary: string | null;
   part2_handoff: Record<string, unknown> | null;
-  part3_handoff: { response_complete?: boolean } | null;
+  part3_handoff: { response_complete?: boolean; currency?: string | null } | null;
+  node_trace: Array<Record<string, unknown>> | null;
+  arbitration_state: {
+    phi_detected?: boolean;
+    baa_dpa_mismatch?: boolean;
+    baa_targets?: string[];
+    open_questions?: string[];
+    capacity?: {
+      resolved?: boolean;
+      population?: { count?: number; unit?: string; source_text?: string };
+      coverage?: { count?: number; unit?: string; source_text?: string };
+      resolution?: string | null;
+    } | null;
+  } | null;
 };
+
+export type RfpFinalDocument = {
+  ticket_id: string;
+  sections: Array<{ department_id: string; draft_content: string }>;
+  currency: string | null;
+  generated_at: string;
+};
+
+export type ApprovalDecisionName = "approve" | "reject" | "request_changes";
 
 export const createRfpTicket = async (file: File): Promise<RfpTicketCreated> => {
   const body = new FormData();
@@ -80,6 +108,32 @@ export const getRfpTicket = async (ticketId: string): Promise<RfpTicket> => {
 export const startRfpResponse = async (ticketId: string): Promise<RfpTicketCreated> => {
   return apiFetch<RfpTicketCreated>(`/rfp/tickets/${ticketId}/response`, {
     method: "POST",
+    auth: true,
+  });
+};
+
+export const startRfpApproval = async (ticketId: string): Promise<RfpTicketCreated> => {
+  return apiFetch<RfpTicketCreated>(`/rfp/tickets/${ticketId}/approval`, {
+    method: "POST",
+    auth: true,
+  });
+};
+
+export const submitRfpDecision = async (
+  ticketId: string,
+  departmentId: string,
+  body: { decision?: ApprovalDecisionName; note?: string; resolution?: "reduce_covered_population" | "add_sites" },
+): Promise<RfpTicket> => {
+  return apiFetch<RfpTicket>(`/rfp/tickets/${ticketId}/approval/${departmentId}`, {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(body),
+  });
+};
+
+export const getRfpFinalDocument = async (ticketId: string): Promise<RfpFinalDocument> => {
+  return apiFetch<RfpFinalDocument>(`/rfp/tickets/${ticketId}/final-document`, {
+    method: "GET",
     auth: true,
   });
 };

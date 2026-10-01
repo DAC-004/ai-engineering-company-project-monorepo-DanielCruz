@@ -7,7 +7,7 @@ from sqlmodel import Session
 
 from app.core.deps import get_current_user
 from app.db.database import get_db, get_engine
-from app.schemas.rfp import RfpTicketCreated, RfpTicketPublic
+from app.schemas.rfp import DepartmentDecision, FinalDocumentPublic, RfpTicketCreated, RfpTicketPublic
 from app.schemas.user import UserInDB
 from app.services import rfp_service
 
@@ -65,6 +65,66 @@ def start_rfp_response(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=exc.code) from exc
     background_tasks.add_task(_run_response_in_background, ticket.ticket_id)
     return RfpTicketCreated(ticket_id=ticket.ticket_id, status=ticket.status)
+
+
+@router.post(
+    "/tickets/{ticket_id}/approval",
+    response_model=RfpTicketCreated,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def start_rfp_approval(
+    ticket_id: str,
+    session: Session = Depends(get_db),
+    _current_user: UserInDB = Depends(get_current_user),
+) -> RfpTicketCreated:
+    """Open the per-department interrupts. A repeat call does not reset them."""
+    try:
+        ticket = rfp_service.begin_approval(session, ticket_id)
+    except rfp_service.ApprovalNotAccepted as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.code) from exc
+    return RfpTicketCreated(ticket_id=ticket.ticket_id, status=ticket.status)
+
+
+@router.post("/tickets/{ticket_id}/approval/{department_id}", response_model=RfpTicketPublic)
+def submit_rfp_approval(
+    ticket_id: str,
+    department_id: str,
+    body: DepartmentDecision,
+    session: Session = Depends(get_db),
+    current_user: UserInDB = Depends(get_current_user),
+) -> RfpTicketPublic:
+    """Resume one department branch, or store the revenue capacity choice."""
+    try:
+        rfp_service.submit_approval_decision(
+            session,
+            ticket_id,
+            department_id,
+            user_id=current_user.id,
+            decision=body.decision,
+            note=body.note,
+            resolution=body.resolution,
+        )
+    except rfp_service.ApprovalNotAccepted as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.code) from exc
+    ticket = rfp_service.get_ticket(session, ticket_id)
+    if ticket is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+    return ticket
+
+
+@router.get("/tickets/{ticket_id}/final-document", response_model=FinalDocumentPublic)
+def read_final_document(
+    ticket_id: str,
+    session: Session = Depends(get_db),
+    _current_user: UserInDB = Depends(get_current_user),
+) -> FinalDocumentPublic:
+    """Return the CONTEXT document fields only after the row exists."""
+    if rfp_service.get_ticket(session, ticket_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+    document = rfp_service.get_final_document(session, ticket_id)
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Final document not stored.")
+    return document
 
 
 @router.get("/tickets/{ticket_id}", response_model=RfpTicketPublic)
