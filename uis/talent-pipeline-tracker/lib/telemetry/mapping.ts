@@ -43,7 +43,8 @@ export const toApiRouteTemplate = (path: string): string => {
   const normalized = toRoutePath(path);
   return normalized
     .replace(/\/inventory\/products\/\d+/g, "/inventory/products/{id}")
-    .replace(/\/users\/[0-9a-fA-F-]+/g, "/users/{id}");
+    .replace(/\/users\/[0-9a-fA-F-]+/g, "/users/{id}")
+    .replace(/\/rfp\/tickets\/[0-9a-fA-F-]+/g, "/rfp/tickets/{ticket_id}");
 };
 
 export const sanitizeTelemetryMessage = (raw: string): string => {
