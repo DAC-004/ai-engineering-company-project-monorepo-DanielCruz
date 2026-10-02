@@ -1,0 +1,256 @@
+{
+  "algorithm": "RandomForestRegressor",
+  "random_state": 42,
+  "primary_metric": "MAE",
+  "primary_metric_units": "USD",
+  "evaluation_scope": "Temporal cross-validation and the learning curve use the 2016-2023 training period only. The 2024-2025 holdout is scored separately with the original rolling one-step-ahead protocol.",
+  "dataset": {
+    "path": "C:/4geeks/Projects/Evaluating_a_Regression_Model/data/raw/healthcore_sales.csv",
+    "raw_rows": 120,
+    "raw_train_rows": 96,
+    "raw_test_rows": 24,
+    "average_monthly_revenue_usd": 2877266.325083333
+  },
+  "temporal_cv": {
+    "method": "TimeSeriesSplit",
+    "n_splits": 5,
+    "shuffled": false,
+    "feature_rule": "Each fold rebuilds causal lags and rolling statistics from raw training months through that fold's last validation month.",
+    "folds": [
+      {
+        "fold_id": 1,
+        "n_train_rows": 14,
+        "n_val_rows": 14,
+        "train_start": "2017-01-01",
+        "train_end": "2018-02-01",
+        "val_start": "2018-03-01",
+        "val_end": "2019-04-01",
+        "feature_source_end": "2019-04-01",
+        "train_mae_usd": 99781.49302589278,
+        "train_rmse_usd": 127027.64722500683,
+        "val_mae_usd": 140143.15871789196,
+        "val_rmse_usd": 162988.1359732322
+      },
+      {
+        "fold_id": 2,
+        "n_train_rows": 28,
+        "n_val_rows": 14,
+        "train_start": "2017-01-01",
+        "train_end": "2019-04-01",
+        "val_start": "2019-05-01",
+        "val_end": "2020-06-01",
+        "feature_source_end": "2020-06-01",
+        "train_mae_usd": 55005.96030616918,
+        "train_rmse_usd": 66067.69946278256,
+        "val_mae_usd": 117014.538267434,
+        "val_rmse_usd": 145882.64522162132
+      },
+      {
+        "fold_id": 3,
+        "n_train_rows": 42,
+        "n_val_rows": 14,
+        "train_start": "2017-01-01",
+        "train_end": "2020-06-01",
+        "val_start": "2020-07-01",
+        "val_end": "2021-08-01",
+        "feature_source_end": "2021-08-01",
+        "train_mae_usd": 46913.39865662263,
+        "train_rmse_usd": 59314.64770654766,
+        "val_mae_usd": 135268.48929566267,
+        "val_rmse_usd": 159759.68388443
+      },
+      {
+        "fold_id": 4,
+        "n_train_rows": 56,
+        "n_val_rows": 14,
+        "train_start": "2017-01-01",
+        "train_end": "2021-08-01",
+        "val_start": "2021-09-01",
+        "val_end": "2022-10-01",
+        "feature_source_end": "2022-10-01",
+        "train_mae_usd": 46902.04856979878,
+        "train_rmse_usd": 59403.17239407763,
+        "val_mae_usd": 147031.34250886884,
+        "val_rmse_usd": 176821.15973450907
+      },
+      {
+        "fold_id": 5,
+        "n_train_rows": 70,
+        "n_val_rows": 14,
+        "train_start": "2017-01-01",
+        "train_end": "2022-10-01",
+        "val_start": "2022-11-01",
+        "val_end": "2023-12-01",
+        "feature_source_end": "2023-12-01",
+        "train_mae_usd": 50132.47850806098,
+        "train_rmse_usd": 63416.216643464264,
+        "val_mae_usd": 183998.16042429654,
+        "val_rmse_usd": 214244.32288023768
+      }
+    ],
+    "val_mae_usd": {
+      "mean": 144691.1378428308,
+      "std": 24627.135267423953,
+      "n_folds": 5.0
+    },
+    "val_rmse_usd": {
+      "mean": 171939.18953880604,
+      "std": 26081.42614821995,
+      "n_folds": 5.0
+    },
+    "train_mae_usd": {
+      "mean": 59747.07581330887,
+      "std": 22623.943143238324,
+      "n_folds": 5.0
+    },
+    "train_rmse_usd": {
+      "mean": 75045.87668637579,
+      "std": 29198.145874759324,
+      "n_folds": 5.0
+    },
+    "selected_metric": {
+      "name": "MAE",
+      "mean_usd": 144691.1378428308,
+      "std_usd": 24627.135267423953,
+      "mean_plus_minus_std": "144691.14 \u00b1 24627.14 USD"
+    }
+  },
+  "official_8_2_split": {
+    "n_train_rows": 84,
+    "n_holdout_rows": 24,
+    "train_start": "2017-01-01",
+    "train_end": "2023-12-01",
+    "holdout_start": "2024-01-01",
+    "holdout_end": "2025-12-01",
+    "train_mae_usd": 53064.609273104594,
+    "train_rmse_usd": 66753.45006358708,
+    "holdout_mae_usd": 170263.47288645242,
+    "holdout_rmse_usd": 209868.55146753078
+  },
+  "learning_curve": {
+    "image": "C:/4geeks/Projects/Evaluating_a_Regression_Model/data/eval/learning_curve.png",
+    "points": [
+      {
+        "n_train_rows": 24,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2018-12-01",
+        "val_start": "2019-01-01",
+        "val_end": "2019-12-01",
+        "feature_source_end": "2019-12-01",
+        "train_mae_usd": 42749.382621261175,
+        "train_rmse_usd": 51229.16825055436,
+        "val_mae_usd": 179270.76923143025,
+        "val_rmse_usd": 200533.61891564977
+      },
+      {
+        "n_train_rows": 30,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2019-06-01",
+        "val_start": "2019-07-01",
+        "val_end": "2020-06-01",
+        "feature_source_end": "2020-06-01",
+        "train_mae_usd": 51913.64506203459,
+        "train_rmse_usd": 62035.24667561954,
+        "val_mae_usd": 127364.21480932215,
+        "val_rmse_usd": 157181.87287017895
+      },
+      {
+        "n_train_rows": 36,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2019-12-01",
+        "val_start": "2020-01-01",
+        "val_end": "2020-12-01",
+        "feature_source_end": "2020-12-01",
+        "train_mae_usd": 46920.85380275353,
+        "train_rmse_usd": 57406.55977681675,
+        "val_mae_usd": 120160.81465899928,
+        "val_rmse_usd": 142824.64320503597
+      },
+      {
+        "n_train_rows": 42,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2020-06-01",
+        "val_start": "2020-07-01",
+        "val_end": "2021-06-01",
+        "feature_source_end": "2021-06-01",
+        "train_mae_usd": 46913.39865662263,
+        "train_rmse_usd": 59314.64770654766,
+        "val_mae_usd": 133450.74483531908,
+        "val_rmse_usd": 161832.79723431752
+      },
+      {
+        "n_train_rows": 48,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2020-12-01",
+        "val_start": "2021-01-01",
+        "val_end": "2021-12-01",
+        "feature_source_end": "2021-12-01",
+        "train_mae_usd": 36885.62508768927,
+        "train_rmse_usd": 47944.04266360252,
+        "val_mae_usd": 147561.69168576287,
+        "val_rmse_usd": 180309.97752886786
+      },
+      {
+        "n_train_rows": 54,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2021-06-01",
+        "val_start": "2021-07-01",
+        "val_end": "2022-06-01",
+        "feature_source_end": "2022-06-01",
+        "train_mae_usd": 44055.971575088435,
+        "train_rmse_usd": 56610.2561945126,
+        "val_mae_usd": 160218.07719477286,
+        "val_rmse_usd": 183907.29232423633
+      },
+      {
+        "n_train_rows": 60,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2021-12-01",
+        "val_start": "2022-01-01",
+        "val_end": "2022-12-01",
+        "feature_source_end": "2022-12-01",
+        "train_mae_usd": 46635.52682161905,
+        "train_rmse_usd": 60714.764528591586,
+        "val_mae_usd": 141865.29652126203,
+        "val_rmse_usd": 170565.17269891236
+      },
+      {
+        "n_train_rows": 66,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2022-06-01",
+        "val_start": "2022-07-01",
+        "val_end": "2023-06-01",
+        "feature_source_end": "2023-06-01",
+        "train_mae_usd": 50178.471458348184,
+        "train_rmse_usd": 64808.127872852274,
+        "val_mae_usd": 120269.62951579255,
+        "val_rmse_usd": 148931.33701282722
+      },
+      {
+        "n_train_rows": 72,
+        "n_val_rows": 12,
+        "train_start": "2017-01-01",
+        "train_end": "2022-12-01",
+        "val_start": "2023-01-01",
+        "val_end": "2023-12-01",
+        "feature_source_end": "2023-12-01",
+        "train_mae_usd": 48387.43456576174,
+        "train_rmse_usd": 61487.32105976403,
+        "val_mae_usd": 177282.1686192831,
+        "val_rmse_usd": 200880.16506089616
+      }
+    ]
+  },
+  "artifacts": {
+    "learning_curve": "C:/4geeks/Projects/Evaluating_a_Regression_Model/data/eval/learning_curve.png",
+    "metrics_json": "C:/4geeks/Projects/Evaluating_a_Regression_Model/data/eval/evaluation_metrics.json"
+  }
+}
