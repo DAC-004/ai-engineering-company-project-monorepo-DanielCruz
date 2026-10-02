@@ -91,7 +91,12 @@ export VERCEL_TOKEN=your_token_here
 
 After deployment, run [PageSpeed Insights](https://pagespeed.web.dev/) against your public Vercel URL. Milestone 1 requires a performance score of at least **80**.
 
-**Production URL:** https://workspace-eosin-zeta.vercel.app
+**Production URL:** https://workspace-eosin-zeta-flax.vercel.app
+
+**PageSpeed verification (Jun 21, 2026):**
+
+- [Desktop report](https://pagespeed.web.dev/analysis/https-workspace-eosin-zeta-flax-vercel-app/8r6dzgg4wd?form_factor=desktop)
+- [Mobile report](https://pagespeed.web.dev/analysis/https-workspace-eosin-zeta-flax-vercel-app/8r6dzgg4wd?form_factor=mobile)
 
 ---
 

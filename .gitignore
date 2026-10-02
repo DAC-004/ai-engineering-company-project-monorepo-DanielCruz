@@ -17,3 +17,4 @@ data/process/models/
 data/process/nltk_data/
 data/process/rfp_checkpoints/
 *.gguf
+dist/
