@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { logout } from "@/lib/auth/session";
+import { RfpArrivalNotifications } from "@/components/rfp/RfpArrivalNotifications";
 import { track } from "@/src/services/telemetry";
 
 type AppShellProps = {
@@ -102,7 +103,10 @@ export const AppShell = ({ children }: AppShellProps) => {
           </button>
         </nav>
       </header>
-      <main className="app-main">{children}</main>
+      <main className="app-main">
+        <RfpArrivalNotifications />
+        {children}
+      </main>
     </div>
   );
 };

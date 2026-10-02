@@ -181,12 +181,78 @@ def _ensure_rfp_response_columns(engine) -> None:
             statements.append("ALTER TABLE rfp_ticket ADD COLUMN node_trace JSON")
         if "arbitration_state" not in ticket_columns:
             statements.append("ALTER TABLE rfp_ticket ADD COLUMN arbitration_state JSON")
+        if "rfp_id" not in ticket_columns:
+            statements.append("ALTER TABLE rfp_ticket ADD COLUMN rfp_id VARCHAR(36)")
 
-    if not statements:
+    if statements:
+        with engine.begin() as connection:
+            for statement in statements:
+                connection.execute(text(statement))
+    _ensure_rfp_id_index(engine)
+    _backfill_classified_rfp_ids(engine)
+
+
+def _ensure_rfp_id_index(engine) -> None:
+    """Keep rfp_id unique on databases created before the column existed."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if "rfp_ticket" not in set(inspector.get_table_names()):
+        return
+    columns = {column["name"] for column in inspector.get_columns("rfp_ticket")}
+    if "rfp_id" not in columns:
+        return
+    indexes = inspector.get_indexes("rfp_ticket")
+    constraints = inspector.get_unique_constraints("rfp_ticket")
+    already_unique = any(
+        index.get("unique") and index.get("column_names") == ["rfp_id"] for index in indexes
+    ) or any(constraint.get("column_names") == ["rfp_id"] for constraint in constraints)
+    if already_unique:
         return
     with engine.begin() as connection:
-        for statement in statements:
-            connection.execute(text(statement))
+        connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_rfp_ticket_rfp_id ON rfp_ticket (rfp_id)"))
+
+
+def _backfill_classified_rfp_ids(engine) -> None:
+    """Assign one new UUID where a classified RFP still has no rfp_id.
+
+    Discarded uploads and analyzing uploads with no metadata stay null.
+    A second run does not replace an id that is already stored.
+    needs_human_review is only a signal that the row was already classified.
+    """
+    import uuid
+
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "rfp_ticket" not in table_names:
+        return
+    columns = {column["name"] for column in inspector.get_columns("rfp_ticket")}
+    if "rfp_id" not in columns:
+        return
+    metadata_clause = ""
+    if "rfp_metadata" in table_names:
+        metadata_clause = "OR ticket_id IN (SELECT ticket_id FROM rfp_metadata)"
+    select_missing = text(
+        "SELECT ticket_id FROM rfp_ticket "
+        "WHERE rfp_id IS NULL AND ("
+        "status IN ("
+        "'intake_complete', 'drafting', 'under_evaluation', "
+        "'needs_human_review', 'waiting_for_approval', 'done'"
+        f") {metadata_clause})"
+    )
+    update_one = text(
+        "UPDATE rfp_ticket SET rfp_id = :rfp_id "
+        "WHERE ticket_id = :ticket_id AND rfp_id IS NULL"
+    )
+    with engine.begin() as connection:
+        ticket_ids = [row[0] for row in connection.execute(select_missing)]
+        for ticket_id in ticket_ids:
+            assigned = str(uuid.uuid4())
+            while assigned == ticket_id:
+                assigned = str(uuid.uuid4())
+            connection.execute(update_one, {"rfp_id": assigned, "ticket_id": ticket_id})
 
 
 def init_databases() -> None:
