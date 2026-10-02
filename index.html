@@ -8,40 +8,13 @@
       name="description"
       content="HealthCore is an outpatient care network serving communities across the US and UK with primary care, specialist consultations, chronic disease management, and preventive health programmes."
     />
-    <link rel="preconnect" href="https://cdn.tailwindcss.com" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              hcBlue: '#0E3A5D',
-              hcTeal: '#0E7490',
-              hcMint: '#DFF7F2',
-              hcInk: '#0F172A'
-            },
-            maxWidth: {
-              hc: '90rem',
-              'hc-form': '52rem'
-            }
-          }
-        },
-        plugins: [
-          function ({ addComponents, theme }) {
-            addComponents({
-              '.hc-container': {
-                width: '100%',
-                maxWidth: theme('maxWidth.hc'),
-                marginLeft: 'auto',
-                marginRight: 'auto',
-                paddingLeft: 'clamp(1.25rem, 4vw, 4rem)',
-                paddingRight: 'clamp(1.25rem, 4vw, 4rem)'
-              }
-            });
-          }
-        ]
-      };
-    </script>
+    <link rel="stylesheet" href="assets/site.css" />
+    <link
+      rel="preload"
+      as="image"
+      href="assets/backgrounds/hero-healthcare.jpg"
+      fetchpriority="high"
+    />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
