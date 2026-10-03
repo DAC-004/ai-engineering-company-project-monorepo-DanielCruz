@@ -6,6 +6,9 @@ requires-python = ">=3.11"
 dependencies = [
     "email-validator>=2.3.0",
     "fastapi>=0.141.1",
+    "fastembed>=0.8.0",
+    "httpx>=0.28.1",
+    "langchain-mcp-adapters>=0.3.2",
     "langgraph>=1.2.12",
     "langgraph-checkpoint-sqlite>=3.1.1",
     "libpass[bcrypt]>=1.9.3",
@@ -17,6 +20,7 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "python-jose[cryptography]>=3.5.0",
     "python-multipart>=0.0.32",
+    "qdrant-client>=1.19.1",
     "sqlmodel>=0.0.39",
     "tinydb>=4.9.0",
     "uvicorn[standard]>=0.52.1",
@@ -37,3 +41,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "../..", "../../packages/shared"]
+testpaths = ["tests"]
