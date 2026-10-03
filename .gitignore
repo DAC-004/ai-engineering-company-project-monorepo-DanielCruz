@@ -20,3 +20,5 @@ data/process/rfp_checkpoints/
 dist/
 .backend_project_requirements/
 .project-input/
+services/api/*.egg-info/
+.uv/

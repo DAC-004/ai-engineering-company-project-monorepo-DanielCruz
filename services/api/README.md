@@ -1,6 +1,6 @@
 # HealthCore API (`services/api`)
 
-FastAPI backend for HealthCore Digital: JWT authentication, TinyDB User/Profile identity, and protected incident analysis endpoints.
+FastAPI backend for HealthCore Digital: JWT authentication, TinyDB User/Profile identity, protected incident analysis, inventory, RFP intake, and the Supplier Directory.
 
 Validation and metrics for incidents use the shared module at `shared/incident_analyzer/` (same logic as `scripts/analyze.py`).
 
@@ -114,6 +114,26 @@ A caught pipeline failure stays `analyzing` with `processing_failed` and a code.
 Seed (idempotent on empty tables): `uv run python scripts/seed_inventory.py`
 
 Validate inventory behavior: `uv run python scripts/validate_inventory.py`
+
+## Supplier directory
+
+Supplier records live in their own TinyDB file, `services/api/data/suppliers.json`, not in the authentication database. `updated_at` is written by the API. A rate change refreshes that timestamp. USA must use USD and UK must use GBP.
+
+```bash
+cd services/api
+uv run seed
+```
+
+The seeder inserts the 15 HealthCore suppliers and skips names that are already present.
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `POST` | `/suppliers` | Public |
+| `GET` | `/suppliers` | Public. Optional `country` and `category` filters. |
+| `GET` | `/suppliers/{id}` | Public |
+| `PATCH` | `/suppliers/{id}/rate` | Public. Updates `monthly_rate` and `updated_at`. |
+| `PATCH` | `/suppliers/{id}/status` | Public. `active` or `suspended`. |
+| `DELETE` | `/suppliers/{id}` | Public |
 
 ## Security notes
 
