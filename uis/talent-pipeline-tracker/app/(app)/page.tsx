@@ -29,6 +29,9 @@ export default function HomePage() {
         <Link href="/account/profile" className="btn-secondary">
           Manage profile
         </Link>
+        <Link href="/candidates" className="btn-secondary">
+          Talent pipeline
+        </Link>
       </div>
     </section>
   );

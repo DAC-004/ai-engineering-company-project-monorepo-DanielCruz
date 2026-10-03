@@ -1,0 +1,33 @@
+export function ApplicationFooter() {
+  return (
+    <footer className="border-t border-slate-200 bg-white">
+      <div className="hc-container py-10 lg:py-12">
+        <div className="grid gap-8 sm:grid-cols-2 lg:gap-10">
+          <div>
+            <p className="text-base font-semibold text-[#0E3A5D] lg:text-lg">HealthCore Patient Access</p>
+            <p className="mt-3 text-base leading-relaxed text-slate-700 lg:text-lg">
+              Care request form for outpatient clinics in the United States and United Kingdom.
+            </p>
+          </div>
+          <div>
+            <p className="text-base font-semibold text-[#0E3A5D] lg:text-lg">Contact</p>
+            <address className="mt-3 space-y-2 text-base not-italic text-slate-700 lg:text-lg">
+              <p>Headquarters: Austin TX, United States</p>
+              <p>Network coverage: Texas, Florida, Georgia, London, Manchester</p>
+              <p>
+                Email: <a className="text-[#0E7490] underline-offset-2 hover:underline" href="mailto:care@healthcore.com">care@healthcore.com</a>
+              </p>
+              <p>
+                Phone (US): <a className="text-[#0E7490] underline-offset-2 hover:underline" href="tel:+15125550142">+1 (512) 555-0142</a>
+              </p>
+              <p>
+                Phone (UK): <a className="text-[#0E7490] underline-offset-2 hover:underline" href="tel:+442079460958">+44 20 7946 0958</a>
+              </p>
+            </address>
+          </div>
+        </div>
+        <p className="mt-8 border-t border-slate-200 pt-6 text-base text-slate-600 lg:text-lg">© 2026 HealthCore.</p>
+      </div>
+    </footer>
+  );
+}

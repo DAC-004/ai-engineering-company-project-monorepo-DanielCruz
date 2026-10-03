@@ -18,3 +18,5 @@ data/process/nltk_data/
 data/process/rfp_checkpoints/
 *.gguf
 dist/
+.backend_project_requirements/
+.project-input/
