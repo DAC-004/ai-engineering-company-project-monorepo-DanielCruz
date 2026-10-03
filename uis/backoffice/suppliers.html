@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthCore | Supplier Directory</title>
+    <meta
+      name="description"
+      content="HealthCore Supplier Directory — filter, register, update rates, and manage status."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html">HealthCore</a>
+      <nav aria-label="Application">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="suppliers.html" class="nav-link is-active">Supplier Directory</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <section class="intro">
+        <p class="eyebrow">Procurement · Compliance</p>
+        <h1>Supplier Directory</h1>
+        <p class="lede">
+          Single source of truth for clinical, operational, and technology suppliers
+          across USA and UK clinics.
+        </p>
+      </section>
+
+      <section class="filters" aria-label="Supplier filters">
+        <label>
+          Country
+          <select id="filter-country">
+            <option value="">All countries</option>
+            <option value="USA">USA</option>
+            <option value="UK">UK</option>
+          </select>
+        </label>
+        <label>
+          Category
+          <select id="filter-category">
+            <option value="">All categories</option>
+          </select>
+        </label>
+        <p id="list-status" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section aria-labelledby="directory-heading">
+        <h2 id="directory-heading">Directory</h2>
+        <div class="table-wrap">
+          <table class="supplier-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Country</th>
+                <th>Categories</th>
+                <th>Monthly rate</th>
+                <th>Compliance</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="supplier-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="register" aria-labelledby="register-heading">
+        <h2 id="register-heading">Register supplier</h2>
+        <form id="register-form" novalidate>
+          <div class="form-grid">
+            <label>
+              Name
+              <input id="name" name="name" type="text" required />
+            </label>
+            <label>
+              Country
+              <select id="country" name="country" required>
+                <option value="">Select country</option>
+                <option value="USA">USA</option>
+                <option value="UK">UK</option>
+              </select>
+            </label>
+            <label>
+              Currency
+              <select id="currency" name="currency" required>
+                <option value="">Select currency</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </label>
+            <label>
+              Monthly rate
+              <input
+                id="monthly_rate"
+                name="monthly_rate"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+              />
+            </label>
+            <label>
+              Status
+              <select id="status" name="status" required>
+                <option value="active">active</option>
+                <option value="suspended">suspended</option>
+              </select>
+            </label>
+            <label>
+              Compliance agreement
+              <select id="compliance_agreement" name="compliance_agreement">
+                <option value="">None</option>
+                <option value="BAA">BAA</option>
+                <option value="DPA">DPA</option>
+                <option value="both">both</option>
+              </select>
+            </label>
+            <label>
+              Contract renewal date
+              <input
+                id="contract_renewal_date"
+                name="contract_renewal_date"
+                type="date"
+              />
+            </label>
+            <label>
+              Contact email
+              <input id="contact_email" name="contact_email" type="email" />
+            </label>
+            <label class="span-2">
+              Categories (Ctrl/Cmd-click for multiple)
+              <select id="categories" name="categories" multiple required size="6"></select>
+            </label>
+            <label class="span-2">
+              Notes
+              <textarea id="notes" name="notes" rows="3"></textarea>
+            </label>
+          </div>
+          <button type="submit">Register supplier</button>
+          <p id="register-status" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <script src="suppliers.js"></script>
+  </body>
+</html>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { sampleAppointments, sampleCareRequests, sampleClinics } from "../../../src/data/sample";
@@ -22,6 +23,12 @@ export default function BackofficeHome() {
           src/ and renders their output directly for operations staff. It is separate from the
           public website and preserves the original business logic in one source location.
         </p>
+        <Link
+          href="/suppliers"
+          className="mt-6 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#10303b]"
+        >
+          Supplier Directory
+        </Link>
       </div>
 
       <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

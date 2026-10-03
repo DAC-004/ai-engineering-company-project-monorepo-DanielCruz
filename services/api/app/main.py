@@ -16,7 +16,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from app.db.database import get_engine, init_databases  # noqa: E402
-from app.routers import auth, incidents, inventory, profiles, rfp_intake, telemetry, users  # noqa: E402
+from app.routers import auth, incidents, inventory, profiles, rfp_intake, suppliers, telemetry, users  # noqa: E402
 from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
 from app.services.rfp_demonstration_accounts import ensure_demonstration_accounts  # noqa: E402
 
@@ -43,6 +43,8 @@ app.add_middleware(
     allow_origins=[
         "http://127.0.0.1:3000",
         "http://localhost:3000",
+        "http://127.0.0.1:3001",
+        "http://localhost:3001",
         "http://127.0.0.1:5500",
         "http://localhost:5500",
         "null",
@@ -59,6 +61,7 @@ app.include_router(incidents.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
 app.include_router(rfp_intake.router)
+app.include_router(suppliers.router)
 
 
 @app.get("/health")
