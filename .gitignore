@@ -16,6 +16,11 @@ data/raw/rfp_intake/*.pdf
 data/process/models/
 data/process/nltk_data/
 data/process/rfp_checkpoints/
+data/process/qdrant_storage/
+data/process/agent_checkpoints/
+data/process/agent_traces/
+data/process/agent_memory/
+services/api/*.db
 *.gguf
 dist/
 .backend_project_requirements/
