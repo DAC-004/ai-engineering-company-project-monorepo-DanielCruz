@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import contextvars
 import logging
 import re
+import threading
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
@@ -232,6 +236,24 @@ def _load_local_llm() -> Any:
     )
     logger.info("Loaded dedicated generation model %s from %s", LOCAL_GENERATION_MODEL_ID, model_path)
     return _local_llm
+
+
+def release_local_llm() -> bool:
+    """Free the cached llama model while its native functions are still callable.
+
+    ``Llama.__del__`` also calls ``close()``. During interpreter shutdown the
+    ``llama_cpp`` module attributes, including ``llama_model_free``, are already
+    ``None``, so that late ``__del__`` raises ``TypeError``. Closing here, while
+    the process is still alive, runs ``free_model`` successfully and leaves the
+    model pointer empty. A later ``__del__`` then finds nothing left to free.
+    """
+    global _local_llm
+    llm = _local_llm
+    _local_llm = None
+    if llm is None:
+        return True
+    llm.close()
+    return True
 
 
 def local_llm_is_loaded() -> bool:
@@ -464,11 +486,27 @@ def _context_for_prompt(context: list[dict[str, Any]]) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
+def _conversation_turns(conversation: list[dict[str, str]] | None) -> list[dict[str, str]]:
+    """Keep prior chat turns as untrusted user and assistant text.
+
+    ``POST /agent/query`` does not pass a conversation. The WebSocket path does,
+    and only into this prompt. The turns are not written to agent memory.
+    """
+    turns: list[dict[str, str]] = []
+    for item in conversation or []:
+        role = item.get("role")
+        content = item.get("content")
+        if role in {"user", "assistant"} and isinstance(content, str) and content:
+            turns.append({"role": role, "content": content})
+    return turns
+
+
 def _build_generation_messages(
     question: str,
     context: list[dict[str, Any]],
     *,
     operational_memory: list[str] | None = None,
+    conversation: list[dict[str, str]] | None = None,
 ) -> list[dict[str, str]]:
     """Coordinator prompt: behavioral rules only. Policy facts come from chunks."""
     system = (
@@ -576,10 +614,10 @@ def _build_generation_messages(
         f"{duration_line}"
         f"{memory_line}"
     )
-    return [
-        {"role": "system", "content": system},
-        {"role": "user", "content": user},
-    ]
+    messages = [{"role": "system", "content": system}]
+    messages.extend(_conversation_turns(conversation))
+    messages.append({"role": "user", "content": user})
+    return messages
 
 
 def _build_retry_messages(
@@ -589,12 +627,14 @@ def _build_retry_messages(
     reason: str,
     *,
     operational_memory: list[str] | None = None,
+    conversation: list[dict[str, str]] | None = None,
 ) -> list[dict[str, str]]:
     """Ask the same generation model to rewrite a leaked or overly cautious answer."""
     messages = _build_generation_messages(
         question,
         context,
         operational_memory=operational_memory,
+        conversation=conversation,
     )
     messages.append({"role": "assistant", "content": previous_answer})
     messages.append(
@@ -935,16 +975,194 @@ def _complete_chat(messages: list[dict[str, str]]) -> str:
     return str(content).strip()
 
 
+@dataclass
+class GenerationObservation:
+    """One local sampling loop. Releases are recorded before later samples."""
+
+    releases: list[str] = field(default_factory=list)
+    content_chunks_after_first_release: int = 0
+    terminal_finish_reason: str | None = None
+    raw_text: str = ""
+    committed_text: str = ""
+    withheld_text: str = ""
+    interrupted: bool = False
+    gate_stopped: bool = False
+    iterator_closed: bool = False
+    published_before_iterator_close: bool = False
+    prompt_messages: list[dict[str, str]] = field(default_factory=list)
+
+
+@dataclass
+class LocalGenerationWatch:
+    """Stop flag and observer for one local generation.
+
+    The llama iterator runs on the generation thread only. Another thread,
+    such as the WebSocket receive loop, may call ``request_stop``. The
+    generation thread checks that flag before pulling the next sample.
+    ``on_release`` still runs for every attempt. ``on_kept_release`` runs
+    while ``forward_kept`` is true, during that sample, before the next
+    chunk is pulled. A grounding retry does not append its replacement to
+    tokens already published for the first sample.
+    """
+
+    stop: bool = False
+    interrupted: bool = False
+    on_release: Callable[[str], None] | None = None
+    on_kept_release: Callable[[str], None] | None = None
+    forward_kept: bool = False
+    kept_attempt_index: int = 0
+    replayed_kept_attempt: bool = False
+    replacement_unpublished: bool = False
+    discarded_attempt_text: str = ""
+    published_text: str = ""
+    replaced_kept_text: bool = False
+    observations: list[GenerationObservation] = field(default_factory=list)
+    stop_event: threading.Event = field(default_factory=threading.Event)
+
+    def request_stop(self) -> None:
+        """Ask the generation thread to stop before the next sample."""
+        self.stop = True
+        self.stop_event.set()
+
+    def stop_requested(self) -> bool:
+        if self.stop_event.is_set():
+            self.stop = True
+        return self.stop
+
+
+_LOCAL_GENERATION_WATCH: contextvars.ContextVar[LocalGenerationWatch | None] = (
+    contextvars.ContextVar("healthcore_local_generation_watch", default=None)
+)
+_GENERATION_CONVERSATION: contextvars.ContextVar[tuple[tuple[str, str], ...] | None] = (
+    contextvars.ContextVar("healthcore_generation_conversation", default=None)
+)
+
+
+def _emit_kept_release(watch: LocalGenerationWatch, text: str) -> None:
+    """Publish one piece of the attempt that belongs to the assistant turn."""
+    if not text or watch.on_kept_release is None:
+        return
+    watch.published_text += text
+    watch.on_kept_release(text)
+
+
+def bind_local_generation_watch(watch: LocalGenerationWatch) -> contextvars.Token[LocalGenerationWatch | None]:
+    """Attach a watch for the current thread's local generation calls."""
+    return _LOCAL_GENERATION_WATCH.set(watch)
+
+
+def bind_generation_conversation(
+    turns: list[dict[str, str]],
+) -> contextvars.Token[tuple[tuple[str, str], ...] | None]:
+    """Attach prior chat turns for this thread's ``generate_answer`` calls.
+
+    ``POST /agent/query`` does not call this. The turns are prompt context only.
+    """
+    cleaned = tuple((item["role"], item["content"]) for item in _conversation_turns(turns))
+    return _GENERATION_CONVERSATION.set(cleaned)
+
+
+def reset_generation_conversation(
+    token: contextvars.Token[tuple[tuple[str, str], ...] | None],
+) -> None:
+    _GENERATION_CONVERSATION.reset(token)
+
+
+def reset_local_generation_watch(token: contextvars.Token[LocalGenerationWatch | None]) -> None:
+    """Remove a watch installed by ``bind_local_generation_watch``."""
+    _LOCAL_GENERATION_WATCH.reset(token)
+
+
+def _chat_stream_delta(chunk: dict[str, Any]) -> tuple[str, str | None]:
+    choices = chunk.get("choices") or []
+    if not choices:
+        return "", None
+    choice = choices[0]
+    delta = choice.get("delta") or {}
+    content = delta.get("content") or ""
+    if not isinstance(content, str):
+        content = str(content)
+    finish_reason = choice.get("finish_reason")
+    if finish_reason is not None and not isinstance(finish_reason, str):
+        finish_reason = str(finish_reason)
+    return content, finish_reason
+
+
 def _local_llm_complete(messages: list[dict[str, str]]) -> str:
-    """Run the local generation LLM. Isolated so unit tests can stub it."""
-    llm = _load_local_llm()
-    completion = llm.create_chat_completion(
-        messages=messages,
-        temperature=0.0,
-        max_tokens=320,
+    """Stream the local generation LLM through the release gate.
+
+    Unit tests replace this function. The real body uses llama-cpp
+    ``stream=True``. Each gate release is recorded before the next chunk is
+    pulled. ``generator.close()`` raises ``GeneratorExit`` inside llama-cpp's
+    sampler, so an interrupt stops further sample calls instead of discarding
+    a finished completion. Normal completion and interruption both drop the
+    gate's held suffix.
+    """
+    from app.services.streaming_release_gate import StreamingReleaseGate
+
+    watch = _LOCAL_GENERATION_WATCH.get()
+    observation = GenerationObservation(
+        prompt_messages=[
+            {"role": str(item.get("role", "")), "content": str(item.get("content", ""))}
+            for item in messages
+            if isinstance(item, dict)
+        ]
     )
-    content = completion["choices"][0]["message"]["content"]
-    return str(content).strip()
+    if watch is not None:
+        watch.observations.append(observation)
+
+    llm = _load_local_llm()
+    gate = StreamingReleaseGate()
+    iterator: Iterator[dict[str, Any]] | None = None
+    release_started = False
+    try:
+        iterator = llm.create_chat_completion(
+            messages=messages,
+            temperature=0.0,
+            max_tokens=320,
+            stream=True,
+        )
+        while True:
+            if watch is not None and watch.stop_requested():
+                observation.interrupted = True
+                watch.interrupted = True
+                gate.interrupt()
+                break
+            try:
+                chunk = next(iterator)
+            except StopIteration:
+                gate.complete()
+                break
+            delta, finish_reason = _chat_stream_delta(chunk)
+            if finish_reason:
+                observation.terminal_finish_reason = finish_reason
+            if not delta:
+                continue
+            if release_started:
+                observation.content_chunks_after_first_release += 1
+            observation.raw_text += delta
+            released = gate.push(delta)
+            if released:
+                release_started = True
+                observation.releases.append(released)
+                if watch is not None and watch.on_release is not None:
+                    watch.on_release(released)
+                if watch is not None and watch.forward_kept:
+                    observation.published_before_iterator_close = True
+                    _emit_kept_release(watch, released)
+            if gate.stopped:
+                # A completed detector match must not keep sampling.
+                observation.gate_stopped = True
+                break
+        observation.committed_text = gate.committed
+        if observation.raw_text.startswith(gate.committed):
+            observation.withheld_text = observation.raw_text[len(gate.committed) :]
+        return gate.committed
+    finally:
+        closer = getattr(iterator, "close", None)
+        if closer is not None:
+            closer()
+        observation.iterator_closed = True
 
 
 def _run_generation_model(messages: list[dict[str, str]]) -> str:
@@ -959,6 +1177,7 @@ def generate_answer(
     context: list[dict[str, Any]],
     *,
     operational_memory: list[str] | None = None,
+    conversation: list[dict[str, str]] | None = None,
 ) -> str:
     """Generate a coordinator-facing answer from a generation LLM.
 
@@ -976,11 +1195,25 @@ def generate_answer(
         {key: value for key, value in item.items() if key != "_score"}
         for item in context
     ]
+    if conversation is None:
+        bound_conversation = _GENERATION_CONVERSATION.get()
+        if bound_conversation:
+            conversation = [
+                {"role": role, "content": content} for role, content in bound_conversation
+            ]
     messages = _build_generation_messages(
         question,
         prompt_payloads,
         operational_memory=operational_memory,
+        conversation=conversation,
     )
+    watch = _LOCAL_GENERATION_WATCH.get()
+    if watch is not None:
+        # Publish eligible releases during this sample. The grounding retry
+        # decision is known only after the sample returns, so holding the
+        # whole answer for a possible retry would hide the no-retry stream.
+        watch.forward_kept = True
+        watch.kept_attempt_index = 0
 
     try:
         answer = _run_generation_model(messages)
@@ -989,6 +1222,11 @@ def generate_answer(
             logger.exception("Generation failed for empty-context refusal")
             return _INSUFFICIENT_INFORMATION_ANSWER
         raise
+
+    if watch is not None and watch.interrupted:
+        # The sampler already stopped. A grounding retry would start another
+        # generation and could release more text after the interrupt.
+        return _release_generated_text(answer) if answer else ""
 
     if not answer:
         if not context:
@@ -1007,6 +1245,12 @@ def generate_answer(
     retry_reason = _grounding_retry_reason(question, prompt_payloads, answer)
     if retry_reason:
         logger.warning("Retrying grounded generation: %s", retry_reason)
+        if watch is not None:
+            watch.discarded_attempt_text = answer
+            # The first sample is already on the token stream. Do not append
+            # the replacement, and do not add a retract event.
+            watch.forward_kept = False
+            watch.replacement_unpublished = True
         answer = _run_generation_model(
             _build_retry_messages(
                 question,
@@ -1014,10 +1258,24 @@ def generate_answer(
                 answer,
                 retry_reason,
                 operational_memory=operational_memory,
+                conversation=conversation,
             )
         )
+        if watch is not None and watch.interrupted:
+            return _release_generated_text(answer) if answer else ""
 
     answer = _qualify_permissibility_answer(answer, prompt_payloads)
+    answer = _release_generated_text(answer)
+    if watch is not None and watch.on_kept_release is not None:
+        if watch.replacement_unpublished:
+            if answer != watch.published_text:
+                watch.replaced_kept_text = True
+        elif answer.startswith(watch.published_text):
+            extension = answer[len(watch.published_text) :]
+            if extension:
+                _emit_kept_release(watch, extension)
+        elif answer != watch.published_text:
+            watch.replaced_kept_text = True
 
     logger.info(
         "generate_answer backend=%s chars=%s context_chunks=%s leaked=%s",
@@ -1026,7 +1284,7 @@ def generate_answer(
         len(prompt_payloads),
         unsupported_policy_facts(answer, prompt_payloads),
     )
-    return _release_generated_text(answer)
+    return answer
 
 
 def _release_generated_text(answer: str) -> str:

@@ -593,6 +593,36 @@ h2,
   white-space: pre-wrap;
 }
 
+.knowledge-thread {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.knowledge-message {
+  border: 1px solid var(--hc-line);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  background: color-mix(in srgb, var(--hc-accent-soft) 35%, var(--hc-panel));
+}
+
+.knowledge-message p:last-child {
+  margin: 0.65rem 0 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.knowledge-message--interrupted {
+  border-style: dashed;
+}
+
+.knowledge-interrupted-mark {
+  margin: 0.35rem 0 0;
+  font-weight: 750;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --hc-ink: #e7f1f3;

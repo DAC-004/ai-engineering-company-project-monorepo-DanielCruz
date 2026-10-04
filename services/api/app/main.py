@@ -31,6 +31,7 @@ from app.routers import (  # noqa: E402
     incident_manager,
     incidents,
     inventory,
+    chat,
     knowledge,
     profiles,
     rfp_intake,
@@ -56,6 +57,9 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         seed_inventory_if_empty(session)
         ensure_demonstration_accounts(session)
     yield
+    from data.pipelines.rag import release_local_llm
+
+    release_local_llm()
 
 
 app = FastAPI(
@@ -95,6 +99,7 @@ app.include_router(rfp_intake.router)
 app.include_router(suppliers.router)
 app.include_router(knowledge.router)
 app.include_router(agent.router)
+app.include_router(chat.router)
 
 
 def _is_manager_write_request(request: Request) -> bool:
