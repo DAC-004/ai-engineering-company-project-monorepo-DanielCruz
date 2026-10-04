@@ -1172,6 +1172,16 @@ def _run_generation_model(messages: list[dict[str, str]]) -> str:
     return _local_llm_complete(messages)
 
 
+def _is_context_capacity_failure(exc: BaseException) -> bool:
+    """True when the local sampler rejects a prompt that does not fit ``n_ctx``.
+
+    Llama-cpp raises ``ValueError`` with this wording from ``_create_completion``.
+    Other sampler failures stay exceptional. This does not treat a short or
+    empty sample as a capacity failure.
+    """
+    return isinstance(exc, ValueError) and "exceed context window" in str(exc)
+
+
 def generate_answer(
     question: str,
     context: list[dict[str, Any]],
@@ -1251,16 +1261,31 @@ def generate_answer(
             # the replacement, and do not add a retract event.
             watch.forward_kept = False
             watch.replacement_unpublished = True
-        answer = _run_generation_model(
-            _build_retry_messages(
-                question,
-                prompt_payloads,
-                answer,
-                retry_reason,
-                operational_memory=operational_memory,
-                conversation=conversation,
+        published_answer = watch.published_text if watch is not None else ""
+        try:
+            answer = _run_generation_model(
+                _build_retry_messages(
+                    question,
+                    prompt_payloads,
+                    answer,
+                    retry_reason,
+                    operational_memory=operational_memory,
+                    conversation=conversation,
+                )
             )
-        )
+        except Exception as exc:
+            # A retry prompt can exceed n_ctx after the first sample was
+            # published. Keep that published text so the chat turn can finish.
+            # The same capacity error on the first sample still raises above,
+            # and any other retry failure still raises here.
+            if published_answer.strip() and _is_context_capacity_failure(exc):
+                logger.warning(
+                    "Grounding retry exceeded the context window after %s published characters; keeping the published answer",
+                    len(published_answer),
+                )
+                answer = published_answer
+            else:
+                raise
         if watch is not None and watch.interrupted:
             return _release_generated_text(answer) if answer else ""
 

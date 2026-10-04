@@ -771,6 +771,181 @@ def test_unpublished_replacement_is_not_the_shared_transcript(
     assert session.last_generation["unpublished_agent_answer"] == "UNPUBLISHED_REPLACEMENT."
 
 
+def test_retry_context_overflow_finishes_the_published_turn_for_every_subscriber(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A retry that cannot fit the context window still ends the streamed turn.
+
+    The model is scripted. The second sample raises the local sampler's
+    context-window error after the first sample has been published. A later
+    question still completes. This does not prove the live GGUF.
+    """
+    published = "The indexed referral target is 11 days."
+    follow_up = "The indexed referral target is recorded separately."
+    scripts = [[published], [follow_up]]
+
+    class _OverflowOnRetry:
+        def __init__(self) -> None:
+            self.calls = 0
+            self._inner = None
+
+        def create_chat_completion(self, **kwargs: Any) -> Any:
+            self.calls += 1
+            if self.calls == 2:
+                raise ValueError("Requested tokens (2086) exceed context window of 2048")
+            from tests.pipelines.test_gated_generation_stream import _ScriptedLlama
+
+            if self._inner is None:
+                self._inner = _ScriptedLlama(scripts)
+            return self._inner.create_chat_completion(**kwargs)
+
+    fake = _OverflowOnRetry()
+    monkeypatch.setattr("data.pipelines.rag._load_local_llm", lambda: fake)
+    monkeypatch.setattr("data.pipelines.rag.GENERATION_API_KEY", "")
+
+    def _run(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        from data.pipelines.rag import generate_answer
+
+        answer = generate_answer(
+            question,
+            [{"source_document": "referral-process", "text": follow_up}],
+        )
+        return AgentRun(answer=answer, error="", trace_id="overflow", thread_id=thread_id or "")
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _run)
+    token = _staff_token("staff.overflow@example.com")
+
+    async def _collect(connection: Any, ready: asyncio.Event) -> list[dict[str, Any]]:
+        assert (await _recv_json(connection))["event"] == "session_snapshot"
+        ready.set()
+        return await _collect_until(connection, "generation_completed")
+
+    async def _run_socket() -> dict[str, Any]:
+        sender_ready = asyncio.Event()
+        watcher_ready = asyncio.Event()
+        async with _StaffSocket(chat_server, "chat_overflow", token) as sender:
+            async with _StaffSocket(chat_server, "chat_overflow", token) as watcher:
+                sender_task = asyncio.create_task(_collect(sender, sender_ready))
+                watcher_task = asyncio.create_task(_collect(watcher, watcher_ready))
+                await asyncio.wait_for(sender_ready.wait(), 5)
+                await asyncio.wait_for(watcher_ready.wait(), 5)
+                await sender.send(
+                    json.dumps(
+                        {
+                            "event": "user_message",
+                            "data": {
+                                "session_id": "chat_overflow",
+                                "text": "What is the indexed referral target?",
+                            },
+                        }
+                    )
+                )
+                sender_events, watcher_events = await asyncio.gather(sender_task, watcher_task)
+        async with _StaffSocket(chat_server, "chat_overflow", token) as restored:
+            snapshot = await _recv_json(restored)
+            await restored.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_overflow",
+                            "text": "What is recorded for the indexed referral target?",
+                        },
+                    }
+                )
+            )
+            follow_events = await _collect_until(restored, "generation_completed")
+        return {
+            "sender": sender_events,
+            "watcher": watcher_events,
+            "snapshot": snapshot,
+            "follow": follow_events,
+        }
+
+    result = asyncio.run(_run_socket())
+    sender_tokens = [item["data"]["token"] for item in result["sender"] if item["event"] == "token_chunk"]
+    watcher_tokens = [item["data"]["token"] for item in result["watcher"] if item["event"] == "token_chunk"]
+    assert "".join(sender_tokens) == published
+    assert sender_tokens == watcher_tokens
+    assert result["sender"][-1]["event"] == "generation_completed"
+    assert result["watcher"][-1]["event"] == "generation_completed"
+    messages = result["snapshot"]["data"]["messages"]
+    assert messages[1]["text"] == published
+    assert messages[1].get("status") != "interrupted"
+    follow_tokens = "".join(
+        item["data"]["token"] for item in result["follow"] if item["event"] == "token_chunk"
+    )
+    assert follow_tokens == follow_up
+    assert result["follow"][-1]["event"] == "generation_completed"
+    session = get_chat_hub().get_session("chat_overflow")
+    assert session is not None
+    assert session.messages[1].text == published
+    assert session.messages[1].status == "completed"
+    assert "unpublished_agent_answer" not in session.last_generation
+    assert session.messages[3].text == follow_up
+    assert session.messages[3].status == "completed"
+    restored_prompt = session.last_generation["attempts"][-1]["prompt_messages"]
+    prompt_text = " ".join(item["content"] for item in restored_prompt)
+    assert published in prompt_text
+
+
+def test_first_sample_context_overflow_does_not_complete_the_turn(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A first sample that cannot fit the context window is not marked completed."""
+
+    class _FailFirst:
+        def create_chat_completion(self, **_kwargs: Any) -> Any:
+            raise ValueError("Requested tokens (2086) exceed context window of 2048")
+
+    monkeypatch.setattr("data.pipelines.rag._load_local_llm", lambda: _FailFirst())
+    monkeypatch.setattr("data.pipelines.rag.GENERATION_API_KEY", "")
+
+    def _run(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        from data.pipelines.rag import generate_answer
+
+        answer = generate_answer(
+            question,
+            [{"source_document": "referral-process", "text": "The indexed referral target is recorded separately."}],
+        )
+        return AgentRun(answer=answer, error="", trace_id="first-overflow", thread_id=thread_id or "")
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _run)
+    token = _staff_token("staff.firstoverflow@example.com")
+
+    async def _run_socket() -> str:
+        async with _StaffSocket(chat_server, "chat_first_overflow", token) as connection:
+            assert (await _recv_json(connection))["event"] == "session_snapshot"
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_first_overflow",
+                            "text": "What is the indexed referral target?",
+                        },
+                    }
+                )
+            )
+            echoed = await _recv_json(connection)
+            assert echoed["event"] == "user_message"
+            try:
+                unexpected = await _recv_json(connection, timeout=0.4)
+            except (TimeoutError, asyncio.TimeoutError):
+                return ""
+            return str(unexpected.get("event"))
+
+    assert asyncio.run(_run_socket()) == ""
+    session = get_chat_hub().get_session("chat_first_overflow")
+    assert session is not None
+    assert session.generating is False
+    assert session.messages[-1].role == "assistant"
+    assert session.messages[-1].text == ""
+    assert session.messages[-1].status == "in_progress"
+
+
 def test_a_second_user_cannot_read_the_session(chat_server: _ChatServer) -> None:
     owner = _staff_token("owner.staff@example.com")
     other = _staff_token("other.staff@example.com")

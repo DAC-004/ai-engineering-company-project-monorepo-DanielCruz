@@ -173,6 +173,31 @@ class _ScriptedLlama:
         return iterator
 
 
+class _CapacityOnCall(_ScriptedLlama):
+    """Raise the local sampler's context-window error on one numbered call."""
+
+    def __init__(self, scripts: list[list[str]], *, fail_on_call: int) -> None:
+        super().__init__(scripts)
+        self.fail_on_call = fail_on_call
+        self.calls = 0
+
+    def create_chat_completion(self, **kwargs: Any) -> _ChunkIterator:
+        self.calls += 1
+        if self.calls == self.fail_on_call:
+            raise ValueError("Requested tokens (2086) exceed context window of 2048")
+        return super().create_chat_completion(**kwargs)
+
+
+_OVERFLOW_CONTEXT = [
+    {
+        "source_document": "referral-process",
+        "text": "The indexed referral target is recorded separately.",
+    }
+]
+_OVERFLOW_QUESTION = "What is the indexed referral target?"
+_PUBLISHED_OVERFLOW = "The indexed referral target is 11 days."
+
+
 def test_grounding_retry_does_not_append_the_replacement_to_the_stream(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -358,6 +383,86 @@ def test_bound_conversation_is_in_the_generation_prompt_only(
     finally:
         reset_local_generation_watch(unbound_token)
     assert [item["role"] for item in unbound.observations[0].prompt_messages] == ["system", "user"]
+
+
+def test_retry_context_overflow_keeps_the_published_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A retry that cannot fit n_ctx leaves the already published sample in place."""
+    fake = _CapacityOnCall([[_PUBLISHED_OVERFLOW]], fail_on_call=2)
+    monkeypatch.setattr("data.pipelines.rag._load_local_llm", lambda: fake)
+    monkeypatch.setattr("data.pipelines.rag.GENERATION_API_KEY", "")
+    published: list[str] = []
+    watch = LocalGenerationWatch(on_kept_release=published.append)
+    token = bind_local_generation_watch(watch)
+    try:
+        from data.pipelines.rag import generate_answer
+
+        answer = generate_answer(_OVERFLOW_QUESTION, _OVERFLOW_CONTEXT)
+    finally:
+        reset_local_generation_watch(token)
+
+    assert fake.calls == 2
+    assert "".join(published) == _PUBLISHED_OVERFLOW
+    assert answer == _PUBLISHED_OVERFLOW
+    assert watch.published_text == _PUBLISHED_OVERFLOW
+    assert watch.replacement_unpublished is True
+    assert watch.replaced_kept_text is False
+
+
+def test_first_sample_context_overflow_is_not_returned_as_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The same capacity error on the first sample still fails the generation."""
+    fake = _CapacityOnCall([[_PUBLISHED_OVERFLOW]], fail_on_call=1)
+    monkeypatch.setattr("data.pipelines.rag._load_local_llm", lambda: fake)
+    monkeypatch.setattr("data.pipelines.rag.GENERATION_API_KEY", "")
+    published: list[str] = []
+    watch = LocalGenerationWatch(on_kept_release=published.append)
+    token = bind_local_generation_watch(watch)
+    try:
+        from data.pipelines.rag import generate_answer
+
+        with pytest.raises(ValueError, match="exceed context window"):
+            generate_answer(_OVERFLOW_QUESTION, _OVERFLOW_CONTEXT)
+    finally:
+        reset_local_generation_watch(token)
+
+    assert published == []
+    assert watch.published_text == ""
+    assert watch.replacement_unpublished is False
+
+
+def test_retry_sampler_failure_other_than_capacity_still_raises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A retry error that is not the context-window rejection is not swallowed."""
+
+    class _OtherFailure(_ScriptedLlama):
+        def __init__(self) -> None:
+            super().__init__([[_PUBLISHED_OVERFLOW]])
+            self.calls = 0
+
+        def create_chat_completion(self, **kwargs: Any) -> _ChunkIterator:
+            self.calls += 1
+            if self.calls == 2:
+                raise RuntimeError("sampler failed")
+            return super().create_chat_completion(**kwargs)
+
+    fake = _OtherFailure()
+    monkeypatch.setattr("data.pipelines.rag._load_local_llm", lambda: fake)
+    monkeypatch.setattr("data.pipelines.rag.GENERATION_API_KEY", "")
+    watch = LocalGenerationWatch(on_kept_release=lambda _text: None)
+    token = bind_local_generation_watch(watch)
+    try:
+        from data.pipelines.rag import generate_answer
+
+        with pytest.raises(RuntimeError, match="sampler failed"):
+            generate_answer(_OVERFLOW_QUESTION, _OVERFLOW_CONTEXT)
+    finally:
+        reset_local_generation_watch(token)
+
+    assert watch.published_text == _PUBLISHED_OVERFLOW
 
 
 def appears_prohibited(text: str) -> bool:

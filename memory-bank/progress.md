@@ -136,3 +136,8 @@
 - Browser session `chat_1b6e7530299d4497` showed Connected. The open chat socket path was `/ws/chat/chat_1b6e7530299d4497` with no search string. The API access log accepted that path three times. Counts in that log: `token=` 0, `eyJ` 0, ASGI traceback or `WebSocketDisconnect` 0.
 - `tests/pipelines/test_live_chat_websocket.py` now sends the same auth frame. Those live GGUF tests were not rerun. Gate, generation, and publication code were not changed.
 - The earlier audit's query-string token-logging limitation is closed for the normal connection and verification workflow. `4292180` remains the inherited prerequisite commit. The user's later commit will be the submission HEAD. No commit, push, pull, or pull request was made. PR #35 was left open.
+
+## Milestone 10 retry context-window correction (2026-10-04)
+- Published HEAD `a7cb5f19bcd0a9e3784b49fda178f6ecb8a82ec1` left the Knowledge assistant in the streaming state when an unpublished grounding retry exceeded the local 2048-token window. The first sample had already been published.
+- `generate_answer` now keeps that published text when the retry raises the sampler's context-window `ValueError`. The same error on the first sample still raises. Other retry errors still raise. Conversation history is not discarded, and retries are not disabled.
+- Focused tests: 37 passed in 12.09s. Browser session `chat_1b6e7530299d4497` interrupted the first answer, completed the UK GDPR redirection, reconnected, kept a 660-character follow-up after the retry overflow, completed a later question, and restored all eight messages on a second reconnect. No generation-worker exception was logged. This correction is not staged.
