@@ -24,9 +24,12 @@ from app.agent.memory_policy import (
     country_exception_excluded,
     normalize_memory_text,
 )
-from shared.healthcore_rag.config import REPO_ROOT
+from shared.healthcore_rag.config import REPO_ROOT, runtime_data_path
 
-MEMORY_DATABASE = REPO_ROOT / "data" / "process" / "agent_memory" / "support_agent_memory.sqlite"
+MEMORY_DATABASE = runtime_data_path(
+    Path("/var/lib/healthcore/agent-memory/support_agent_memory.sqlite"),
+    REPO_ROOT / "data" / "process" / "agent_memory" / "support_agent_memory.sqlite",
+)
 
 # Design choices, not graded numbers. See docs/agent-memory/architecture.md.
 PENDING_TTL = timedelta(hours=24)

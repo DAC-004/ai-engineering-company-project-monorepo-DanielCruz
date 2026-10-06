@@ -1,0 +1,358 @@
+Conversion record
+Source filename: 2026-10-05T234354Z-guest-readonly-recapture.txt
+Source bytes: 40373
+UTF-16 LE BOM offset: 1153
+Method: bytes before the BOM decoded as UTF-8; bytes from the BOM decoded as UTF-16 LE.
+Command results were not reconstructed or edited.
+The source file is unchanged.
+
+Read-only baseline recapture for healthcore-audit
+Guest hostname: healthcore-vcn
+Public address: 150.136.171.59
+SSH user: ubuntu
+Guest clock from date -u: Mon Oct  5 23:43:54 UTC 2026
+Secret review: completed before this file was written. The output contains no password values, private keys, API tokens, connection strings, or PHI. Matches on the words password and key are sshd configuration names or host-key file paths. getent password fields are the placeholder x.
+Host changes during capture: none.
+
+Commands, in order, on the guest:
+date -u
+hostnamectl
+nproc
+lscpu
+free -h
+swapon --show
+df -hT
+uptime
+cat /proc/loadavg
+id
+sudo -n -l
+getent passwd ubuntu opc root
+getent group sudo
+sudo -n sshd -T
+sudo -n ss -lntup
+sudo -n nft list ruleset
+sudo -n iptables-save
+sudo -n ip6tables-save
+ip -4 -brief addr
+ip -6 addr show scope global
+
+Firewall constraint for later approved changes: retain the OUTPUT jump to 169.254.0.0/16 and every InstanceServices rule in the iptables-save section below. Those lines are operational Oracle rules.
+
+This file is the before-state inspection. It does not show that hardening is complete.
+
+----- guest output -----
+=== date -u ===
+Mon Oct  5 23:43:54 UTC 2026
+=== hostnamectl ===
+  Static hostname: healthcore-vcn
+        Icon name: computer-vm
+          Chassis: vm ≡ƒû┤
+Chassis Asset Tag: OracleCloud.com
+       Machine ID: 6eb5ee2a55b447509f4e6cfe0169f570
+          Boot ID: 7ff93e684d0949db8540131016fd83dd
+   Virtualization: kvm
+ Operating System: Ubuntu 26.04 LTS
+           Kernel: Linux 7.0.0-1009-oracle
+     Architecture: x86-64
+  Hardware Vendor: QEMU
+   Hardware Model: Standard PC _Q35 + ICH9, 2009_
+ Hardware Version: pc-q35-7.2
+ Firmware Version: 20260902
+=== nproc ===
+2
+=== lscpu ===
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           40 bits physical, 57 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  2
+On-line CPU(s) list:                     0,1
+Vendor ID:                               AuthenticAMD
+Model name:                              AMD EPYC 9J14 96-Core Processor
+CPU family:                              25
+Model:                                   17
+Thread(s) per core:                      2
+Core(s) per socket:                      1
+Socket(s):                               1
+Stepping:                                1
+BogoMIPS:                                5192.18
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm rep_good nopl xtopology cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext perfctr_core ssbd ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr wbnoinvd arat npt nrip_save vgif vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid overflow_recov succor fsrm arch_capabilities
+Virtualization:                          AMD-V
+Hypervisor vendor:                       KVM
+Virtualization type:                     full
+L1d cache:                               64 KiB (1 instance)
+L1i cache:                               64 KiB (1 instance)
+L2 cache:                                512 KiB (1 instance)
+L3 cache:                                16 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0,1
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Vulnerable: Safe RET, no microcode
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP always-on; PBRSB-eIBRS Not affected; BHI Not affected
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Vulnerable: No microcode
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+=== free -h ===
+               total        used        free      shared  buff/cache   available
+Mem:            11Gi       616Mi        10Gi       5.2Mi       985Mi        11Gi
+Swap:             0B          0B          0B
+=== swapon --show ===
+=== df -hT ===
+Filesystem     Type      Size  Used Avail Use% Mounted on
+tmpfs          tmpfs     2.4G  1.3M  2.4G   1% /run
+/dev/sda1      ext4       45G  2.4G   42G   6% /
+tmpfs          tmpfs     5.9G     0  5.9G   0% /dev/shm
+efivarfs       efivarfs  256K  7.1K  244K   3% /sys/firmware/efi/efivars
+tmpfs          tmpfs     5.9G     0  5.9G   0% /tmp
+none           tmpfs     1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+none           tmpfs     1.0M     0  1.0M   0% /run/credentials/systemd-resolved.service
+/dev/sda13     ext4      989M  100M  822M  11% /boot
+/dev/sda15     vfat      105M  6.3M   99M   7% /boot/efi
+none           tmpfs     1.0M     0  1.0M   0% /run/credentials/systemd-networkd.service
+none           tmpfs     1.0M     0  1.0M   0% /run/credentials/serial-getty@ttyS0.service
+none           tmpfs     1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
+tmpfs          tmpfs     1.2G  8.0K  1.2G   1% /run/user/1001
+=== uptime ===
+ 23:43:54 up  5:25,  1 user,  load average: 0.09, 0.08, 0.08
+=== loadavg ===
+0.09 0.08 0.08 1/246 4455
+=== id ===
+uid=1001(ubuntu) gid=1001(ubuntu) groups=1001(ubuntu),4(adm),24(cdrom),27(sudo),30(dip),102(lxd)
+=== sudo -n -l ===
+User ubuntu may run the following commands on healthcore-vcn:
+    (ALL : ALL) ALL
+    (ALL) NOPASSWD: ALL
+=== getent passwd ===
+ubuntu:x:1001:1001:Ubuntu:/home/ubuntu:/bin/bash
+opc:x:1000:1000::/home/opc:/bin/sh
+root:x:0:0:root:/root:/bin/bash
+=== getent group sudo ===
+sudo:x:27:ubuntu
+=== sshd -T ===
+port 22
+addressfamily any
+listenaddress [::]:22
+listenaddress 0.0.0.0:22
+usepam yes
+pamservicename sshd
+logingracetime 120
+x11displayoffset 10
+maxauthtries 6
+maxsessions 10
+clientaliveinterval 0
+clientalivecountmax 3
+requiredrsasize 1024
+streamlocalbindmask 0177
+unusedconnectiontimeout none
+permitrootlogin prohibit-password
+ignorerhosts yes
+ignoreuserknownhosts no
+hostbasedauthentication no
+hostbasedusesnamefrompacketonly no
+pubkeyauthentication yes
+kerberosauthentication no
+kerberosorlocalpasswd yes
+kerberosticketcleanup yes
+gssapiauthentication no
+gssapicleanupcredentials yes
+gssapistrictacceptorcheck yes
+gssapikeyexchange no
+gssapistorecredentialsonrekey no
+gssapikexalgorithms gss-group14-sha256-,gss-group16-sha512-,gss-nistp256-sha256-,gss-curve25519-sha256-
+passwordauthentication no
+kbdinteractiveauthentication no
+printmotd no
+printlastlog yes
+x11forwarding yes
+x11uselocalhost yes
+permittty yes
+permituserrc yes
+strictmodes yes
+tcpkeepalive yes
+permitemptypasswords no
+compression yes
+gatewayports no
+usedns no
+allowtcpforwarding yes
+allowagentforwarding yes
+disableforwarding no
+allowstreamlocalforwarding yes
+streamlocalbindunlink no
+fingerprinthash SHA256
+exposeauthinfo no
+refuseconnection no
+debianbanner yes
+pidfile /run/sshd.pid
+modulifile /etc/ssh/moduli
+xauthlocation /usr/bin/xauth
+ciphers chacha20-poly1305@openssh.com,aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr
+macs umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1
+banner none
+forcecommand none
+chrootdirectory none
+trustedusercakeys none
+revokedkeys none
+securitykeyprovider internal
+authorizedprincipalsfile none
+versionaddendum none
+authorizedkeyscommand none
+authorizedkeyscommanduser none
+authorizedprincipalscommand none
+authorizedprincipalscommanduser none
+hostkeyagent none
+kexalgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521
+casignaturealgorithms ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+hostbasedacceptedalgorithms ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+hostkeyalgorithms ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+pubkeyacceptedalgorithms ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+sshdsessionpath /usr/lib/openssh/sshd-session
+sshdauthpath /usr/lib/openssh/sshd-auth
+persourcepenaltyexemptlist none
+loglevel INFO
+syslogfacility AUTH
+authorizedkeysfile .ssh/authorized_keys .ssh/authorized_keys2
+hostkey /etc/ssh/ssh_host_rsa_key
+hostkey /etc/ssh/ssh_host_ecdsa_key
+hostkey /etc/ssh/ssh_host_ed25519_key
+acceptenv LANG
+acceptenv LC_*
+acceptenv COLORTERM
+acceptenv NO_COLOR
+authenticationmethods any
+channeltimeout none
+subsystem sftp /usr/lib/openssh/sftp-server
+maxstartups 10:30:100
+persourcemaxstartups none
+persourcenetblocksize 32:128
+permittunnel no
+ipqos ef cs0
+rekeylimit 0 0
+permitopen any
+permitlisten any
+permituserenvironment no
+pubkeyauthoptions none
+persourcepenalties crash:90 authfail:5 noauth:1 grace-exceeded:10 refuseconnection:10 max:600 min:15 max-sources4:65536 max-sources6:65536 overflow:permissive overflow6:permissive
+=== ss -lntup ===
+Netid State  Recv-Q Send-Q     Local Address:Port Peer Address:PortProcess                                                   
+udp   UNCONN 0      0             127.0.0.54:53        0.0.0.0:*    users:(("systemd-resolve",pid=605,fd=18))                
+udp   UNCONN 0      0          127.0.0.53%lo:53        0.0.0.0:*    users:(("systemd-resolve",pid=605,fd=16))                
+udp   UNCONN 0      0      10.0.0.134%enp0s5:68        0.0.0.0:*    users:(("systemd-network",pid=1156,fd=33))               
+udp   UNCONN 0      0                0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=898,fd=5),("systemd",pid=1,fd=227))
+udp   UNCONN 0      0              127.0.0.1:323       0.0.0.0:*    users:(("chronyd",pid=1559,fd=4))                        
+udp   UNCONN 0      0                   [::]:111          [::]:*    users:(("rpcbind",pid=898,fd=7),("systemd",pid=1,fd=229))
+udp   UNCONN 0      0                  [::1]:323          [::]:*    users:(("chronyd",pid=1559,fd=5))                        
+tcp   LISTEN 0      4096          127.0.0.54:53        0.0.0.0:*    users:(("systemd-resolve",pid=605,fd=19))                
+tcp   LISTEN 0      4096             0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=898,fd=4),("systemd",pid=1,fd=226))
+tcp   LISTEN 0      4096             0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=1505,fd=3),("systemd",pid=1,fd=187))  
+tcp   LISTEN 0      4096       127.0.0.53%lo:53        0.0.0.0:*    users:(("systemd-resolve",pid=605,fd=17))                
+tcp   LISTEN 0      4096                [::]:111          [::]:*    users:(("rpcbind",pid=898,fd=6),("systemd",pid=1,fd=228))
+tcp   LISTEN 0      4096                [::]:22           [::]:*    users:(("sshd",pid=1505,fd=4),("systemd",pid=1,fd=188))  
+=== nft list ruleset ===
+table ip filter {
+	chain INPUT {
+		type filter hook input priority filter; policy accept;
+		ct state related,established counter packets 36625 bytes 43201205 accept
+		ip protocol icmp counter packets 0 bytes 0 accept
+		iifname "lo" counter packets 935 bytes 94948 accept
+		ip protocol tcp ct state new tcp dport 22 counter packets 359 bytes 18248 accept
+		counter packets 2 bytes 80 reject with icmp type host-prohibited
+	}
+
+	chain FORWARD {
+		type filter hook forward priority filter; policy accept;
+		counter packets 0 bytes 0 reject with icmp type host-prohibited
+	}
+
+	chain OUTPUT {
+		type filter hook output priority filter; policy accept;
+		ip daddr 169.254.0.0/16 counter packets 23720 bytes 1751786 jump InstanceServices
+	}
+
+	chain InstanceServices {
+		ip daddr 169.254.0.2 ip protocol tcp skuid 0 tcp dport 3260  counter packets 0 bytes 0 accept
+		ip daddr 169.254.2.0/24 ip protocol tcp skuid 0 tcp dport 3260  counter packets 0 bytes 0 accept
+		ip daddr 169.254.4.0/24 ip protocol tcp skuid 0 tcp dport 3260  counter packets 0 bytes 0 accept
+		ip daddr 169.254.5.0/24 ip protocol tcp skuid 0 tcp dport 3260  counter packets 0 bytes 0 accept
+		ip daddr 169.254.0.2 tcp dport 80  counter packets 0 bytes 0 accept
+		ip daddr 169.254.169.254 udp dport 53  counter packets 1260 bytes 119785 accept
+		ip daddr 169.254.169.254 tcp dport 53  counter packets 0 bytes 0 accept
+		ip daddr 169.254.0.3 ip protocol tcp skuid 0 tcp dport 80  counter packets 0 bytes 0 accept
+		ip daddr 169.254.0.4 tcp dport 80  counter packets 0 bytes 0 accept
+		ip daddr 169.254.169.254 tcp dport 80  counter packets 22460 bytes 1632001 accept
+		ip daddr 169.254.169.254 udp dport 67  counter packets 0 bytes 0 accept
+		ip daddr 169.254.169.254 udp dport 69  counter packets 0 bytes 0 accept
+		ip daddr 169.254.169.254 udp dport 123  counter packets 0 bytes 0 accept
+		ip daddr 169.254.0.0/16 ip protocol tcp meta l4proto tcp  counter packets 0 bytes 0 reject with tcp reset
+		ip daddr 169.254.0.0/16 ip protocol udp meta l4proto udp  counter packets 0 bytes 0 reject
+	}
+}
+table ip6 filter {
+	chain INPUT {
+		type filter hook input priority filter; policy accept;
+	}
+
+	chain FORWARD {
+		type filter hook forward priority filter; policy accept;
+	}
+
+	chain OUTPUT {
+		type filter hook output priority filter; policy accept;
+	}
+}
+=== iptables-save ===
+# Generated by iptables-save v1.8.11 (nf_tables) on Mon Oct  5 23:43:54 2026
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [14331:18761898]
+:InstanceServices - [0:0]
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-A OUTPUT -d 169.254.0.0/16 -j InstanceServices
+-A InstanceServices -d 169.254.0.2/32 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.2.0/24 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.4.0/24 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.5.0/24 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.2/32 -p tcp -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 53 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p tcp -m tcp --dport 53 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.3/32 -p tcp -m owner --uid-owner 0 -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.4/32 -p tcp -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p tcp -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 67 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 69 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 123 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.0/16 -p tcp -m tcp -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j REJECT --reject-with tcp-reset
+-A InstanceServices -d 169.254.0.0/16 -p udp -m udp -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j REJECT --reject-with icmp-port-unreachable
+COMMIT
+# Completed on Mon Oct  5 23:43:54 2026
+=== ip6tables-save ===
+# Generated by ip6tables-save v1.8.11 (nf_tables) on Mon Oct  5 23:43:54 2026
+*filter
+:INPUT ACCEPT [2:140]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [19:1132]
+COMMIT
+# Completed on Mon Oct  5 23:43:54 2026
+=== ip -4 -brief addr ===
+lo               UNKNOWN        127.0.0.1/8 
+enp0s5           UP             10.0.0.134/24 metric 100 
+=== ip -6 addr show scope global ===
+=== END ===

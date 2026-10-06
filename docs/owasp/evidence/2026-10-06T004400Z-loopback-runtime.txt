@@ -1,0 +1,41 @@
+Document class: runtime summary, not a command transcript.
+The lines below condense earlier observations. They are not the saved stdout of one command.
+Current command output is a separate capture with its own timestamp.
+
+Loopback runtime on healthcore-audit, guest hostname healthcore-vcn.
+Window: 2026-10-06 00:44:00 UTC through 00:53 UTC.
+Secret review: this file contains no password, token, private key, or connection-string value.
+
+API
+- healthcore-api.service active
+- bind 127.0.0.1:8000
+- no 0.0.0.0:8000, no 6333, no 6334
+- process environment: JWT_ALGORITHM=HS256
+- process environment names present: QDRANT_PATH, RAG_MODELS_DIR, FASTEMBED_CACHE_PATH, HF_HOME
+- QDRANT_URL absent
+- index: collection healthcore_knowledge, 47 chunks
+- synthetic question: What notice does the appointment policy require before a cancellation?
+- answer begins: The appointment policy requires a cancellation to be made at least 2 hours before the appointment.
+- response is not model_asset_missing
+- process still active after the answer
+- RSS 3956032 KiB
+- GGUF 2.0G
+- FastEmbed cache 65M
+- Qdrant storage 268K
+- memory after the answer: 11Gi total, 2.4Gi used, 9.3Gi available
+
+Tracker
+- healthcore-web.service active
+- bind 127.0.0.1:3000
+- GET /login HTTP 200
+- build variables: API and inventory base http://127.0.0.1:8000
+- telemetry http://127.0.0.1:8000/telemetry/events
+- production route table has no opengraph-image route
+- GET /_next/image HTTP 400, body: "url" parameter is required
+- image cache symlink: /var/lib/healthcore/web-cache/images
+- repeat probe recorded no EACCES
+
+Unchanged controls
+- sshd -T: permitrootlogin prohibit-password, passwordauthentication no
+- iptables-save still contains -A OUTPUT -d 169.254.0.0/16 -j InstanceServices
+- TCP 80 and 443 were not added

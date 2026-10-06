@@ -1,0 +1,31 @@
+Document class: public verification after the production certificate already existed.
+Script: docs/owasp/evidence/2026-10-06-public-verification.py
+Workstation clock: 2026-10-06T03:09:05Z through 2026-10-06T03:09:08Z.
+No certificate was requested by this run. Certificate checks used ssl.create_default_context. verify_mode 2 is CERT_REQUIRED. check_hostname was True. No verification bypass was set.
+
+Issuance of the certificate being checked is recorded in docs/owasp/evidence/2026-10-06T025146Z-certificate-and-tls.txt.
+Production certbot completed at guest 02:50:12Z through 02:50:17Z on 2026-10-06.
+The certificate notBefore time is Oct 6 01:51:44 2026 GMT. notAfter is Oct 12 17:51:43 2026 GMT.
+Issuer is C=US, O=Let's Encrypt, CN=YE1.
+
+HTTP_CHALLENGE_STATUS 200
+HTTP_CHALLENGE_BODY healthcore-acme-probe
+HTTP_REDIRECT_STATUS 301
+HTTP_REDIRECT_LOCATION https://150.136.171.59/
+SSL_VERIFY_MODE 2
+SSL_CHECK_HOSTNAME True
+CERT_SAN IP Address:150.136.171.59
+SAN_MATCHES_IP True
+FRONTEND_STATUS HTTP/1.1 200 OK
+FRONTEND_SCRIPT_COUNT 9
+FRONTEND_ORIGIN_HITS 2
+FRONTEND_LOOPBACK_HITS 0
+FRONTEND_TELEMETRY_HITS 2
+REGISTER_STATUS 201
+LOGIN_STATUS 200
+TOKEN_PRESENT True
+WSS_STATUS_LINE HTTP/1.1 101 Switching Protocols
+WSS_EVENT session_snapshot
+WSS_SESSION auditprobe1
+
+The token and password were not printed. After this check the guest cleanup printed PROBE_USERS_REMOVED 1 and PROBE_PROFILES_REMOVED 1, and healthcore-api returned to active.

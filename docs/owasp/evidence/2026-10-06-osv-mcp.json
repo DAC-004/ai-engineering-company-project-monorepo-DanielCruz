@@ -1,0 +1,122 @@
+{
+  "query": "POST https://api.osv.dev/v1/querybatch",
+  "ecosystem": "PyPI",
+  "pins": [
+    "annotated-types==0.8.0",
+    "anyio==4.15.1",
+    "attrs==26.1.0",
+    "certifi==2026.7.22",
+    "cffi==2.1.1 ; platform_python_implementation != 'PyPy'",
+    "charset-normalizer==3.5.1",
+    "click==8.5.0",
+    "cryptography==50.0.1",
+    "h11==0.16.0",
+    "httpcore==1.0.9",
+    "httptools==0.8.0",
+    "httpx==0.28.1",
+    "httpx-sse==0.4.3",
+    "idna==3.20",
+    "jsonschema==4.26.0",
+    "jsonschema-specifications==2025.9.1",
+    "mcp==1.30.0",
+    "mcpauth==0.2.0b1",
+    "pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'",
+    "pydantic==2.13.5",
+    "pydantic-core==2.46.5",
+    "pydantic-settings==2.15.0",
+    "pyjwt==2.14.0",
+    "python-dotenv==1.2.3",
+    "python-multipart==0.0.32",
+    "pywin32==312 ; sys_platform == 'win32'",
+    "pyyaml==6.0.3",
+    "referencing==0.37.0",
+    "requests==2.34.2",
+    "rpds-py==2026.6.3",
+    "sse-starlette==3.4.11",
+    "starlette==1.7.0",
+    "typing-extensions==4.16.0",
+    "typing-inspection==0.4.4",
+    "urllib3==2.8.0",
+    "uvicorn==0.53.0",
+    "uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'",
+    "watchfiles==1.3.0",
+    "websockets==17.1"
+  ],
+  "vulnerable": [
+    {
+      "id": "GHSA-42vr-xj54-vc7v",
+      "summary": "PyJWT: Unauthenticated RecursionError DoS in pre-verification payload parse (PyJWKClient.get_signing_key_from_jwt / verify_signature=False)",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        }
+      ],
+      "affected": [
+        {
+          "package": "pyjwt",
+          "ecosystem": "PyPI",
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "2.0.0a1"
+            },
+            {
+              "fixed": "2.15.0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GHSA-x33g-cr3x-6449",
+      "summary": "PyJWT accepts inconsistent OKP x/d JWKs, causing public/private key identity confusion",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:H/A:N"
+        }
+      ],
+      "affected": [
+        {
+          "package": "pyjwt",
+          "ecosystem": "PyPI",
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "2.1.0"
+            },
+            {
+              "fixed": "2.15.0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PYSEC-2026-4141",
+      "summary": "PyJWT: Unauthenticated RecursionError DoS in pre-verification payload parse (PyJWKClient.get_signing_key_from_jwt / verify_signature=False)",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        }
+      ],
+      "affected": [
+        {
+          "package": "pyjwt",
+          "ecosystem": "PyPI",
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "2.0.0a1"
+            },
+            {
+              "fixed": "2.15.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+Command: uv run pytest tests/pipelines/test_runtime_data_path.py -q
+Working directory: repository root.
+Using CPython 3.14.3
+4 passed in 0.06s
+
+The four tests are the two runtime-path assertions, test_dotenv_stub_does_not_escape, and test_failed_load_restores_the_preexisting_dotenv_module.
+This file records that pytest run. It is not a manual function call.
+uv created .venv at the repository root for this command. That directory is ignored and is not part of the review package.

@@ -41,14 +41,15 @@ from app.agent.nodes import (
 from app.agent.routing import classify_question
 from app.agent.state import AgentState
 from app.agent.tracing import load_trace, persist_trace, trace_directory
-from shared.healthcore_rag.config import REPO_ROOT
+from shared.healthcore_rag.config import REPO_ROOT, runtime_data_path
 
 logger = logging.getLogger(__name__)
 
 GRAPH_EXECUTION_FAILED = "graph execution failed"
 
-CHECKPOINT_DATABASE = (
-    REPO_ROOT / "data" / "process" / "agent_checkpoints" / "support_agent.sqlite"
+CHECKPOINT_DATABASE = runtime_data_path(
+    Path("/var/lib/healthcore/agent-checkpoints/support_agent.sqlite"),
+    REPO_ROOT / "data" / "process" / "agent_checkpoints" / "support_agent.sqlite",
 )
 
 

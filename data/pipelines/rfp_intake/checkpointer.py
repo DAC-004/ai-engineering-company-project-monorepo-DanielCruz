@@ -15,8 +15,12 @@ from typing import TypeVar
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from data.pipelines.rfp_intake.generation import REPO_ROOT
+from shared.healthcore_rag.config import runtime_data_path
 
-CHECKPOINT_DIR = REPO_ROOT / "data" / "process" / "rfp_checkpoints"
+CHECKPOINT_DIR = runtime_data_path(
+    Path("/var/lib/healthcore/rfp-checkpoints"),
+    REPO_ROOT / "data" / "process" / "rfp_checkpoints",
+)
 CHECKPOINT_PATH = CHECKPOINT_DIR / "approvals.sqlite"
 
 T = TypeVar("T")

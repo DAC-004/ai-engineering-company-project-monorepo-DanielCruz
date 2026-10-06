@@ -1,0 +1,24 @@
+#!/bin/bash
+set -u
+LOG=/var/log/healthcore-renewal/certbot-deploy-hook.log
+{
+  echo DEPLOY_HOOK_START
+  date -u
+} >> "$LOG"
+if nginx -t >> "$LOG" 2>&1; then
+  echo NGINX_TEST_EXIT 0 >> "$LOG"
+else
+  echo NGINX_TEST_EXIT 1 >> "$LOG"
+  exit 1
+fi
+if systemctl reload nginx >> "$LOG" 2>&1; then
+  echo NGINX_RELOAD_EXIT 0 >> "$LOG"
+else
+  echo NGINX_RELOAD_EXIT 1 >> "$LOG"
+  exit 1
+fi
+{
+  date -u
+  echo DEPLOY_HOOK_EXIT 0
+} >> "$LOG"
+exit 0

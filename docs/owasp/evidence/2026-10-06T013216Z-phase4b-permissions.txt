@@ -1,0 +1,58 @@
+Phase 4b permission command output. No secret values are included.
+
+Guest clock: Tue Oct 6 01:32:16 UTC 2026 through Tue Oct 6 01:32:22 UTC 2026. Host healthcore-vcn.
+
+PROBE_USERS_REMOVED 1
+PROBE_PROFILES_REMOVED 1
+DURABILITY_SUMMARY 200
+{}
+STAT_GGUF root healthcore 640
+STAT_ENV root healthcore 640
+STAT_APP root healthcore 750
+STAT_MODELS root healthcore 750
+STAT_AUTHJSON healthcore healthcore 640
+STAT_LOG healthcore ubuntu 750
+namei -l /etc/healthcore/healthcore.env
+drwxr-xr-x root root /
+drwxr-xr-x root root etc
+drwxr-x--- root healthcore healthcore
+-rw-r----- root healthcore healthcore.env
+GGUF_WRITE_OPEN denied
+PermissionError: [Errno 13] Permission denied: '/var/lib/healthcore/models/qwen2.5-3b-instruct-q4_k_m.gguf'
+CODE_WRITE denied
+SEPARATE_PROCESS_TRACE_WRITE allowed
+HEALTHCORE_ENV_READ allowed
+HEALTHCORE_ENV_WRITE denied
+NOBODY_ENV_READ denied
+PY_OK
+VENV_PYTHON executable
+
+The curls in that same script returned 000 because the script did not wait for the second startup. The units were active. A later check at Tue Oct 6 01:41:09 UTC 2026 recorded:
+
+API_OPENAPI 200
+WEB_LOGIN 200
+ANON_INVENTORY 401
+SUPPLIERS 200
+suppliers directory healthcore healthcore 750
+suppliers.json was healthcore healthcore 644 at that moment
+main.py root healthcore 640
+uvicorn root healthcore 750
+LISTEN 127.0.0.1:8000 uvicorn pid 19849
+LISTEN 127.0.0.1:3000 next-server pid 19850
+LISTEN 0.0.0.0:22 and [::]:22
+sshd -T permitrootlogin prohibit-password
+sshd -T passwordauthentication no
+iptables-save still contains -A OUTPUT -d 169.254.0.0/16 -j InstanceServices and the InstanceServices chain
+CACHE regular files are not world-readable. The six mode 777 names are symbolic links. The inspected blob target config.json -> blobs/0d7726d0cdccb62ee17c03bd1595cff07199b8f8 is mode 640 healthcore healthcore.
+
+After deploying the supplier file-mode change, Tue Oct 6 01:44:17 UTC 2026:
+
+SUPPLIERS 200
+suppliers.json healthcore healthcore 640
+healthcore-api active
+
+Environment name check after systemctl daemon-reload, Tue Oct 6 01:45:27 UTC 2026. PID 20969. ACCESS_TOKEN_EXPIRE_MINUTES present 0. JWT_ALGORITHM HS256. QDRANT_URL present 0. Both units active.
+
+Listener recheck after that reload: 127.0.0.1:8000, 127.0.0.1:3000, 0.0.0.0:22, [::]:22. No port 80, 443, 6333, or 6334.
+
+SEPARATE_PROCESS_TRACE_WRITE is a sudo -u healthcore touch in agent-traces. It is not an API workflow. The API process write is suppliers.json, owner healthcore, created by GET /suppliers after the restart. The in-process guardrail summary was {"input_scope":{"block":1},"failure_type":{"security":1}} before the durability restart and {} after it.

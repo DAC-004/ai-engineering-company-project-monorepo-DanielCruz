@@ -1,0 +1,24 @@
+Document class: retrieved-document hidden-instruction fixture output.
+Script retained at docs/owasp/evidence/2026-10-06-retrieved-document-fixture.py.
+Guest clock: Tue Oct 6 02:56:05 UTC 2026 through Tue Oct 6 02:56:08 UTC 2026.
+The API was stopped so the embedded Qdrant lock could be taken, then started again.
+The question does not contain the instruction text. The raw search hit contained it. retrieve() omitted that chunk. The synthetic point was deleted.
+
+FIXTURE_START
+STOP_EXIT 0
+QDRANT_URL_SET False
+QDRANT_PATH /var/lib/healthcore/qdrant
+QUESTION_CONTAINS_INSTRUCTION False
+RAW_HIT_COUNT 3
+RAW_CONTAINS_INSTRUCTION True
+RAW_CONTAINS_MARKER True
+SURVIVING_COUNT 2
+SURVIVING_CONTAINS_INSTRUCTION False
+SURVIVING_CONTAINS_MARKER False
+RETRIEVED_DOCUMENT_FIXTURE_PASSED
+POINT_DELETED True
+FIXTURE_EXIT 0
+PROBE_USERS_REMOVED 1
+PROBE_PROFILES_REMOVED 1
+CLEANUP_EXIT 0
+START_EXIT 0

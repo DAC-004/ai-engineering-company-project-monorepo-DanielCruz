@@ -1,0 +1,134 @@
+Document class: command transcript for one guest script.
+Guest clock in this output: Tue Oct 6 01:11:50 UTC 2026 through Tue Oct 6 01:12:37 UTC 2026.
+Target: hostname healthcore-vcn, IMDS display name healthcore-audit, private address 10.0.0.134.
+Secrets, full process environments, and credential-bearing command lines are not included.
+A later root stat and sha256sum are recorded after the end marker. That later command did not print date -u, so it is not given an invented timestamp.
+
+=== date -u ===
+Tue Oct  6 01:11:50 UTC 2026
+=== hostname ===
+healthcore-vcn
+=== imds display name ===
+healthcore-audit
+=== ipv4 ===
+lo               UNKNOWN        127.0.0.1/8 
+enp0s5           UP             10.0.0.134/24 metric 100 
+=== service show ===
+Id=healthcore-api.service
+ActiveState=active
+MainPID=18093
+ExecStart={ path=/opt/healthcore/app/services/api/.venv/bin/uvicorn ; argv[]=/opt/healthcore/app/services/api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 ; ignore_errors=no ; start_time=[Tue 2026-10-06 01:11:22 UTC] ; stop_time=[n/a] ; pid=18093 ; code=(null) ; status=0/0 }
+EnvironmentFiles=/etc/healthcore/healthcore.env (ignore_errors=no)
+WorkingDirectory=/opt/healthcore/app/services/api
+User=healthcore
+Group=healthcore
+---
+Id=healthcore-web.service
+ActiveState=active
+MainPID=17844
+ExecStart={ path=/opt/healthcore/app/uis/talent-pipeline-tracker/node_modules/next/dist/bin/next ; argv[]=/opt/healthcore/app/uis/talent-pipeline-tracker/node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000 ; ignore_errors=no ; start_time=[Tue 2026-10-06 00:54:01 UTC] ; stop_time=[n/a] ; pid=17844 ; code=(null) ; status=0/0 }
+WorkingDirectory=/opt/healthcore/app/uis/talent-pipeline-tracker
+User=healthcore
+Group=healthcore
+=== wait for api ===
+STARTUP_COMPLETE
+=== listeners ===
+Netid State  Recv-Q Send-Q     Local Address:Port Peer Address:PortProcess                                                     
+tcp   LISTEN 0      2048           127.0.0.1:8000      0.0.0.0:*    users:(("uvicorn",pid=18093,fd=16))                        
+tcp   LISTEN 0      4096             0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=13270,fd=3),("systemd",pid=1,fd=159))   
+tcp   LISTEN 0      511            127.0.0.1:3000      0.0.0.0:*    users:(("next-server (v1",pid=17844,fd=21))                
+tcp   LISTEN 0      4096                [::]:22           [::]:*    users:(("sshd",pid=13270,fd=4),("systemd",pid=1,fd=160))   
+=== path probe ===
+[0;93m2026-10-06 01:11:53.335682149 [W:onnxruntime:Default, telemetry.cc:800 operator()] Failed to persist telemetry device ID; using an in-memory identifier[m
+SELECTION_CHECKS_PASSED
+CONSTANT CHECKPOINT_DATABASE /var/lib/healthcore/agent-checkpoints/support_agent.sqlite
+CONSTANT TRACE_DIRECTORY /var/lib/healthcore/agent-traces
+CONSTANT MEMORY_DATABASE /var/lib/healthcore/agent-memory/support_agent_memory.sqlite
+CONSTANT CHECKPOINT_DIR /var/lib/healthcore/rfp-checkpoints
+CONSTANT CHECKPOINT_PATH /var/lib/healthcore/rfp-checkpoints/approvals.sqlite
+TRACE_WRITE /var/lib/healthcore/agent-traces/audit-path-probe.json
+TRACE_READBACK audit-path-probe probe
+SQL_READBACK /var/lib/healthcore/agent-checkpoints/support_agent.sqlite audit-path-probe
+SQL_READBACK /var/lib/healthcore/agent-memory/support_agent_memory.sqlite audit-path-probe
+SQL_READBACK /var/lib/healthcore/rfp-checkpoints/approvals.sqlite audit-path-probe
+=== synthetic request ===
+HTTP/1.1 200 OK
+date: Tue, 06 Oct 2026 01:11:53 GMT
+content-length: 289
+content-type: application/json
+keys answer,memory_proposal,thread_id,trace_id
+model_asset_missing False
+answer_chars 160
+answer_prefix The appointment policy requires a cancellation to be made at least 2 hours before the appointment. If a cancellation is made within 2 hours of the appointment, 
+=== process files after request ===
+MainPID 18093
+    PID USER       RSS CMD
+  18093 healthc+ 3948648 /opt/healthcore/app/services/api/.venv/bin/python /opt/healthcore/app/services/api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+--- matching fds ---
+lrwx------ 1 healthcore healthcore 64 Oct  6 01:11 14 -> /var/lib/healthcore/auth/auth.json
+lrwx------ 1 healthcore healthcore 64 Oct  6 01:11 15 -> /var/lib/healthcore/auth/inventory.sqlite
+lrwx------ 1 healthcore healthcore 64 Oct  6 01:12 22 -> /var/lib/healthcore/qdrant/.lock
+lrwx------ 1 healthcore healthcore 64 Oct  6 01:12 23 -> /var/lib/healthcore/qdrant/collection/healthcore_knowledge/storage.sqlite
+--- newest traces ---
+1791249113.5374195910 /var/lib/healthcore/agent-traces/audit-path-probe.json
+1791249157.6172115450 /var/lib/healthcore/agent-traces/d83b6f19a2d54b4cac0c547e512b8d04.json
+=== capacity ===
+               total        used        free      shared  buff/cache   available
+Mem:            11Gi       2.4Gi       3.1Gi       5.2Mi       6.4Gi       9.3Gi
+Swap:             0B          0B          0B
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/sda1      ext4   45G  7.4G   37G  17% /
+/dev/sda1      ext4   45G  7.4G   37G  17% /
+2.0G	/var/lib/healthcore/models/qwen2.5-3b-instruct-q4_k_m.gguf
+65M	/var/lib/healthcore/cache/fastembed
+268K	/var/lib/healthcore/qdrant
+64K	/var/lib/healthcore/cache/huggingface
+=== selected environ names ===
+JWT_ALGORITHM=HS256
+TINYDB_PATH=/var/lib/healthcore/auth/auth.json
+QDRANT_PATH=/var/lib/healthcore/qdrant
+RAG_MODELS_DIR=/var/lib/healthcore/models
+FASTEMBED_CACHE_PATH=/var/lib/healthcore/cache/fastembed
+HF_HOME=/var/lib/healthcore/cache/huggingface
+QDRANT_URL_SET no
+=== sshd ===
+permitrootlogin prohibit-password
+pubkeyauthentication yes
+passwordauthentication no
+kbdinteractiveauthentication no
+=== instanceservices ===
+:InstanceServices - [0:0]
+-A OUTPUT -d 169.254.0.0/16 -j InstanceServices
+-A InstanceServices -d 169.254.0.2/32 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.2.0/24 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.4.0/24 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.5.0/24 -p tcp -m owner --uid-owner 0 -m tcp --dport 3260 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.2/32 -p tcp -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 53 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p tcp -m tcp --dport 53 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.3/32 -p tcp -m owner --uid-owner 0 -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.4/32 -p tcp -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p tcp -m tcp --dport 80 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 67 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 69 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.169.254/32 -p udp -m udp --dport 123 -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j ACCEPT
+-A InstanceServices -d 169.254.0.0/16 -p tcp -m tcp -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j REJECT --reject-with tcp-reset
+-A InstanceServices -d 169.254.0.0/16 -p udp -m udp -m comment --comment "See the Oracle-Provided Images section in the Oracle Cloud Infrastructure documentation for security impact of modifying or removing this rule" -j REJECT --reject-with icmp-port-unreachable
+=== code tree stores ===
+=== end ===
+Tue Oct  6 01:12:37 UTC 2026
+
+---
+exit_code: 0
+elapsed_ms: 53659
+ended_at: 2026-10-06T01:12:39.699Z
+===== later root command, guest clock not printed =====
+stat -c '%y %U %G %a %n' of the four stores, then sha256sum of the GGUF.
+2026-10-06 01:12:37.614027923 +0000 healthcore healthcore 644 /var/lib/healthcore/agent-checkpoints/support_agent.sqlite
+2026-10-06 01:11:53.550609972 +0000 healthcore healthcore 644 /var/lib/healthcore/agent-memory/support_agent_memory.sqlite
+2026-10-06 01:11:53.558610048 +0000 healthcore healthcore 644 /var/lib/healthcore/rfp-checkpoints/approvals.sqlite
+2026-10-06 01:11:53.537419591 +0000 healthcore healthcore 644 /var/lib/healthcore/agent-traces/audit-path-probe.json
+2026-10-06 01:12:37.617211545 +0000 healthcore healthcore 644 /var/lib/healthcore/agent-traces/d83b6f19a2d54b4cac0c547e512b8d04.json
+626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d  /var/lib/healthcore/models/qwen2.5-3b-instruct-q4_k_m.gguf
+Hugging Face paths-info lfs.oid for Qwen/Qwen2.5-3B-Instruct-GGUF qwen2.5-3b-instruct-q4_k_m.gguf is the same sha256. Size 2104932768.
+The HEAD etag from that host was the xetHash, not the LFS oid.

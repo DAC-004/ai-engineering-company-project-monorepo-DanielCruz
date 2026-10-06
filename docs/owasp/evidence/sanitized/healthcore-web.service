@@ -1,0 +1,15 @@
+[Unit]
+Description=HealthCore tracker on loopback
+After=network.target healthcore-api.service
+
+[Service]
+User=healthcore
+Group=healthcore
+WorkingDirectory=/opt/healthcore/app/uis/talent-pipeline-tracker
+Environment=HOME=/var/lib/healthcore
+Environment=NEXT_CACHE_DIR=/var/lib/healthcore/web-cache
+ExecStart=/opt/healthcore/app/uis/talent-pipeline-tracker/node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

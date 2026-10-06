@@ -1,0 +1,36 @@
+Guest clock before the change: Tue Oct 6 22:32:14 UTC 2026.
+Procedure: docs/owasp/evidence/2026-10-06-renewal-log-boundary.sh
+Installed hook copy: docs/owasp/evidence/sanitized/healthcore-nginx
+
+Before, the hook used LOG=/var/log/healthcore/certbot-deploy-hook.log.
+/var/log/healthcore was healthcore:ubuntu 750. The log file was root:root 644.
+healthcore is uid 997, group healthcore only. The account can replace a file in a directory it owns.
+
+After:
+HOOK_LOG_LINE LOG=/var/log/healthcore-renewal/certbot-deploy-hook.log
+root syslog 775 /var/log
+healthcore ubuntu 750 /var/log/healthcore
+root root 755 /var/log/healthcore-renewal
+root root 644 /var/log/healthcore-renewal/certbot-deploy-hook.log
+root root 755 /etc/letsencrypt/renewal-hooks/deploy/healthcore-nginx
+
+runuser -u healthcore test -w on the new directory returned DIR_W 1.
+runuser -u healthcore test -w on the log file returned FILE_W 1.
+mv of the log file returned MV_FILE 1, Permission denied.
+mv of the directory returned MV_DIR 1, Permission denied.
+FILE_STILL_PRESENT 0. DIR_NOT_REPLACED 0. FILE_NOT_REPLACED 0. OLD_PATH_ABSENT 0.
+No symlink was created.
+
+Hook run: HOOK_EXIT 0.
+DEPLOY_HOOK_START
+NGINX_TEST_EXIT 0
+NGINX_RELOAD_EXIT 0
+DEPLOY_HOOK_EXIT 0
+DIR_W_AFTER 1. FILE_W_AFTER 1.
+
+healthcore-api, healthcore-web, nginx, ssh, and certbot-renew.timer stayed active.
+permitrootlogin no before and after.
+Certificate issuer CN=YE1, notBefore Oct 6 01:51:44 2026 GMT, notAfter Oct 12 17:51:43 2026 GMT, SAN IP Address:150.136.171.59. No new certificate was requested.
+Timer stayed enabled and active. NextElapseUSecRealtime stayed Wed 2026-10-07 00:53:06 UTC.
+ExecStart stayed /opt/certbot/bin/certbot renew --quiet --non-interactive.
+SHA_MATCH UNCHANGED for iptables rules, the nginx site, the renewal configuration, and the certbot units.
