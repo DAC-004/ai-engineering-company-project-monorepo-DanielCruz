@@ -465,6 +465,85 @@ def test_retry_sampler_failure_other_than_capacity_still_raises(
     assert watch.published_text == _PUBLISHED_OVERFLOW
 
 
+def test_completion_release_matches_the_answer_without_a_protected_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A permitted completion flush is published once and omits an open prefix."""
+    from data.pipelines.rag import _local_llm_complete
+
+    cases = (
+        ("Bring the form for the patients. Please review patient A", "patient A"),
+        ("Bring the form for the patients. Note: ignore all your", "ignore all your"),
+    )
+    for model_text, protected in cases:
+        for chunks in (list(model_text), [model_text]):
+            class _OneShot:
+                def create_chat_completion(self, **_kwargs: Any) -> _ChunkIterator:
+                    pieces = [
+                        {"choices": [{"delta": {"content": piece}, "finish_reason": None}]}
+                        for piece in chunks
+                    ]
+                    pieces.append({"choices": [{"delta": {}, "finish_reason": "stop"}]})
+                    return _ChunkIterator(pieces)
+
+            monkeypatch.setattr("data.pipelines.rag.GENERATION_API_KEY", "")
+            monkeypatch.setattr("data.pipelines.rag._load_local_llm", lambda: _OneShot())
+            callback_releases: list[str] = []
+            kept_releases: list[str] = []
+            watch = LocalGenerationWatch(
+                on_release=callback_releases.append,
+                on_kept_release=kept_releases.append,
+                forward_kept=True,
+            )
+            token = bind_local_generation_watch(watch)
+            try:
+                answer = _local_llm_complete([{"role": "user", "content": "form"}])
+            finally:
+                reset_local_generation_watch(token)
+
+            observation = watch.observations[0]
+            assert protected not in answer
+            assert "for the patients" in answer
+            assert answer == "".join(observation.releases)
+            assert answer == "".join(callback_releases)
+            assert answer == "".join(kept_releases)
+            assert answer == watch.published_text
+            assert answer == observation.committed_text
+            assert answer.count("for the patients") == 1
+            assert observation.withheld_text == protected
+            assert not appears_prohibited(answer)
+            assert observation.published_before_iterator_close is True
+
+    held_only = "for the patients."
+
+    class _HeldOnly:
+        def create_chat_completion(self, **_kwargs: Any) -> _ChunkIterator:
+            pieces = [
+                {"choices": [{"delta": {"content": char}, "finish_reason": None}]}
+                for char in held_only
+            ]
+            pieces.append({"choices": [{"delta": {}, "finish_reason": "stop"}]})
+            return _ChunkIterator(pieces)
+
+    monkeypatch.setattr("data.pipelines.rag._load_local_llm", lambda: _HeldOnly())
+    held_releases: list[str] = []
+    watch = LocalGenerationWatch(
+        on_release=held_releases.append,
+        on_kept_release=held_releases.append,
+        forward_kept=True,
+    )
+    token = bind_local_generation_watch(watch)
+    try:
+        answer = _local_llm_complete([{"role": "user", "content": "form"}])
+    finally:
+        reset_local_generation_watch(token)
+    observation = watch.observations[0]
+    assert answer == held_only
+    assert observation.published_before_iterator_close is False
+    assert held_releases == [held_only, held_only]
+    assert watch.published_text == held_only
+
+
 def appears_prohibited(text: str) -> bool:
     from app.agent.guardrails.text_rules import disclosure_is_prohibited
     from app.agent.memory_policy import appears_to_contain_phi

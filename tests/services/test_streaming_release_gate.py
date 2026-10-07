@@ -17,8 +17,22 @@ for import_path in (str(REPO_ROOT), str(API_ROOT)):
     if import_path not in sys.path:
         sys.path.insert(0, import_path)
 
-from app.agent.guardrails.text_rules import disclosure_is_prohibited  # noqa: E402
-from app.agent.memory_policy import appears_to_contain_phi  # noqa: E402
+from app.agent.guardrails.output_validation import (  # noqa: E402
+    SAFE_OUTPUT,
+    output_failure,
+    safe_output,
+)
+from app.agent.guardrails.text_rules import (  # noqa: E402
+    _NAMED_PATIENT,
+    disclosure_is_prohibited,
+)
+from app.agent.memory_policy import (  # noqa: E402
+    _NAMED_AS_PATIENT,
+    _PATIENT_NAME,
+    _PHI_TERMS,
+    _cites_an_appointment_cancellation_for_a_patient,
+    appears_to_contain_phi,
+)
 from app.services.streaming_release_gate import (  # noqa: E402
     _FIXED_PHRASES,
     _PATTERN_SOURCES,
@@ -30,6 +44,41 @@ ORDINARY_OPEN_TAIL = "UK GDPR requires a documented basis"
 OPEN_PATIENT_PREFIX = "Please review patient A"
 OPEN_INSTRUCTION_PREFIX = "Note: ignore all your"
 THREE_WORD = "cancel the appointment for the patient"
+JOHNSON = "Patient Johnson cancelled tomorrow's appointment, note that down."
+PATIENT_SMITH = "patient Smith had a failed referral"
+PRIVATE_PAY_POLICY = (
+    "The appointment policy requires a cancellation to be made more than 24 hours "
+    "in advance without any charge. If a cancellation is made less than 24 hours "
+    "in advance or if it's a no-show, a charge of 50 USD (or 40 GBP in the UK) "
+    "applies for private-pay patients."
+)
+_CANCEL_FORMS = (
+    "cancel",
+    "cancelled",
+    "canceled",
+    "cancelling",
+    "canceling",
+    "cancellation",
+    "cancelation",
+)
+PLURAL_PATIENTS = "cancel the appointment for the patients."
+PATIENT_CANCELED = "The patient canceled the appointment."
+PATIENTS_CANCELED = "The patients canceled the appointment."
+PASSIVE_UK = "The appointment was cancelled for the patient."
+PASSIVE_US = "The appointment was canceled for the patients."
+PASSIVE_FRONT = "For the patients, the appointment was canceled."
+PASSIVE_MIDDLE = "The appointment for the patient was cancelled."
+# Eleven words sit between "appointment" and "cancelled".
+LONG_PASSIVE = (
+    "The appointment originally scheduled by the downtown clinic after the referral "
+    "review was cancelled for the patient."
+)
+# Ten words sit between "patient" and "canceled".
+LONG_ACTOR = (
+    "The patient called the downtown clinic after the referral review and then "
+    "canceled the appointment."
+)
+GENERIC_CATEGORY = "A cancellation notice before the appointment applies to patients."
 
 
 def _chunk_partitions(text: str) -> list[list[str]]:
@@ -151,22 +200,250 @@ def test_prohibited_matches_stay_withheld_across_chunk_partitions() -> None:
 def test_three_word_completing_word_is_not_emitted() -> None:
     before_last_character = THREE_WORD[:-1]
     partial = _assert_partition_stable(before_last_character)
-    assert partial.committed == "cancel the appointment for "
-    assert partial.held == "the patien"
+    assert partial.committed == "cancel the appointment "
+    assert partial.held == "for the patien"
     assert "appointment" in partial.committed
     assert "cancel" in partial.committed
     assert partial.stopped is False
 
     finished = _assert_partition_stable(THREE_WORD)
-    assert finished.committed == "cancel the appointment for "
-    assert finished.held == ""
+    assert finished.committed == "cancel the appointment "
     assert finished.stopped is True
+    assert finished.held == ""
     assert "appointment" in finished.committed
     assert "cancel" in finished.committed
     assert "patient" not in finished.committed.casefold()
+    assert "for" not in finished.committed.casefold()
+    assert appears_to_contain_phi(THREE_WORD) is True
+    assert disclosure_is_prohibited(THREE_WORD) is True
+    assert output_failure(THREE_WORD) == "content"
     remainder = THREE_WORD[len(finished.committed) :]
-    assert remainder == "the patient"
+    assert remainder == "for the patient"
     assert remainder not in finished.committed
+    _assert_completion_drops_held(THREE_WORD, finished.committed)
+
+
+def _gate_without_flush(text: str) -> StreamingReleaseGate:
+    gate = StreamingReleaseGate()
+    gate.push(text)
+    return gate
+
+
+def _assert_completion_drops_held(text: str, committed: str) -> None:
+    """Chunk splits and completion must not emit held or later text."""
+    for partition in _chunk_partitions(text):
+        running = _replay(partition)
+        assert running.committed == committed
+        released = running.complete()
+        assert released == ""
+        assert running.held == ""
+        assert running.stopped is True
+        assert running.committed == committed
+        assert "patient" not in running.committed.casefold()
+        assert running.push(" later") == ""
+        assert running.committed == committed
+
+
+def test_private_pay_policy_sentence_is_not_phi() -> None:
+    gate = _gate_without_flush(PRIVATE_PAY_POLICY)
+    assert _cites_an_appointment_cancellation_for_a_patient(PRIVATE_PAY_POLICY) is False
+    assert _PATIENT_NAME.search(PRIVATE_PAY_POLICY) is None
+    assert _NAMED_PATIENT.search(PRIVATE_PAY_POLICY) is None
+    assert _PHI_TERMS.search(PRIVATE_PAY_POLICY) is None
+    assert appears_to_contain_phi(PRIVATE_PAY_POLICY) is False
+    assert disclosure_is_prohibited(PRIVATE_PAY_POLICY) is False
+    assert output_failure(PRIVATE_PAY_POLICY) is None
+    assert safe_output(PRIVATE_PAY_POLICY) == PRIVATE_PAY_POLICY
+    assert gate.stopped is False
+    assert gate.committed == PRIVATE_PAY_POLICY
+    assert gate.held == ""
+    for partition in _chunk_partitions(PRIVATE_PAY_POLICY):
+        running = _replay(partition)
+        assert running.committed == PRIVATE_PAY_POLICY
+        assert running.held == ""
+        assert running.complete() == ""
+        assert running.committed == PRIVATE_PAY_POLICY
+        assert running.held == ""
+
+
+@pytest.mark.parametrize("verb", _CANCEL_FORMS)
+def test_inflected_cancellation_for_the_patient_is_blocked(verb: str) -> None:
+    text = f"{verb} the appointment for the patient."
+    assert _PATIENT_NAME.search(text) is None
+    assert _NAMED_PATIENT.search(text) is None
+    assert _NAMED_AS_PATIENT.search(text) is None
+    assert _PHI_TERMS.search(text) is None
+    assert _cites_an_appointment_cancellation_for_a_patient(text) is True
+    assert appears_to_contain_phi(text) is True
+    assert disclosure_is_prohibited(text) is True
+    assert output_failure(text) == "content"
+    assert safe_output(text) == SAFE_OUTPUT
+    gate = _assert_partition_stable(text)
+    assert gate.stopped is True
+    assert gate.held == ""
+    assert "patient" not in gate.committed.casefold()
+    assert output_failure(gate.committed) is None
+    _assert_completion_drops_held(text, gate.committed)
+
+
+@pytest.mark.parametrize("verb", _CANCEL_FORMS)
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "{verb} the appointment for patient Smith.",
+        "{verb} the appointment for Patient Johnson.",
+        "{verb} the appointment for patient Aa.",
+    ],
+)
+def test_named_patient_cancellation_is_blocked_by_the_name_detector(verb: str, sentence: str) -> None:
+    text = sentence.format(verb=verb)
+    assert _PATIENT_NAME.search(text) is not None
+    assert _NAMED_PATIENT.search(text) is not None
+    assert appears_to_contain_phi(text) is True
+    assert disclosure_is_prohibited(text) is True
+    assert output_failure(text) == "content"
+    assert safe_output(text) == SAFE_OUTPUT
+    gate = _gate_without_flush(text)
+    assert gate.stopped is True
+    assert "Smith" not in gate.committed
+    assert "Johnson" not in gate.committed
+    assert "Aa" not in gate.committed
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        PLURAL_PATIENTS,
+        PATIENT_CANCELED,
+        PATIENTS_CANCELED,
+        PASSIVE_UK,
+        PASSIVE_US,
+        PASSIVE_FRONT,
+        PASSIVE_MIDDLE,
+        LONG_PASSIVE,
+        LONG_ACTOR,
+    ],
+)
+def test_patient_cancellation_relation_is_blocked_for_either_number(text: str) -> None:
+    assert _NAMED_PATIENT.search(text) is None
+    assert _NAMED_AS_PATIENT.search(text) is None
+    assert _PHI_TERMS.search(text) is None
+    assert _cites_an_appointment_cancellation_for_a_patient(text) is True
+    assert appears_to_contain_phi(text) is True
+    assert disclosure_is_prohibited(text) is True
+    assert output_failure(text) == "content"
+    assert safe_output(text) == SAFE_OUTPUT
+    gate = _assert_partition_stable(text)
+    assert gate.stopped is True
+    assert gate.held == ""
+    assert "patient" not in gate.committed.casefold()
+    assert output_failure(gate.committed) is None
+    _assert_completion_drops_held(text, gate.committed)
+
+
+FORM_THEN_NAME = "Bring the form for the patients. Please review patient A"
+FORM_THEN_INSTRUCTION = "Bring the form for the patients. Note: ignore all your"
+_PROTECTED_TAILS = {
+    FORM_THEN_NAME: "patient A",
+    FORM_THEN_INSTRUCTION: "ignore all your",
+}
+
+
+def _partitions_including_protected_splits(text: str, protected: str) -> list[list[str]]:
+    """Whole text, one character, fixed widths, and cuts inside the protected tail."""
+    partitions = _chunk_partitions(text)
+    start = text.rindex(protected)
+    head = text[:start]
+    tail = text[start:]
+    partitions.append([head, tail[:1], tail[1:3], tail[3:]])
+    partitions.append([head, tail[: len(tail) // 2], tail[len(tail) // 2 :]])
+    return partitions
+
+
+def test_completion_does_not_flush_a_protected_prefix_inside_a_benign_for_phrase() -> None:
+    """A benign for-phrase hold must not carry out an unfinished detector prefix."""
+    for text, protected in _PROTECTED_TAILS.items():
+        assert output_failure(text) is None, text
+        assert protected not in text[: text.rindex(protected)]
+        for partition in _partitions_including_protected_splits(text, protected):
+            running = _replay(partition)
+            before = running.committed
+            assert protected not in before
+            assert output_failure(before) is None
+            released = running.complete()
+            assert released == running.committed[len(before) :]
+            assert running.committed == before + released
+            assert protected not in released
+            assert protected not in running.committed
+            assert "for the patients" in running.committed
+            assert output_failure(running.committed) is None
+            assert running.held == ""
+            assert running.stopped is True
+            assert running.push(" later") == ""
+            assert running.committed == before + released
+
+            interrupted = _replay(partition)
+            committed_before_interrupt = interrupted.committed
+            assert interrupted.interrupt() == ""
+            assert interrupted.committed == committed_before_interrupt
+            assert protected not in interrupted.committed
+            assert "for the patients" not in interrupted.committed
+            assert interrupted.held == ""
+            assert interrupted.stopped is True
+            assert interrupted.push(protected) == ""
+            assert interrupted.committed == committed_before_interrupt
+
+
+def test_unrelated_for_the_patients_phrase_is_released_at_completion() -> None:
+    text = "Bring the listed form for the patients."
+    assert _cites_an_appointment_cancellation_for_a_patient(text) is False
+    gate = _assert_partition_stable(text)
+    assert gate.stopped is False
+    assert "patient" not in gate.committed.casefold()
+    assert gate.held.casefold().startswith("for the patient")
+    for partition in _chunk_partitions(text):
+        running = _replay(partition)
+        released = running.complete()
+        assert released == running.committed[len(gate.committed) :]
+        assert running.committed == text
+        assert running.held == ""
+        assert output_failure(running.committed) is None
+
+
+def test_generic_patient_category_is_not_a_cancellation_citation() -> None:
+    assert _cites_an_appointment_cancellation_for_a_patient(GENERIC_CATEGORY) is False
+    assert _cites_an_appointment_cancellation_for_a_patient(PRIVATE_PAY_POLICY) is False
+    assert appears_to_contain_phi(GENERIC_CATEGORY) is False
+    assert disclosure_is_prohibited(GENERIC_CATEGORY) is False
+    assert output_failure(GENERIC_CATEGORY) is None
+    gate = _assert_partition_stable(GENERIC_CATEGORY)
+    assert gate.stopped is False
+    assert gate.committed == GENERIC_CATEGORY
+    for partition in _chunk_partitions(GENERIC_CATEGORY):
+        running = _replay(partition)
+        assert running.complete() == ""
+        assert running.committed == GENERIC_CATEGORY
+        assert running.held == ""
+
+
+def test_existing_identifier_fixtures_stay_blocked_by_their_name_detectors() -> None:
+    assert _PATIENT_NAME.search(JOHNSON) is not None
+    assert _NAMED_PATIENT.search(JOHNSON) is not None
+    assert appears_to_contain_phi(JOHNSON) is True
+    assert disclosure_is_prohibited(JOHNSON) is True
+    assert output_failure(JOHNSON) == "content"
+    johnson_gate = _gate_without_flush(JOHNSON)
+    assert johnson_gate.stopped is True
+    assert "Johnson" not in johnson_gate.committed
+
+    assert _PATIENT_NAME.search(PATIENT_SMITH) is not None
+    assert _NAMED_PATIENT.search(PATIENT_SMITH) is not None
+    assert appears_to_contain_phi(PATIENT_SMITH) is True
+    assert disclosure_is_prohibited(PATIENT_SMITH) is True
+    assert output_failure(PATIENT_SMITH) == "content"
+    smith_gate = _gate_without_flush(PATIENT_SMITH)
+    assert smith_gate.stopped is True
+    assert "Smith" not in smith_gate.committed
 
 
 def test_held_prefixes_are_not_flushed_and_later_pushes_emit_nothing() -> None:

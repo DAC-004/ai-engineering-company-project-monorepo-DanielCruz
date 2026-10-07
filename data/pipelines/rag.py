@@ -688,6 +688,190 @@ def _answer_opens_with_no(answer: str) -> bool:
     return tokens[0].lower().rstrip(".,:;!") == "no"
 
 
+_HOUR_ONES = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+}
+_HOUR_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50}
+# A hyphen or a run of spaces joins tens and ones. "twenty-four" and
+# "twenty  four" are one count; a single space class would stop after "twenty".
+_HOUR_TOKEN = (
+    r"(?:\d+"
+    r"|(?:twenty|thirty|forty|fifty)(?:(?:-|\s+)(?:one|two|three|four|five|six|seven|eight|nine))?"
+    r"|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen"
+    r"|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)"
+)
+_HOUR_UNIT = r"(?:hours?|hrs?)"
+_CANCELLATION_HOUR = re.compile(
+    rf"\b({_HOUR_TOKEN})\s*{_HOUR_UNIT}\b",
+    re.IGNORECASE,
+)
+# Skip words before the hour, but stop when the next word begins an hour token.
+# Otherwise "not twenty four hours" consumes "twenty" and captures only "four".
+_NEGATED_CANCELLATION_HOUR = re.compile(
+    rf"\bnot\b(?:\s+(?!{_HOUR_TOKEN}\b)\w+){{0,4}}\s+({_HOUR_TOKEN})\s*{_HOUR_UNIT}\b",
+    re.IGNORECASE,
+)
+_DEADLINE_LANGUAGE = re.compile(
+    r"\b(require|requires|required|must|at least)\b",
+    re.IGNORECASE,
+)
+
+
+def _canonical_hour(token: str) -> str:
+    """Map a digit, written number, or mixed form to the same hour digits.
+
+    "2", "two", "24", and "twenty-four" compare as equal only when they are
+    the same count. Repeated spaces inside a written number collapse before
+    that comparison. The unit, "hours" or "hrs", is not part of the value.
+    """
+    compact = re.sub(r"\s+", "-", token.lower().strip())
+    if compact.isdigit():
+        return str(int(compact))
+    if compact in _HOUR_ONES:
+        return str(_HOUR_ONES[compact])
+    if compact in _HOUR_TENS:
+        return str(_HOUR_TENS[compact])
+    tens, dash, ones = compact.partition("-")
+    if dash and tens in _HOUR_TENS and ones in _HOUR_ONES:
+        return str(_HOUR_TENS[tens] + _HOUR_ONES[ones])
+    return compact
+
+
+def _cancellation_question_is_a_reminder(question: str) -> bool:
+    """True for a reminder question that only mentions cancellation in passing."""
+    question_text = question.lower()
+    return (
+        "remind" in question_text
+        and "notice" not in question_text
+        and "require" not in question_text
+    )
+
+
+def _asserted_cancellation_deadline_hours(answer: str) -> set[str]:
+    """Return hour counts the answer states as the cancellation notice rule.
+
+    The comparison is the hour in that rule, not every hour in the answer.
+    A reminder hour is excluded when "remind" sits between the requirement
+    and the hour. A negated hour, as in "not 2 hours" or "not two hrs", is
+    not the rule. Written numbers and "hr" or "hrs" use the same digits as
+    "2 hours". An hour that only says when a cancellation occurs, such as
+    "cancelling 12 hours ahead", is not a deadline.
+    """
+    text = answer.lower()
+    negated = {
+        _canonical_hour(match.group(1))
+        for match in _NEGATED_CANCELLATION_HOUR.finditer(text)
+    }
+    asserted: set[str] = set()
+    for match in _CANCELLATION_HOUR.finditer(text):
+        hour = _canonical_hour(match.group(1))
+        if hour in negated:
+            continue
+        before = text[max(0, match.start() - 90) : match.start()]
+        after = text[match.end() : match.end() + 24]
+        nearby = text[max(0, match.start() - 120) : match.end() + 80]
+        if "cancell" not in nearby:
+            continue
+        requirements = list(_DEADLINE_LANGUAGE.finditer(before))
+        notice_after = re.search(r"\bnotice\b", after) is not None
+        if not requirements and not notice_after:
+            continue
+        if requirements and "remind" in before[requirements[-1].end() :]:
+            continue
+        # A reminder can contain its own "at least N hours" after the cancellation rule.
+        reminder_at = before.rfind("remind")
+        if reminder_at != -1 and "cancell" not in before[reminder_at:]:
+            continue
+        asserted.add(hour)
+    return asserted
+
+
+def _retrieved_cancellation_hours(context: list[dict[str, Any]]) -> set[str]:
+    """Hour counts on retrieved cancellation lines, with no fixed expected value."""
+    cited = _retrieved_cancellation_threshold(context)
+    if not cited:
+        return set()
+    return {
+        _canonical_hour(match.group(1))
+        for match in _CANCELLATION_HOUR.finditer(cited.lower())
+    }
+
+
+def _answer_replaces_cancellation_threshold(
+    question: str,
+    context: list[dict[str, Any]],
+    answer: str,
+) -> bool:
+    """True when the asserted cancellation deadline is not a retrieved hour.
+
+    The retrieved lines supply the hour count. A reminder attached by a
+    period, semicolon, newline, colon, or "and" does not make a different
+    deadline agree. A deadline that cites a retrieved hour agrees, including
+    "24 hours notice, not 2 hours" when 24 hours was retrieved.
+    """
+    if "cancel" not in question.lower() or _cancellation_question_is_a_reminder(question):
+        return False
+    retrieved_hours = _retrieved_cancellation_hours(context)
+    if not retrieved_hours:
+        return False
+    asserted = _asserted_cancellation_deadline_hours(answer)
+    if not asserted:
+        return False
+    return not asserted.issubset(retrieved_hours)
+
+
+def _retrieved_cancellation_threshold(context: list[dict[str, Any]]) -> str | None:
+    """Return retrieved lines that state a cancellation hour count.
+
+    The match is the line's own hour count, not a fixed 24-hour phrase.
+    A reminder line that does not state a cancellation hour count is not
+    included. This does not ground any other policy topic.
+    """
+    lines: list[str] = []
+    for item in context:
+        for line in str(item.get("text", "")).splitlines():
+            lowered = line.lower()
+            if "cancell" not in lowered or _CANCELLATION_HOUR.search(lowered) is None:
+                continue
+            stripped = line.strip()
+            if stripped and stripped not in lines:
+                lines.append(stripped)
+    if not lines:
+        return None
+    return " ".join(lines)
+
+
+def _answer_invents_cancellation_deadline(
+    question: str,
+    context: list[dict[str, Any]],
+    answer: str,
+) -> bool:
+    """True when a cancellation answer states an hour deadline no retrieved line states."""
+    if "cancel" not in question.lower() or _cancellation_question_is_a_reminder(question):
+        return False
+    if _retrieved_cancellation_hours(context):
+        return False
+    return bool(_asserted_cancellation_deadline_hours(answer))
+
+
 def _question_asks_about_cancellation_or_no_show_fee(question: str) -> bool:
     lowered = question.lower()
     return any(
@@ -770,6 +954,18 @@ def _grounding_retry_reason(
                 "The retrieved context includes a Medicare or Medicaid fee "
                 "exception. Include that retrieved exception."
             )
+    if _answer_replaces_cancellation_threshold(question, context, answer):
+        cited = _retrieved_cancellation_threshold(context)
+        # Quote the retrieved lines. Do not substitute a fixed hour count.
+        reasons.append(
+            "Cite this retrieved cancellation text and do not replace it with "
+            f"a cancellation hour count those lines do not state: {cited}"
+        )
+    if _answer_invents_cancellation_deadline(question, context, answer):
+        reasons.append(
+            "The retrieved context does not state a cancellation hour count. "
+            "Do not present an hour count as the cancellation rule."
+        )
 
     if (
         not _question_names_country(question)
@@ -1095,8 +1291,10 @@ def _local_llm_complete(messages: list[dict[str, str]]) -> str:
     ``stream=True``. Each gate release is recorded before the next chunk is
     pulled. ``generator.close()`` raises ``GeneratorExit`` inside llama-cpp's
     sampler, so an interrupt stops further sample calls instead of discarding
-    a finished completion. Normal completion and interruption both drop the
-    gate's held suffix.
+    a finished completion. Interruption drops the held suffix. Completion may
+    release a benign cancellation hold that does not end in another open
+    detector prefix. That release is recorded once, on the same path as a
+    ``push`` release, and is not appended again to the returned answer.
     """
     from app.services.streaming_release_gate import StreamingReleaseGate
 
@@ -1131,7 +1329,16 @@ def _local_llm_complete(messages: list[dict[str, str]]) -> str:
             try:
                 chunk = next(iterator)
             except StopIteration:
-                gate.complete()
+                # The iterator is already exhausted, so this is not evidence
+                # that text was published before close. Record the release
+                # once so the callback and the returned answer match.
+                released_at_completion = gate.complete()
+                if released_at_completion:
+                    observation.releases.append(released_at_completion)
+                    if watch is not None and watch.on_release is not None:
+                        watch.on_release(released_at_completion)
+                    if watch is not None and watch.forward_kept:
+                        _emit_kept_release(watch, released_at_completion)
                 break
             delta, finish_reason = _chat_stream_delta(chunk)
             if finish_reason:
@@ -1290,6 +1497,18 @@ def generate_answer(
             return _release_generated_text(answer) if answer else ""
 
     answer = _qualify_permissibility_answer(answer, prompt_payloads)
+    if _answer_invents_cancellation_deadline(question, prompt_payloads, answer):
+        # The retrieved chunks do not state a cancellation hour count. Publishing
+        # the model's deadline would present an invented rule as policy.
+        logger.warning("Refusing an invented cancellation deadline with no retrieved cancellation rule")
+        answer = _INSUFFICIENT_INFORMATION_ANSWER
+    elif _answer_replaces_cancellation_threshold(question, prompt_payloads, answer):
+        # One retry was not enough. Cite the retrieved lines instead of
+        # publishing the invented 2-hour cancellation notice.
+        cited = _retrieved_cancellation_threshold(prompt_payloads)
+        if cited:
+            logger.warning("Replacing an invented cancellation notice with the retrieved threshold")
+            answer = cited
     answer = _release_generated_text(answer)
     if watch is not None and watch.on_kept_release is not None:
         if watch.replacement_unpublished:

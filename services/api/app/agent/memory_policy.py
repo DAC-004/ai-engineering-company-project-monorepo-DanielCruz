@@ -102,6 +102,40 @@ class IntentDecision:
     residual_question: str | None = None
 
 
+# One appointment-cancellation action, in either spelling.
+# The inner "l" covers cancelled, cancelling, and cancellation.
+# The alternatives without that "l" cover canceled, canceling, and cancelation.
+_CANCEL_ACTION = r"cancel(?:l(?:ation|ing|ed)|ation|ing|ed|s)?"
+# "for the patient", "for a patient", "for the patients", and "for patients".
+# A category word between "for" and the noun, as in "for private-pay patients",
+# is not this phrase.
+_FOR_PATIENT = r"\bfor\s+(?:(?:the|a)\s+)?patients?\b"
+# "the patient" also matches inside "the patient's".
+_SPECIFIC_PATIENT = r"\b(?:the|a)\s+patients?\b"
+
+
+def _cites_an_appointment_cancellation_for_a_patient(text: str) -> bool:
+    """True when a cancellation refers to the patient or patients involved.
+
+    Active and passive wording use the same relations. Singular and plural
+    are the same reference, and US and UK spellings are the same action.
+    Distance is not capped: the policy sentence stays out because it lacks
+    the relation, not because the pieces sit far apart. "for private-pay
+    patients" is a fee category. "the patient" or "the patients" before the
+    action, or "for the patient(s)", ties the cancellation to those people.
+    """
+    lowered = text.casefold()
+    if re.search(rf"\b{_CANCEL_ACTION}\b", lowered) is None:
+        return False
+    if re.search(r"\bappointment\b", lowered) is None:
+        return False
+    if re.search(_FOR_PATIENT, lowered):
+        return True
+    return (
+        re.search(rf"{_SPECIFIC_PATIENT}[\s\S]*?\b{_CANCEL_ACTION}\b", lowered) is not None
+    )
+
+
 def appears_to_contain_phi(text: str) -> bool:
     """Return whether the text appears to carry a patient identifier or visit content.
 
@@ -115,10 +149,7 @@ def appears_to_contain_phi(text: str) -> bool:
         return True
     if _PHI_TERMS.search(text):
         return True
-    lowered = text.casefold()
-    if "appointment" in lowered and "cancel" in lowered and "patient" in lowered:
-        return True
-    return False
+    return _cites_an_appointment_cancellation_for_a_patient(text)
 
 
 def normalize_memory_text(text: str) -> str:

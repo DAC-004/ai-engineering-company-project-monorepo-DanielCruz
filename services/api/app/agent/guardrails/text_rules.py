@@ -9,7 +9,11 @@ from __future__ import annotations
 
 import re
 
-from app.agent.memory_policy import _NAMED_AS_PATIENT, _PHI_TERMS
+from app.agent.memory_policy import (
+    _NAMED_AS_PATIENT,
+    _PHI_TERMS,
+    _cites_an_appointment_cancellation_for_a_patient,
+)
 
 # The optional words stay narrow so ordinary sentences that say "ignore these
 # instructions" in the system prompt are not treated as an attack string.
@@ -64,8 +68,7 @@ def disclosure_is_prohibited(text: str | None) -> bool:
         return True
     if _PHI_TERMS.search(text) or _NAMED_AS_PATIENT.search(text) or _NAMED_PATIENT.search(text):
         return True
-    lowered = text.casefold()
-    return "appointment" in lowered and "cancel" in lowered and "patient" in lowered
+    return _cites_an_appointment_cancellation_for_a_patient(text)
 
 
 def content_is_prohibited(text: str | None) -> bool:
