@@ -1,0 +1,23 @@
+Isolated fixture on healthcore-audit. Temporary directory /tmp/hc-sev-fixture only.
+The production hook, renewal log, certificate, and services were not modified.
+Captured after guest checks; services healthcore-api, healthcore-web, nginx, and certbot-renew.timer stayed active.
+
+VULN_DIR healthcore healthcore 750
+VULN_FILE root root 644
+RM_EXIT 0
+LINK_EXIT 0
+SYMLINK_PRESENT 1
+SINK_HAS_FIXED 1
+SINK_HAS_ATTACKER_TEXT 0
+SINK_OWNER root root 644
+FIXED_MV_EXIT 1
+FIXED_FILE_PRESENT 0
+ROOT_KEYS_PRESENT 1
+root root 600
+FIXTURE_REMOVED 0
+
+FIXED_FILE_PRESENT 0 means test -f succeeded, so the corrected-layout file was still present.
+ROOT_KEYS_PRESENT records that /root/.ssh/authorized_keys exists. Its contents were not read.
+The root writer in this fixture appended the fixed line FIXED_HOOK_LINE. The sink did not contain the string ATTACKER_CHOSEN. That result applies only to this writer. It does not describe `nginx -t` or `systemctl reload` output, and it does not show what an attacker-chosen destination would do to a production file.
+The comment in the fixture script that mentions the hook's lack of attacker-chosen text is not a finding. The script was not rewritten after the run.
+Script: docs/owasp/evidence/2026-10-06-renewal-severity-fixture.sh
