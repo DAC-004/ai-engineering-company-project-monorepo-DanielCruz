@@ -6,6 +6,10 @@ Daniel uploaded evidence ZIP (8). The reviewing assistant's findings from that p
 
 This is an engineering adherence review against `project_specs.md` and `CONTEXT-healthcore.md`. It is not a certification. Final sign-off and submission remain Daniel's. This report does not claim either.
 
+The repository table below is the 2026-10-08 closeout snapshot. It is not the published state. The published state is in `docs/nist/pre-submission-audit.md`: commit `1b4b8f758703651db127f772f2ba896f95d76f34`, pull request #38, 59 of 61 parent items checked, A05 and H06 open.
+
+Daniel approved the corrected pre-submission audit and the 207-entry, 692,200-byte package on 2026-10-08. Both report findings from that review are closed. That approval authorizes staging the six documentation files. It is not final pull-request approval and it is not submission.
+
 ## Repository state
 
 | Item | Value |

@@ -2,7 +2,7 @@
 
 This file is the tracked index. The authoritative item records are in `.project_specs/HEALTHCORE_SECURE_AI_CHECKLIST.md`, which is local-only and is copied into the review ZIP. A checked parent item there is the completion record. This index repeats that result so the two files do not disagree.
 
-Audit date: 2026-10-08 pre-commit approval. Branch: `feature/nist-security-practices`. HEAD: `38a0806bcc2fc3106aa4e4f969fd893e87953d02`. Checked parent items: 55 of 61. Daniel approved the pre-commit audit and ZIP (10) on 2026-10-08. That approval authorizes staging. Commit, push, pull request, and submission are not done. A05 stays unchecked as a historical timing deviation. H02 through H06 stay unchecked.
+Audit date: 2026-10-08 pre-submission. Branch: `feature/nist-security-practices`. Published HEAD: `1b4b8f758703651db127f772f2ba896f95d76f34`. Checked parent items: 59 of 61. The 55 of 61 count in `docs/nist/pre-commit-audit.md` is the pre-commit snapshot. Daniel approved that audit and ZIP (10). Commit `1b4b8f7` and pull request #38 are evidenced. On 2026-10-08 Daniel also approved the corrected pre-submission audit and the 207-entry, 692,200-byte package. Both report findings from that review are closed. That approval authorizes staging these documentation files. It is not final pull-request approval and it is not submission. A05 stays unchecked as a historical timing deviation. H06 stays unchecked until Daniel gives final approval and confirms submission. This index update is not inside commit `1b4b8f7`.
 
 | ID | Obligation | Board | Status |
 | --- | --- | --- | --- |
@@ -58,10 +58,10 @@ Audit date: 2026-10-08 pre-commit approval. Branch: `feature/nist-security-pract
 | G09 | Prioritize debug exposure and physician gates | checked | Verified as an audit |
 | G10 | Deliver hardening proof and critical-fix evidence | checked | Verified when the ZIP is rebuilt |
 | H01 | Place the NIST Markdown report in the delivery folder | checked | Verified |
-| H02 | Daniel commits and pushes | open | Pending Daniel |
-| H03 | Create the pull request in Daniel's fork | open | Pending push |
-| H04 | Include injection evidence and gap status in the PR | open | Pending the PR |
-| H05 | Request Daniel's tech-lead review | open | Pending PR |
+| H02 | Daniel commits and pushes | checked | Commit 1b4b8f7 pushed. Upstream matches. |
+| H03 | Create the pull request in Daniel's fork | checked | PR #38. Base feature/owasp-top10-audit. |
+| H04 | Include injection evidence and gap status in the PR | checked | Current GitHub description links the tests and the remaining findings. |
+| H05 | Request Daniel's tech-lead review | checked | Description asks Daniel to review. Not an approval. |
 | H06 | Record Daniel's approval and submission | open | Pending |
 | U01 | Audit the completed implementation against every item | checked | Verified as this re-audit |
 | U02 | Deliver the adherence and deliverables report | checked | Verified |
