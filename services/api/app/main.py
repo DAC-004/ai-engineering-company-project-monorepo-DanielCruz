@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -24,6 +23,11 @@ if str(REPO_ROOT) not in sys.path:
 if str(PACKAGES_SHARED) not in sys.path:
     sys.path.insert(0, str(PACKAGES_SHARED))
 
+from app.core.safe_errors import (  # noqa: E402
+    log_failure,
+    public_validation_errors,
+    safe_route_template,
+)
 from app.db.database import get_engine, init_databases  # noqa: E402
 from app.routers import (  # noqa: E402
     agent,
@@ -142,9 +146,11 @@ async def request_validation_handler(
 ) -> JSONResponse:
     """Manager write validation is HTTP 400. Other routes keep FastAPI 422."""
     if not _is_manager_write_request(request):
-        # FastAPI's default body is encoded. Raw Pydantic errors can carry a
-        # ValueError in ``ctx``, which breaks supplier and inventory 422s.
-        return JSONResponse(status_code=422, content={"detail": jsonable_encoder(exc.errors())})
+        # Keep type and a safe location. Replace msg. Drop input and ctx.
+        return JSONResponse(
+            status_code=422,
+            content={"detail": public_validation_errors(exc.errors())},
+        )
 
     first = exc.errors()[0] if exc.errors() else {}
     field = _field_from_validation_error(first)
@@ -183,7 +189,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
             content={"detail": exc.detail},
             headers=getattr(exc, "headers", None),
         )
-    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    log_failure(
+        logger,
+        "Unhandled error on %s %s",
+        request.method,
+        safe_route_template(request),
+    )
     return JSONResponse(
         status_code=500,
         content={"message": "An unexpected error occurred. Please try again."},

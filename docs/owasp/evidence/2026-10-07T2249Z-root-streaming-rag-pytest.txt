@@ -1,0 +1,6 @@
+﻿WORKDIR=C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz
+COMMAND=uv run pytest tests/services/test_streaming_release_gate.py tests/pipelines/test_gated_generation_stream.py tests/pipelines/test_rag.py -q --tb=line
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed in 2.14s
+EXIT_CODE=0

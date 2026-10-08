@@ -7,6 +7,7 @@ subscribe to ``chat.<session_id>`` and do not call the model themselves.
 from __future__ import annotations
 
 import asyncio
+import logging
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -14,6 +15,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.agent.graph import run_support_agent
+from app.core.safe_errors import log_failure
 from data.pipelines.rag import (
     LocalGenerationWatch,
     bind_generation_conversation,
@@ -24,6 +26,7 @@ from data.pipelines.rag import (
 
 AGENT_ID = "compliance_assistant"
 CHANNEL_PREFIX = "chat."
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -323,6 +326,14 @@ def _generate_turn(session_id: str, question: str) -> None:
                 },
             )
         session.last_generation["stored_text"] = assistant.text
+    except Exception:
+        # The worker thread would otherwise print the exception and traceback
+        # on stderr and leave the assistant message in_progress. The public
+        # protocol has no failure event. Do not emit generation_completed,
+        # and do not copy exception text into the transcript or the log.
+        log_failure(logger, "HealthCore chat generation failed")
+        assistant.status = "failed"
+        session.status = "active"
     finally:
         reset_generation_conversation(conversation_token)
         reset_local_generation_watch(watch_token)

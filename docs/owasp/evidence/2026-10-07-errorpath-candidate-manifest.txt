@@ -1,0 +1,45 @@
+Error-path finalization candidate manifest
+Pushed baseline: f11eec087bbddcaab1c0a5cfb1d2954c176cd0dc
+Branch: feature/owasp-top10-audit
+PR: #37 base feature/websocket-chat
+Host: healthcore-audit 150.136.171.59
+API PID: 82558
+API started: 2026-10-07T23:23:46Z
+Historical API PID 81774 started 2026-10-07T22:32:09Z (pre-worker-fix finalization)
+Web PID: 45466
+Health: {"status":"ok"}
+
+Installed SHA-256 (LF bytes, root:healthcore 640):
+safe_errors.py 0f84861136f695923f649ab48689db89bc9d3aec3ebfa345b171e099d3e973d6
+knowledge.py 5fd0c51e1a33a0d5df1af330bbb2dafc2b4fad302406faf069ee5a8f232efdf6
+agent.py 4999a463ebc55796b4306a2eb1584cb1a057e63a320ce63bbcf35b796422d16a
+main.py a7037688c08915d6d76c1cf26a49ec5640c46fddf84c3e51fcdfc7072e89ccca
+telemetry.py b472a24f1477fb8087d1975647d7bd8aac8ceec8effbdf4452f912245721e9df
+inventory.py 874f6b88b1b797b8776c0ea0c9964c4df43a43ed75163f42219fc597f7c57742
+chat_channel.py f219005d89c6c3070bef5c7f74daafa339ec184ae866d9451e7fd4fc04782e7f
+historical host chat_channel.py before this install: 47835a74ebd0b23154b7611235d526ca398790e29b8d89ffc239169ad0e23a49
+
+Unchanged controls retained from completion install:
+streaming_release_gate.py 7567c2d67c3e8abb5f46abda061ab2fa616bff5ff78844379a6e71efaf9d3587
+rag.py 0a6e2649fb472c633a62870fb3b6cd16ee0940e0f56b460cf7ba1f2ebda8bae3
+
+Evidence:
+docs/owasp/evidence/2026-10-07T2232Z-errorpath-finalization.md
+docs/owasp/evidence/2026-10-07T2151Z-errorpath-privacy.md
+docs/owasp/evidence/2026-10-07T2113Z-errorpath-privacy.md
+docs/owasp/evidence/2026-10-07-errorpath-deploy.sh
+docs/owasp/evidence/2026-10-07-errorpath-host-check.py
+docs/owasp/evidence/2026-10-07-public-wss-stream.py
+docs/owasp/evidence/2026-10-07-remove-wss-stream-user.sh
+
+Captured suite stdout:
+docs/owasp/evidence/2026-10-07T2315Z-chat-worker-pytest.txt
+docs/owasp/evidence/2026-10-07T2317Z-chat-worker-deploy.txt
+docs/owasp/evidence/2026-10-07T2317Z-chat-worker-failure.md
+Historical 2249Z captures (pre-worker-fix; the API suite warning in that file is historical):
+docs/owasp/evidence/2026-10-07T2249Z-errorpath-pytest.txt
+docs/owasp/evidence/2026-10-07T2249Z-api-privacy-chat-pytest.txt
+docs/owasp/evidence/2026-10-07T2249Z-root-streaming-rag-pytest.txt
+
+Historical intermediate PIDs: 78676 (2113Z), 80512 (2151Z), 81774 (2232Z)
+REQ-SUB-02: Pending

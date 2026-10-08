@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import ValidationError
 
 from app.core.config import get_settings
+from app.core.safe_errors import public_validation_errors
 from app.schemas.telemetry import TelemetryBatch, TelemetryEvent, TelemetryIngestResponse
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ def _parse_batch(raw_body: bytes) -> TelemetryBatch:
     except ValidationError as exc:
         raise HTTPException(
             status_code=422,
-            detail=exc.errors(),
+            detail=public_validation_errors(exc.errors()),
         ) from exc
 
 
