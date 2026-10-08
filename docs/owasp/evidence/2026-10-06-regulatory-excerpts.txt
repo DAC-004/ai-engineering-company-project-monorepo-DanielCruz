@@ -1,0 +1,17 @@
+164.404 https://www.ecfr.gov/current/title-45/section-164.404 chars=1719
+164.406 https://www.ecfr.gov/current/title-45/section-164.406 chars=1719
+164.408 https://www.ecfr.gov/current/title-45/section-164.408 chars=1719
+164.524 https://www.ecfr.gov/current/title-45/section-164.524 chars=1719
+164.502 https://www.ecfr.gov/current/title-45/section-164.502 chars=1719
+164.504 https://www.ecfr.gov/current/title-45/section-164.504 chars=1719
+uk33 https://www.legislation.gov.uk/eur/2016/679/article/33/data.xml chars=9221
+uk33 HIT h, the controller shall without undue delay and, where feasible, not later than 72 hours after having become aware of it, notify the personal data breach to the Commission , unless the personal data breach is unlikely to result in a risk to
+uk33 HIT ity/language/ENG ENG language ENG ENG English English CHAPTER IV Controller and processor Section 2 Security of personal data Notification of a personal data breach to the Commission Article 33 1 In the case of a personal data breach, the c
+uk34 https://www.legislation.gov.uk/eur/2016/679/article/34/data.xml chars=7957
+uk34 HIT ity/language/ENG ENG language ENG ENG English English CHAPTER IV Controller and processor Section 2 Security of personal data Communication of a personal data breach to the data subject Article 34 1 When the personal data breach is likely t
+uk15 https://www.legislation.gov.uk/eur/2016/679/article/15/data.xml chars=9743
+uk15 HIT II Rights of the data subject Section 2 Information and access to personal data Right of access by the data subject Article 15 1 The data subject shall have the right to obtain from the controller confirmation as to whether or not personal 
+uk28 https://www.legislation.gov.uk/eur/2016/679/article/28/data.xml chars=13600
+uk28 HIT ity/language/ENG ENG language ENG ENG English English CHAPTER IV Controller and processor Section 1 General obligations Processor Article 28 1 Where processing is to be carried out on behalf of a controller, the controller shall use only pr
+ico https://ico.org.uk/for-organisations/report-a-breach/personal-data-breach/ chars=8820
+ico HIT assessment We have a simple guide about how to respond to a breach in the first 72 hours to help small companies and sole traders.&nbsp; We also have a detailed guide about how to manage a breach , including risk assessments and informing i

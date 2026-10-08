@@ -1,0 +1,23 @@
+Guest clock: Tue Oct 6 03:33:13 UTC 2026.
+
+healthcore:x:997:986::/var/lib/healthcore:/usr/sbin/nologin
+
+READ=yes WRITE=no /opt/healthcore/app
+READ=yes WRITE=no /var/lib/healthcore/models/qwen2.5-3b-instruct-q4_k_m.gguf
+READ=yes WRITE=yes /var/lib/healthcore/qdrant
+READ=yes WRITE=yes /var/lib/healthcore/cache/fastembed
+READ=yes WRITE=yes /var/lib/healthcore/auth
+READ=yes WRITE=yes /var/lib/healthcore/agent-checkpoints
+READ=yes WRITE=yes /var/lib/healthcore/agent-traces
+READ=yes WRITE=yes /var/lib/healthcore/agent-memory
+READ=yes WRITE=yes /var/lib/healthcore/rfp-checkpoints
+READ=yes WRITE=yes /var/lib/healthcore/web-cache
+READ=yes WRITE=yes /var/log/healthcore
+READ=yes WRITE=no /etc/healthcore/healthcore.env
+
+ss listener filter for 6333, 6334, 5432, 6379, 5555, and 111:
+
+LISTEN 0.0.0.0:111
+LISTEN [::]:111
+
+No listen line was printed for 6333, 6334, 5432, 6379, or 5555. Port 111 is rpcbind on all interfaces. The saved guest INPUT policy accepts new TCP 22, 80, and 443 and then rejects other new input. See docs/owasp/evidence/2026-10-06T021622Z-live-rules.v4 lines 10-13. This file does not change those rules.

@@ -1,0 +1,52 @@
+Audit coverage command output. No passwords, tokens, or clinical records are included.
+
+Guest clock at the start of the coverage script: Tue Oct 6 01:20:32 UTC 2026. Host healthcore-vcn.
+
+JAILBREAK_ACTION block
+JAILBREAK_GUARDRAIL input_scope
+JAILBREAK_ECHOES_QUESTION False
+JAILBREAK_CONTAINS_MARKER False
+JAILBREAK_IS_FIXED_REFUSAL True
+KEEP_CHUNKS 1
+KEPT_CONTAINS_INSTRUCTION False
+MCP_MALFORMED missing
+MCP_SNAPSHOT_FIELDS id,status,category,origin,branch
+MCP_SNAPSHOT_HAS_URL False
+ANON_USERS 401
+ANON_INVENTORY 401
+ANON_SUPPLIERS 500
+REGISTER 201
+LOGIN 200
+TOKEN_PRINTED False
+AUTH_ME 200
+AUTH_ME_KEYS email,profile,role
+AUTH_ME_ROLE user
+INVENTORY_ANY_CLINIC 200
+INVENTORY_COUNT 6
+INVENTORY_KEYS category,clinic_current_stock,country,current_stock,expiry_date,id,minimum_stock,name,sku,unit
+USER_DIRECTORY 200
+FAILED_LOGIN 401
+FAILED_LOGIN_BODY {"detail":"Incorrect email or password"}
+TELEMETRY 200 {"received":1}
+AGENT_QUERY 200
+AGENT_CONTAINS_MARKER False
+AGENT_IS_FIXED_REFUSAL True
+AGENT_ANSWER_CHARS 72
+GUARDRAIL_SUMMARY_BEFORE 200 {"input_scope":{"block":1},"failure_type":{"security":1}}
+
+Journal check of healthcore-api since 2026-10-06 01:20:00 UTC:
+
+JOURNAL_LINES 341
+PASSWORD_PRESENT True
+PASSWORD_IN_JOURNAL False
+INCORRECT_EMAIL_LINES 0
+AUTH_LOGIN_LINES 2
+EVENT_TYPE_LINES 0
+CLINICAL_WORDS False
+LOG Oct 06 01:20:33 healthcore-vcn uvicorn[18093]: INFO:     127.0.0.1:57066 - "POST /auth/login HTTP/1.1" 200 OK
+LOG Oct 06 01:20:33 healthcore-vcn uvicorn[18093]: INFO:     127.0.0.1:57098 - "POST /auth/login HTTP/1.1" 401 Unauthorized
+LOG Oct 06 01:20:33 healthcore-vcn uvicorn[18093]: INFO:     127.0.0.1:57112 - "POST /telemetry/events HTTP/1.1" 200 OK
+SUPPLIERS_STATUS 500
+SUPPLIERS_BODY {"message":"An unexpected error occurred. Please try again."}
+
+The supplier 500 was PermissionError on /opt/healthcore/app/services/api/data. The probe account audit.coverage@example.com was removed later: PROBE_USERS_REMOVED 1, PROBE_PROFILES_REMOVED 1. The password marker file was deleted after the journal comparison.

@@ -1,0 +1,64 @@
+SSH policy change and guest firewall. No secret values are included.
+
+Recovery console: Daniel confirmed the Cloud Shell serial console for healthcore-audit is attached and left open. The message did not include the visible prompt text.
+
+Guest clock for the SSH change: Tue Oct 6 02:03:57 UTC 2026. Host healthcore-vcn.
+
+BEFORE
+permitrootlogin prohibit-password
+pubkeyauthentication yes
+passwordauthentication no
+ESTABLISHED_BEFORE 2
+SSHD_TEST ok
+RELOAD_EXIT 0
+AFTER
+permitrootlogin no
+pubkeyauthentication yes
+passwordauthentication no
+kbdinteractiveauthentication no
+ESTABLISHED_AFTER 2
+ACTIVE active
+
+Drop-in: /etc/ssh/sshd_config.d/99-no-root-login.conf
+Include line: /etc/ssh/sshd_config:24:Include /etc/ssh/sshd_config.d/*.conf
+sshd was reloaded, not restarted.
+
+Root public-key attempt from this workstation:
+root@150.136.171.59: Permission denied (publickey).
+Client exit 255.
+Journal:
+Oct 06 02:04:09 healthcore-vcn sshd-session[21844]: ROOT LOGIN REFUSED FROM 67.84.181.68 port 53910
+Oct 06 02:04:09 healthcore-vcn sshd-session[21844]: ROOT LOGIN REFUSED FROM 67.84.181.68 port 53910 [preauth]
+Oct 06 02:04:09 healthcore-vcn sshd-session[21844]: Connection reset by authenticating user root 67.84.181.68 port 53910 [preauth]
+
+Ubuntu login after the reload:
+whoami ubuntu
+hostname healthcore-vcn
+id -u 1001
+UBUNTU_OK
+The earlier ubuntu session stayed open. Established SSH sessions remained 2 across the reload.
+
+Guest firewall, Tue Oct 6 02:05:12 UTC 2026.
+INSTANCE_BEFORE 17
+INSTANCE_AFTER 17
+INSTANCE_MATCH
+FORWARD -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+SAVE_EXIT 0
+IPv4 INPUT now accepts new TCP 22, 80, and 443, then rejects.
+IPv6 INPUT accepts established traffic, ICMPv6, loopback, and new TCP 22, 80, and 443, then rejects.
+IPv6 FORWARD policy stayed ACCEPT.
+ESTABLISHED 2
+Ubuntu login after the firewall: whoami ubuntu, UBUNTU_AFTER_FIREWALL.
+
+InstanceServices lines after the edit:
+:InstanceServices - [0:0]
+-A OUTPUT -d 169.254.0.0/16 -j InstanceServices
+and the same 15 InstanceServices rules recorded in the 2026-10-05 recapture, including the terminal TCP and UDP rejects for 169.254.0.0/16.
+
+Workstation TCP check after the guest firewall, 8 second timeout:
+22 open
+80 TimeoutError
+443 TimeoutError
+8000 TimeoutError
+
+OCI ingress still does not allow TCP 80 or 443. Certificate issuance has not started.

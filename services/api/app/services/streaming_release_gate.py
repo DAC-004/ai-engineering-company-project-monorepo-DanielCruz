@@ -7,11 +7,12 @@ permission to emit the current suffix.
 
 ``committed`` is text that has left every proper-prefix family. ``held`` is
 the longest suffix that could still grow into an existing pattern. Characters
-move from ``held`` to ``committed`` during ``push``. ``interrupt`` and
-``complete`` drop ``held`` and stop the gate; later ``push`` calls emit
-nothing. Flushing ``held`` would publish prefixes such as ``patient A`` or
-``ignore all your`` that the boolean detectors have not accepted and have not
-rejected.
+move from ``held`` to ``committed`` during ``push``. ``interrupt`` drops
+``held``. ``complete`` may release a benign "for the/a patient(s)" hold, but
+only the part that is not also an unfinished name or instruction prefix.
+Later ``push`` calls emit nothing. Flushing ``patient A`` or
+``ignore all your`` would publish text the boolean detectors have not
+accepted and have not rejected.
 """
 
 from __future__ import annotations
@@ -22,9 +23,17 @@ from app.agent.guardrails.text_rules import (
     _BREACH_DETAIL,
     _CONFIDENTIAL_CONTRACT,
     _INSTRUCTION,
+    _NAMED_PATIENT,
     disclosure_is_prohibited,
 )
-from app.agent.memory_policy import _PHI_TERMS, appears_to_contain_phi
+from app.agent.memory_policy import (
+    _FOR_PATIENT,
+    _NAMED_AS_PATIENT,
+    _PATIENT_NAME,
+    _PHI_TERMS,
+    _cites_an_appointment_cancellation_for_a_patient,
+    appears_to_contain_phi,
+)
 
 # Expansions of the imported patterns. A test checks that each phrase is a
 # match of one of those patterns so this list cannot become a second policy.
@@ -319,8 +328,85 @@ def _suffix_is_open(text: str, start: int) -> bool:
     return _ignore_suffix_is_open(suffix)
 
 
+def _text_is_prohibited(text: str) -> bool:
+    return appears_to_contain_phi(text) or disclosure_is_prohibited(text)
+
+
+def _trailing_patient_may_be_plural(text: str) -> bool:
+    """Hold a final "patient" only when the next letter can remove the match.
+
+    End of the current buffer is a word boundary, so a pattern can match
+    "patient" before an "s" arrives. This does not decide that plural wording
+    is policy text. If the plural spelling is still prohibited, the gate stops.
+    """
+    if not text.casefold().endswith("patient"):
+        return False
+    if (
+        _PATIENT_NAME.search(text)
+        or _NAMED_AS_PATIENT.search(text)
+        or _NAMED_PATIENT.search(text)
+        or _PHI_TERMS.search(text)
+    ):
+        return False
+    if not _text_is_prohibited(text):
+        return False
+    return not _text_is_prohibited(text + "s")
+
+
+_FOR_PATIENT_PREFIXES = (
+    "for the patients",
+    "for the patient",
+    "for a patients",
+    "for a patient",
+    "for patients",
+    "for patient",
+)
+
+
+def _open_cancellation_tie_length(text: str) -> int:
+    """Hold "for the/a patient(s)" from its first character until it is decided.
+
+    An unfinished "for the pat" is a proper prefix, so "for" is not emitted
+    before the noun is known. A finished phrase stays held while appointment
+    or the action word can still arrive. ``complete`` releases that hold when
+    the finished text is not a cancellation match.
+    """
+    if not text:
+        return 0
+    lowered = text.casefold()
+    if _cites_an_appointment_cancellation_for_a_patient(text):
+        return 0
+    match = re.search(_FOR_PATIENT, lowered)
+    if match is not None:
+        return len(text) - match.start()
+    best = 0
+    for start in range(len(lowered)):
+        if start and (lowered[start - 1].isalnum() or lowered[start - 1] == "_"):
+            continue
+        suffix = lowered[start:]
+        if any(phrase.startswith(suffix) for phrase in _FOR_PATIENT_PREFIXES):
+            best = max(best, len(text) - start)
+    return best
+
+
 def open_suffix_length(text: str) -> int:
     """Length of the longest suffix that is still a proper prefix of a pattern."""
+    if not text:
+        return 0
+    longest = _open_cancellation_tie_length(text)
+    for start in range(len(text)):
+        if _suffix_is_open(text, start):
+            return max(longest, len(text) - start)
+    return longest
+
+
+def _protected_open_suffix_length(text: str) -> int:
+    """Length of an unfinished detector prefix, excluding the cancellation hold.
+
+    ``complete`` may release a benign for-phrase. That release must stop
+    before a later open name or instruction prefix, because those prefixes
+    are not prohibited until another character arrives.
+    """
     if not text:
         return 0
     for start in range(len(text)):
@@ -356,7 +442,7 @@ class StreamingReleaseGate:
             if self.stopped:
                 break
             candidate = self.committed + self.held + character
-            if appears_to_contain_phi(candidate) or disclosure_is_prohibited(candidate):
+            if _text_is_prohibited(candidate) and not _trailing_patient_may_be_plural(candidate):
                 # The open prefix is the start of the match. Drop it with the
                 # completing character. Do not unsend text already committed.
                 self.held = ""
@@ -371,8 +457,32 @@ class StreamingReleaseGate:
         return self._terminate()
 
     def complete(self) -> str:
-        """Stop because generation ended. Do not flush ``held``."""
-        return self._terminate()
+        """Stop because generation ended.
+
+        Name and instruction prefixes stay dropped. An unresolved
+        "for the/a patient(s)" phrase is released when the finished text is
+        not a cancellation match, so ordinary wording is not truncated.
+        A protected prefix inside that hold is not part of the release.
+        """
+        if self.stopped or not self.held:
+            return self._terminate()
+        combined = self.committed + self.held
+        if _text_is_prohibited(combined):
+            return self._terminate()
+        if _open_cancellation_tie_length(combined) != len(self.held):
+            return self._terminate()
+        protected = _protected_open_suffix_length(combined)
+        if protected > len(self.held):
+            # The unfinished prefix began in text already committed. Do not
+            # extend it by flushing the cancellation hold.
+            return self._terminate()
+        released = self.held if protected == 0 else self.held[:-protected]
+        if released and _text_is_prohibited(self.committed + released):
+            return self._terminate()
+        self.held = ""
+        self.committed += released
+        self.stopped = True
+        return released
 
     def _terminate(self) -> str:
         self.held = ""

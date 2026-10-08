@@ -1,0 +1,22 @@
+Read-only inspection of the production hook's diagnostic sources.
+Scripts: docs/owasp/evidence/2026-10-07-nginx-diagnostic-sources.sh and docs/owasp/evidence/2026-10-07-nginx-dir-writability.sh.
+No reload, no log write, and no unit change. healthcore-api, healthcore-web, nginx, and certbot-renew.timer stayed active.
+`test -w` exit 1 means not writable. It does not mean writable.
+
+Current `nginx -t` printed: `nginx: the configuration file /etc/nginx/nginx.conf syntax is ok` and exited 0. The stock success line `nginx: configuration file /etc/nginx/nginx.conf test is successful` was also emitted. That matches the 2026-10-06T02:51:46Z hook transcript in docs/owasp/evidence/2026-10-06T025146Z-certificate-and-tls.txt. These are success-path lines. They do not describe a failing test.
+
+`nginx -T` include directives:
+include /etc/nginx/modules-enabled/*.conf;
+include /etc/nginx/mime.types;
+include /etc/nginx/conf.d/*.conf;
+include /etc/nginx/sites-enabled/*;
+No file matched conf.d/*.conf or modules-enabled/*.conf.
+
+`healthcore` write test, exit 1 on every path below:
+/etc/nginx, /etc/nginx/conf.d, /etc/nginx/sites-available, /etc/nginx/sites-enabled, /etc/nginx/modules-enabled: root:root 755.
+/etc/letsencrypt: root:root 755. /etc/letsencrypt/live: root:root 700. /etc/letsencrypt/live/150.136.171.59: root:root 755.
+/usr/lib/systemd/system and /etc/systemd/system: root:root 755.
+nginx.service FragmentPath /usr/lib/systemd/system/nginx.service: root:root 644, DropInPaths empty, write test exit 1.
+Certificate and site targets followed from the live symlinks: fullchain mode 644, private key mode 600, sites-enabled/healthcore.conf target mode 644. Write test exit 1. Key bytes were not read.
+
+Source-supported limit: the hook appends fixed markers, `date -u`, and the standard output and standard error of `nginx -t` and `systemctl reload nginx`. On this host, `healthcore` cannot write the current nginx include directories, the site file, the certificate files, or the nginx unit. That snapshot does not prove every future diagnostic line is free of attacker influence, and it does not prove that an attacker-chosen append destination is harmless.

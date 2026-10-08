@@ -1,0 +1,27 @@
+Firewall reload and ACME listener. No secret values are included.
+
+First netfilter-persistent reload at Tue Oct 6 02:13:26 UTC 2026 exited 0 and duplicated the built-in rules. The cloud image sets IPTABLES_RESTORE_NOFLUSH=yes, so reload appends. The persistent files were not rewritten by that reload. Live IPv4 then had 33 -A rules and 9 duplicated kinds, including a second -A OUTPUT -d 169.254.0.0/16 -j InstanceServices. The InstanceServices chain rules themselves were not duplicated.
+
+Corrective load at Tue Oct 6 02:16:21 UTC 2026. /etc/default/netfilter-persistent now has IPTABLES_RESTORE_NOFLUSH=no and IP6TABLES_RESTORE_NOFLUSH=no. iptables-restore and ip6tables-restore loaded the persistent files. A second netfilter-persistent reload exited 0.
+
+After that reload:
+V4_MATCH yes
+V6_MATCH yes
+v4 RULES 24 DUPS 0
+v6 RULES 7 DUPS 0
+INSTANCE 17
+OUTPUT_JUMP yes
+JUMP_COUNT 1
+ESTABLISHED 2
+ubuntu
+UBUNTU_AFTER_RELOAD
+
+Complete live rules: docs/owasp/evidence/2026-10-06T021622Z-live-rules.v4 and 2026-10-06T021622Z-live-rules.v6.
+Persistent files: docs/owasp/evidence/2026-10-06T021622Z-persistent-rules.v4 and 2026-10-06T021622Z-persistent-rules.v6.
+sudo sshd -T after the nginx package install still reported permitrootlogin no. Established SSH sessions stayed at 2. needrestart did not restart ssh.
+
+HTTP-only ACME site: /etc/nginx/sites-available/healthcore-acme.conf. ssl_certificate lines are absent. nginx -t succeeded. nginx is active. Listeners are 0.0.0.0:80 and [::]:80. Port 443 is not listening. That is expected before a TLS service exists.
+
+Loopback fetch of http://127.0.0.1/.well-known/acme-challenge/healthcore-probe returned HTTP 200 and the body healthcore-acme-probe.
+
+External TCP 80 from this workstation timed out. After that attempt, iptables -L INPUT showed 0 packets on the new TCP 80 rule and 0 packets on the terminal REJECT. TCP 22 had 22 packets. The external SYN did not reach this guest. Certificate issuance was not started. Certbot 5.8.0 is installed at /opt/certbot/bin/certbot and has not requested a certificate.

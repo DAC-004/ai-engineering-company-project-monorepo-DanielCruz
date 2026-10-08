@@ -1,0 +1,15 @@
+[Unit]
+Description=HealthCore API on loopback
+After=network.target
+
+[Service]
+User=healthcore
+Group=healthcore
+WorkingDirectory=/opt/healthcore/app/services/api
+Environment=PYTHONPATH=/opt/healthcore/app:/opt/healthcore/app/services/api
+EnvironmentFile=/etc/healthcore/healthcore.env
+ExecStart=/opt/healthcore/app/services/api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

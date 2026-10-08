@@ -943,7 +943,68 @@ def test_first_sample_context_overflow_does_not_complete_the_turn(
     assert session.generating is False
     assert session.messages[-1].role == "assistant"
     assert session.messages[-1].text == ""
-    assert session.messages[-1].status == "in_progress"
+    assert session.messages[-1].status == "failed"
+    assert get_chat_hub().active_watch("chat_first_overflow") is None
+
+
+def test_worker_failure_omits_exception_text_from_stderr_logs_and_public_output(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The real generation thread must not publish a raised agent exception."""
+
+    sentinel = "SYNTH_CHAT_WORKER_714"
+
+    def _raise(*_args: Any, **_kwargs: Any) -> AgentRun:
+        raise RuntimeError(sentinel)
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _raise)
+    token = _staff_token("staff.workerfail@example.com")
+
+    async def _run_socket() -> list[dict[str, Any]]:
+        received: list[dict[str, Any]] = []
+        async with _StaffSocket(chat_server, "chat_worker_fail", token) as connection:
+            received.append(await _recv_json(connection))
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_worker_fail",
+                            "text": "What is the indexed referral target?",
+                        },
+                    }
+                )
+            )
+            received.append(await _recv_json(connection))
+            try:
+                received.append(await _recv_json(connection, timeout=0.6))
+            except (TimeoutError, asyncio.TimeoutError):
+                pass
+        return received
+
+    with caplog.at_level(logging.ERROR, logger="app.services.chat_channel"):
+        events = asyncio.run(_run_socket())
+    captured = capsys.readouterr()
+    session = get_chat_hub().get_session("chat_worker_fail")
+    assert session is not None
+    public_blob = json.dumps(events)
+    log_blob = "\n".join(record.getMessage() for record in caplog.records)
+    assert sentinel not in captured.err
+    assert sentinel not in captured.out
+    assert "Traceback" not in captured.err
+    assert sentinel not in log_blob
+    assert "HealthCore chat generation failed" in log_blob
+    assert sentinel not in public_blob
+    assert "generation_completed" not in public_blob
+    assert session.generating is False
+    assert session.messages[-1].role == "assistant"
+    assert session.messages[-1].status == "failed"
+    assert sentinel not in session.messages[-1].text
+    assert get_chat_hub().active_watch("chat_worker_fail") is None
+    assert session.status != "completed"
 
 
 def test_a_second_user_cannot_read_the_session(chat_server: _ChatServer) -> None:

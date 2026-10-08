@@ -1,0 +1,5 @@
+﻿WORKDIR=C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\services\api
+COMMAND=uv run pytest ../../tests/pipelines/test_error_path_privacy.py -q --tb=line
+...........                                                              [100%]
+11 passed in 10.97s
+EXIT_CODE=0

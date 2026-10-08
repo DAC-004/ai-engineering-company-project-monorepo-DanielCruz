@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from sqlmodel import Session
 
 from app.core.deps import get_current_user
+from app.core.safe_errors import public_validation_errors
 from app.db.database import get_db
 from app.inventory_constants import CLINIC_ID_MAX, CLINIC_ID_MIN
 from app.schemas.inventory import (
@@ -75,7 +76,7 @@ async def create_product(
     except ValidationError as exc:
         raise HTTPException(
             status_code=422,
-            detail=exc.errors(),
+            detail=public_validation_errors(exc.errors()),
         ) from exc
     return inventory_service.create_medical_supply(session, payload)
 
