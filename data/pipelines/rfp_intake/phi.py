@@ -97,6 +97,30 @@ def screen_structure(value: object, *, extra_values: tuple[str, ...] = ()) -> tu
     return screened_value, detected, tuple(sorted(set(blocked), key=len, reverse=True))
 
 
+def screen_generated_structure(value: object) -> tuple[object, bool]:
+    """Screen every stored string with the generated-text rules.
+
+    ``screen_structure`` redacts labeled fields. Generated prose such as a
+    named patient sentence is covered by ``screen_generated``. Callers that
+    persist model text use this walk so the stored copy is the screened copy.
+    """
+    detected = False
+
+    def walk(item: object) -> object:
+        nonlocal detected
+        if isinstance(item, str):
+            screened = screen_generated(item)
+            detected = detected or screened.detected
+            return screened.text
+        if isinstance(item, list):
+            return [walk(entry) for entry in item]
+        if isinstance(item, dict):
+            return {key: walk(entry) for key, entry in item.items()}
+        return item
+
+    return walk(value), detected
+
+
 # Prose patterns the labeled-field screen does not cover. A workforce mention of a
 # condition, with no patient attached, is still not PHI.
 _SSN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")

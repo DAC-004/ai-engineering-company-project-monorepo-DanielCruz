@@ -1,0 +1,12 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.12, pytest-9.1.1, pluggy-1.6.0 -- C:\4geeks\Projects\Secure Practices for AI Integration in Systems\ai-engineering-company-project-monorepo-DanielCruz\services\api\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\4geeks\Projects\Secure Practices for AI Integration in Systems\ai-engineering-company-project-monorepo-DanielCruz
+configfile: pyproject.toml
+plugins: anyio-4.14.2, langsmith-0.14.1
+collecting ... collected 2 items
+
+..\..\tests\pipelines\test_nist_protections.py::test_policy_override_is_blocked_before_the_model PASSED [ 50%]
+..\..\tests\pipelines\test_nist_protections.py::test_retrieved_medication_instruction_is_dropped PASSED [100%]
+
+============================== 2 passed in 2.08s ==============================

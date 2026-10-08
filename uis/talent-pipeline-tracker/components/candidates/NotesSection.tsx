@@ -15,6 +15,7 @@ interface NotesSectionProps {
 
 export function NotesSection({ recordId }: NotesSectionProps) {
   const [content, setContent] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const {
     notes,
     loading,
@@ -114,14 +115,35 @@ export function NotesSection({ recordId }: NotesSectionProps) {
                     <p className="text-sm text-slate-500">
                       {formatDate(note.created_at)}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => void removeNote(note.id)}
-                      disabled={deletingNoteId === note.id}
-                      className="text-sm font-medium text-slate-600 hover:text-rose-700 disabled:opacity-60"
-                    >
-                      {deletingNoteId === note.id ? "Deleting..." : "Delete"}
-                    </button>
+                    {pendingDeleteId === note.id ? (
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPendingDeleteId(null)}
+                          disabled={deletingNoteId === note.id}
+                          className="text-sm font-medium text-slate-600 hover:text-slate-800 disabled:opacity-60"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void removeNote(note.id)}
+                          disabled={deletingNoteId === note.id}
+                          className="text-sm font-medium text-rose-700 hover:text-rose-800 disabled:opacity-60"
+                        >
+                          {deletingNoteId === note.id ? "Deleting..." : "Confirm delete"}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteId(note.id)}
+                        disabled={deletingNoteId !== null}
+                        className="text-sm font-medium text-slate-600 hover:text-rose-700 disabled:opacity-60"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </li>
               ))}

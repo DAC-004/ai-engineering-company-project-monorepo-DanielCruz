@@ -9,13 +9,14 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.agent.graph import run_support_agent
 from app.agent.guardrails.audit import summary as guardrail_summary
 from app.agent.routing import classify_question
 from app.core.deps import CREDENTIALS_EXCEPTION, get_current_user
+from app.core.model_rate_limit import enforce_model_rate_limit
 from app.core.safe_errors import log_failure
 from app.schemas.agent import AgentQueryRequest, AgentQueryResponse
 
@@ -36,6 +37,7 @@ def agent_guardrail_summary() -> dict[str, dict[str, int]]:
 @router.post("/query", response_model=AgentQueryResponse)
 def agent_query(
     body: AgentQueryRequest,
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(optional_bearer),
 ) -> AgentQueryResponse:
     """Invoke the compiled graph and translate its result into HTTP.
@@ -45,6 +47,7 @@ def agent_query(
     401 before ``run_support_agent``. A present bearer is accepted only by
     ``get_current_user``. The token is not stored on the graph state.
     """
+    enforce_model_rate_limit("POST /agent/query", request)
     route_kind = classify_question(body.question)
     caller_is_authenticated = False
     actor_user_id = None

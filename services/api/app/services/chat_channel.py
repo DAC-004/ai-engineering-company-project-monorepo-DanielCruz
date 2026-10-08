@@ -201,6 +201,39 @@ def _message_id() -> str:
     return "msg_" + uuid.uuid4().hex[:12]
 
 
+_WITHHELD_EVENT_LABELS = frozenset(
+    {
+        "policy_override",
+        "identifier_disclosure",
+        "embedded_instruction",
+        "jailbreak",
+        "patient_case",
+        "breach_probe",
+    }
+)
+WITHHELD_EVENT_TEXT = "The submitted message was withheld from the event."
+
+
+def event_text_for_turn(text: str) -> str:
+    """Return text safe to store on the chat event.
+
+    Allowed policy questions are echoed. A blocked identifier, patient,
+    breach, or instruction request is replaced before the event is published.
+    The generator still receives the original text so the existing refusal runs.
+    """
+    from app.agent.guardrails.input_scope import screen_question
+    from app.agent.memory_policy import appears_to_contain_phi
+
+    # The memory check and the input screen are separate detectors.
+    # Either one is enough to keep the submitted text off the chat event.
+    if appears_to_contain_phi(text):
+        return WITHHELD_EVENT_TEXT
+    decision = screen_question(text)
+    if decision.allowed or decision.trace_label not in _WITHHELD_EVENT_LABELS:
+        return text
+    return WITHHELD_EVENT_TEXT
+
+
 def start_user_turn(session_id: str, text: str) -> bool:
     """Publish one user turn and start one generation. Return False when one is already running."""
     hub = get_chat_hub()
@@ -208,6 +241,7 @@ def start_user_turn(session_id: str, text: str) -> bool:
     loop = hub._loop
     if session is None or loop is None or not text.strip():
         return False
+    published = event_text_for_turn(text)
     with hub._lock:
         if session.generating:
             return False
@@ -216,11 +250,11 @@ def start_user_turn(session_id: str, text: str) -> bool:
         session.cancel_requested = False
         session.status = "active"
         session.messages.append(
-            ChatMessage(message_id=_message_id(), role="user", text=text, status="completed")
+            ChatMessage(message_id=_message_id(), role="user", text=published, status="completed")
         )
     hub.publish(
         session_id,
-        {"event": "user_message", "data": {"session_id": session_id, "text": text}},
+        {"event": "user_message", "data": {"session_id": session_id, "text": published}},
     )
     threading.Thread(
         target=_generate_turn,

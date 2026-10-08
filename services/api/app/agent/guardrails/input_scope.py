@@ -5,7 +5,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from app.agent.guardrails.text_rules import content_is_prohibited
+from app.agent.guardrails.text_rules import (
+    content_is_prohibited,
+    embedded_clinical_instruction,
+    identifier_disclosure_requested,
+    policy_override_requested,
+)
 
 CASUAL_FRANCE = (
     "Paris is a general fact, not a HealthCore policy. Please ask about "
@@ -21,26 +26,53 @@ GENERAL_REGULATION = (
     "from HHS or ICO guidance, and it is not a previously issued internal "
     "HealthCore policy."
 )
+# These replies are returned without generation. They quote the supplied
+# HealthCore context and name the indexed reference. They do not claim the
+# indexed file contains a deadline it does not contain, and they do not claim
+# a signed agreement is on file.
+_HHS_PRIVACY_URL = (
+    "https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html"
+)
+_ICO_SPECIAL_CATEGORY_URL = (
+    "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/"
+    "lawful-basis/special-category-data/what-are-the-rules-on-special-category-data/"
+)
 BREACH_NOTIFICATION = (
-    "HealthCore's breach-notification comparison is 60 days under HIPAA and "
-    "72 hours to the ICO under UK GDPR. The indexed library has no separate "
-    "breach-notification document to cite."
+    "Cited source: the supplied HealthCore context, applicable regulatory "
+    "framework. Notification of a breach exposing PHI is up to 60 days under "
+    "HIPAA. Notification is within 72 hours to the ICO under UK GDPR. The "
+    "indexed file healthcore-compliance-reference.en.md "
+    "does not contain those deadlines. Its permissibility citations are HHS "
+    f"{_HHS_PRIVACY_URL} and ICO {_ICO_SPECIAL_CATEGORY_URL}. This reply "
+    "quotes the supplied context. It is not a retrieved internal policy passage."
 )
 CONTRACT_SCOPE = (
-    "US vendors are handled with a Business Associate Agreement. UK vendors "
-    "are handled with a Data Processing Agreement. Confidential commercial "
-    "terms of those agreements are not disclosed."
+    "Cited source: the supplied HealthCore context, applicable regulatory "
+    "framework, and healthcore-compliance-reference.en.md, assistant "
+    "restrictions. A pipeline that touches claims or clinical data requires "
+    "a signed Business Associate Agreement with every technology vendor, "
+    "including the language model provider. UK GDPR requires a Data "
+    "Processing Agreement with any external processor. Confidential "
+    "vendor-specific agreement content is not disclosed. This reply does "
+    "not state that either agreement is signed."
 )
 CONTRACT_REFUSAL = (
     "I can't disclose confidential commercial terms of a vendor agreement. "
-    "US vendors use a Business Associate Agreement and UK vendors use a "
-    "Data Processing Agreement."
+    "Cited source: the supplied HealthCore context, applicable regulatory "
+    "framework. A claims or clinical pipeline requires a signed Business "
+    "Associate Agreement. An external processor under UK GDPR requires a "
+    "Data Processing Agreement. This reply does not state that either "
+    "agreement is signed."
 )
 PERSONAL_REFUSAL = (
     "I can't help with personal tasks. Please ask a HealthCore policy question."
 )
 JAILBREAK_REFUSAL = (
     "I can't change my instructions. Please ask a HealthCore policy question."
+)
+POLICY_OVERRIDE_REFUSAL = (
+    "I can't disregard HealthCore policy or disclose identifiers. "
+    "Ask a policy question without a request for identifiers."
 )
 PATIENT_REFUSAL = (
     "I can't use identifiable patient details. Rephrase the question without "
@@ -125,6 +157,16 @@ def screen_question(question: str) -> InputDecision:
     if not isinstance(question, str) or not question.strip():
         return InputDecision(True, "", "", "allow", "", "")
 
+    # Strip a NUL so it cannot split a detector or reach the model as a
+    # hidden character. The original question is not copied into the decision.
+    question = question.replace("\x00", "")
+
+    if policy_override_requested(question):
+        return _block("policy_override", POLICY_OVERRIDE_REFUSAL, "security")
+    if identifier_disclosure_requested(question):
+        return _block("identifier_disclosure", POLICY_OVERRIDE_REFUSAL, "security")
+    if embedded_clinical_instruction(question):
+        return _block("embedded_instruction", POLICY_OVERRIDE_REFUSAL, "security")
     if content_is_prohibited(question) and _looks_like_jailbreak(question):
         return _block("jailbreak", JAILBREAK_REFUSAL, "security")
     if _BREACH_PROBE.search(question):

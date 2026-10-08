@@ -13,7 +13,7 @@ from typing import Any
 
 from data.pipelines.rfp_intake.departments import DEPARTMENT_IDS, DEPARTMENTS, country_rule
 from data.pipelines.rfp_intake.generation import ChatComplete, PipelineFailure, complete_local
-from data.pipelines.rfp_intake.phi import screen_structure, screen_text
+from data.pipelines.rfp_intake.phi import screen_generated, screen_structure, screen_text
 
 _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.IGNORECASE)
 
@@ -296,11 +296,14 @@ def analyze_department(
         "department_name": department_name,
         "contact_name": DEPARTMENTS[department_id]["contact_name"],
         "aspects": [
-            aspect
+            screen_generated(aspect).text
             for aspect in _string_list(parsed.get("aspects"))
             if _aspect_is_grounded(aspect, source, department_name)
         ],
-        "open_questions": _string_list(parsed.get("open_questions")),
+        "open_questions": [
+            screen_generated(question).text
+            for question in _string_list(parsed.get("open_questions"))
+        ],
     }
     screened, _detected, _blocked = screen_structure(section)
     return screened  # type: ignore[return-value]

@@ -26,6 +26,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from jose import jwt  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
+from app.core.irreversible import confirmation_headers  # noqa: E402
 from app.core.security import create_access_token, verify_password  # noqa: E402
 from app.db.tinydb import reset_db_for_tests  # noqa: E402
 from app.main import app  # noqa: E402
@@ -305,11 +306,22 @@ def main() -> int:
         r.text,
     )
 
-    r = client.delete("/api/incidents/results", headers=auth)
-    check("DELETE /api/incidents/results as owner -> 204", r.status_code == 204, r.text)
-
-    r = client.get("/api/incidents/results", headers=auth)
-    check("GET /api/incidents/results after clear -> 404", r.status_code == 404, r.text)
+    # The header is attached only when the operator passed --confirm.
+    # Without that flag the owner call stops at 428 and the results remain.
+    confirmed = confirmation_headers(sys.argv)
+    r = client.delete("/api/incidents/results", headers={**auth, **confirmed})
+    if confirmed:
+        check("DELETE /api/incidents/results as owner -> 204", r.status_code == 204, r.text)
+        r = client.get("/api/incidents/results", headers=auth)
+        check("GET /api/incidents/results after clear -> 404", r.status_code == 404, r.text)
+    else:
+        check(
+            "DELETE /api/incidents/results as owner without --confirm -> 428",
+            r.status_code == 428,
+            r.text,
+        )
+        r = client.get("/api/incidents/results", headers=auth)
+        check("GET /api/incidents/results remains after unconfirmed delete", r.status_code == 200, r.text)
 
     # DELETE user removes linked profile (self)
     charlie = client.post(
@@ -326,13 +338,17 @@ def main() -> int:
         "Charlie profile exists before delete",
         profile_service.get_profile_by_user_id(charlie_id) is not None,
     )
-    r = client.delete(f"/users/{charlie_id}", headers=charlie_auth)
-    check("DELETE /users/{id}", r.status_code == 204, r.text)
-    check("User removed after delete", user_service.get_user_by_id(charlie_id) is None)
-    check(
-        "linked Profile removed after delete",
-        profile_service.get_profile_by_user_id(charlie_id) is None,
-    )
+    r = client.delete(f"/users/{charlie_id}", headers={**charlie_auth, **confirmed})
+    if confirmed:
+        check("DELETE /users/{id}", r.status_code == 204, r.text)
+        check("User removed after delete", user_service.get_user_by_id(charlie_id) is None)
+        check(
+            "linked Profile removed after delete",
+            profile_service.get_profile_by_user_id(charlie_id) is None,
+        )
+    else:
+        check("DELETE /users/{id} without --confirm -> 428", r.status_code == 428, r.text)
+        check("User remains after unconfirmed delete", user_service.get_user_by_id(charlie_id) is not None)
 
     # Env-backed token helper
     fresh = create_access_token(subject=alice.get("id") or stored.id)
