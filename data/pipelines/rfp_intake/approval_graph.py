@@ -30,6 +30,7 @@ from data.pipelines.rfp_intake.evaluators import evaluate_compliance
 from data.pipelines.rfp_intake.final_document import build_final_document
 from data.pipelines.rfp_intake.generation import ChatComplete
 from data.pipelines.rfp_intake.node_trace import append_trace
+from data.pipelines.rfp_intake.phi import screen_generated
 from data.pipelines.rfp_intake.response_loop import MAX_ATTEMPTS, run_department
 
 _complete_fn: contextvars.ContextVar[ChatComplete | None] = contextvars.ContextVar(
@@ -92,14 +93,23 @@ def _await_approval(state: BranchState) -> dict[str, Any]:
     if not isinstance(resumed, dict):
         return {"decision": "", "note": "", "feedback": "", "approved": False}
     decision = resumed.get("decision")
-    note = resumed.get("note")
-    feedback = resumed.get("feedback")
+    # Screen before the checkpoint write and before revision uses the note as model input.
+    # Ordinary operational commentary does not match the labeled-field screen and is kept.
+    note = _screen_resume_text(resumed.get("note"))
+    feedback = _screen_resume_text(resumed.get("feedback"))
     return {
         "decision": decision if isinstance(decision, str) else "",
-        "note": note if isinstance(note, str) else "",
-        "feedback": feedback if isinstance(feedback, str) else "",
+        "note": note,
+        "feedback": feedback,
         "approved": False,
     }
+
+
+def _screen_resume_text(value: object) -> str:
+    """Return resume text with labeled patient fields removed."""
+    if not isinstance(value, str) or not value:
+        return ""
+    return screen_generated(value).text
 
 
 def _validate_decision(state: BranchState) -> dict[str, Any]:
@@ -333,10 +343,12 @@ class ApprovalRun:
             reason = self._approve_block_reason(department_id)
             if reason is not None:
                 raise ApprovalFlowError(reason)
-        feedback = (note or "").strip()
+        # The checkpointer stores this resume payload. Screen it here, not only
+        # after the node returns, so the stored command does not keep the field.
+        feedback = _screen_resume_text((note or "").strip())
         self._resume(
             department_id,
-            {"decision": decision, "note": note or "", "feedback": feedback},
+            {"decision": decision, "note": feedback, "feedback": feedback},
         )
         if decision == "approve" and self._branch_approved(department_id):
             self._mark_approved(section, submitted_by_user_id, approver_name)

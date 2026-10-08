@@ -177,10 +177,28 @@ def test_non_manager_validation_response_omits_request_input(
         assert MARKER not in str(item["loc"])
 
 
+def _authenticate_supplier_request(api_client: TestClient) -> None:
+    """Reach body validation. Anonymous supplier writes are 401 before this check."""
+    from datetime import UTC, datetime
+
+    from app.core.deps import get_current_user
+    from app.schemas.user import UserInDB, UserRole
+
+    api_client.app.dependency_overrides[get_current_user] = lambda: UserInDB(
+        id="privacy-user",
+        email="privacy@example.com",
+        is_active=True,
+        role=UserRole.user,
+        created_at=datetime.now(UTC),
+        hashed_password="not-used",
+    )
+
+
 def test_supplier_custom_validator_message_is_not_reflected(
     api_client: TestClient,
 ) -> None:
     """SupplierCreate.categories embeds rejected values in ValueError text."""
+    _authenticate_supplier_request(api_client)
     response = api_client.post(
         "/suppliers",
         json={
@@ -208,6 +226,7 @@ def test_supplier_extra_field_key_is_redacted_from_loc(
     api_client: TestClient,
 ) -> None:
     """SupplierCreate forbids extras; the submitted key lands in loc."""
+    _authenticate_supplier_request(api_client)
     response = api_client.post(
         "/suppliers",
         json={

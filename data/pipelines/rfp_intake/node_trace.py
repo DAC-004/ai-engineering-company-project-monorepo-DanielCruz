@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from data.pipelines.rfp_intake.phi import screen_structure
+from data.pipelines.rfp_intake.phi import screen_generated_structure
 
 
 def screened_record(
@@ -21,8 +21,8 @@ def screened_record(
     sequence: int,
 ) -> dict[str, Any]:
     """Build one trace record. sequence is assigned by the caller under its lock."""
-    screened_input, input_phi, _blocked_input = screen_structure(node_input)
-    screened_output, output_phi, _blocked_output = screen_structure(node_output)
+    screened_input, input_phi = screen_generated_structure(node_input)
+    screened_output, output_phi = screen_generated_structure(node_output)
     record: dict[str, Any] = {
         "sequence": sequence,
         "node": node,

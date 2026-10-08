@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+
+from app.core.irreversible import require_explicit_confirmation
 from fastapi.responses import Response
 
 from shared.incident_analyzer import analysis_to_csv_rows, analyze_csv_bytes
@@ -133,12 +135,15 @@ async def export_results(
 
 @router.delete("/results", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_results(
+    request: Request,
     current_user: UserInDB = Depends(get_current_user),
 ) -> None:
     """
     Protected: clear the stored analysis.
 
     Only the analysis owner or an admin may clear it (403 otherwise).
+    The owner must also send the irreversible-action confirmation header.
     """
     _require_analysis_owner_or_admin(current_user)
+    require_explicit_confirmation(request, "delete_analysis_results")
     clear_last_analysis()
