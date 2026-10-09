@@ -58,8 +58,14 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         ensure_demonstration_accounts(session)
     yield
     from data.pipelines.rag import release_local_llm
+    from shared.healthcore_rag.qdrant import close_qdrant_client
 
+    # Close Qdrant before interpreter teardown. The local client's __del__
+    # imports portalocker during shutdown and can fail, which leaves the
+    # exclusive lock held. Closing here unlocks embedded storage without
+    # deleting the prepared knowledge index.
     release_local_llm()
+    close_qdrant_client()
 
 
 app = FastAPI(

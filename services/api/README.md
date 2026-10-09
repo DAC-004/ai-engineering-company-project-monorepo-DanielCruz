@@ -22,11 +22,25 @@ Do not use `pip install` or Poetry for dependency changes.
 
 ## Run
 
+Index the knowledge base once from the repository root before the first API start. That writes the gitignored 384-d collection `healthcore_knowledge` under `data/process/qdrant_storage`. Later API starts reopen that directory. They do not ingest again.
+
+```bash
+uv run python scripts/setup_knowledge_base.py
+```
+
 From `services/api`:
 
 ```bash
 uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+Stop the API with Ctrl+C so lifespan can release the local Qdrant lock. The index stays on disk. Start the same command again without re-running `setup_knowledge_base.py`. Do not point `QDRANT_PATH` at another milestone's store.
+
+An embedded `QDRANT_PATH` outside this checkout is rejected by default so a
+leftover worktree setting cannot silently select another index. For a
+deliberately shared external store, set both `QDRANT_PATH` and
+`HEALTHCORE_ALLOW_EXTERNAL_QDRANT=1`. That opt-in does not migrate, convert, or
+re-ingest the selected store.
 
 Open interactive docs: <http://127.0.0.1:8000/docs>
 

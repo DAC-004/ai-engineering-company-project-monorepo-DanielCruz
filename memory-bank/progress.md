@@ -149,3 +149,10 @@
 - Protocol: `generation_failed` is distinct from `generation_completed` and from `generation_interrupted`. Failure text is not stored as a completed assistant answer. First-sample n_ctx overflow uses `generation_failed` so the UI is not left busy; unlimited context was not added.
 - Knowledge UI: submit button clickable at 562x720. Browser: stream, interrupt, next turn, same-process reload restored the transcript.
 - Final pre-commit checks on this uncommitted set: tracker lint and build passed; `test_chat_websocket.py` 16 passed; `test_streaming_release_gate.py` plus `test_gated_generation_stream.py` with the chat suite 38 passed before the extra history test, then chat 16 passed after it. Isolated I01+I07 WebSocket pre-merge checks PASS. No commit, push, pull, main merge, or #35 close.
+
+## Qdrant restart persistence (2026-10-09)
+- Cause: leftover process `QDRANT_PATH` pointed at `healthcore-i36-d37ac3a`, so ingest and retrieval used that worktree. Local main `data/process/qdrant_storage` was not the store. API lifespan did not close Qdrant; `QdrantClient.__del__` fails importing portalocker at interpreter shutdown.
+- Fix in this tree: close Qdrant in API lifespan and after `setup_knowledge_base.py`; refuse another checkout's store; pytest uses a throwaway path.
+- Restart proof: collection `healthcore_knowledge`, 384-d, 47 chunks at this clone's `data/process/qdrant_storage`. Retrieve 3 hits. HTTP `/knowledge/query` 200, 796 characters, before and after documented `uvicorn --reload` restart without re-ingest. Browser stream, interrupt, next turn, and reconnect after that restart. `storage.sqlite` remained (249856 bytes).
+- Forecast in CPython 3.14.3: 23 passed. Those files are not collected in the API 3.13 environment.
+- RFP final-document stall remains an open required gap. No push. #35 untouched.
