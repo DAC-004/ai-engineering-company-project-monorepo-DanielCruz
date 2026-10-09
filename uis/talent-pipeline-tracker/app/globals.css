@@ -84,6 +84,135 @@ h2,
   width: min(100%, 76rem);
 }
 
+.supplier-directory h2 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.supplier-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-top: 1.25rem;
+}
+
+.supplier-filters label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.supplier-filters select {
+  min-width: 12rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.6rem;
+  background: #fff;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.supplier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.supplier-actions input {
+  width: 7rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.supplier-directory .table-scroll {
+  scroll-margin-top: 14rem;
+}
+
+.supplier-actions .btn-secondary {
+  position: relative;
+  z-index: 11;
+  scroll-margin-top: 14rem;
+}
+
+.supplier-register-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.supplier-register-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.supplier-register-form input,
+.supplier-register-form select,
+.supplier-register-form textarea {
+  border: 1px solid var(--hc-line);
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+}
+
+.supplier-categories,
+.supplier-notes {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 48rem) {
+  .supplier-register-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Sticky app-header can wrap tall nav and cover long forms (Knowledge uses the same pattern). */
+.supplier-directory [aria-labelledby="register-heading"] {
+  scroll-margin-top: 14rem;
+}
+
+.supplier-register-form {
+  isolation: isolate;
+}
+
+.supplier-register-form .supplier-register-actions {
+  grid-column: 1 / -1;
+}
+
+.supplier-register-form .supplier-register-actions .btn-primary {
+  position: relative;
+  z-index: 11;
+  scroll-margin-top: 14rem;
+}
+
+@media (max-width: 72rem) {
+  .app-header {
+    max-height: min(38vh, 14rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-items: flex-start;
+  }
+
+  .app-nav {
+    width: 100%;
+  }
+}
+
 .auth-card h1,
 .home-panel h1 {
   margin: 0.65rem 0 0;
@@ -241,6 +370,10 @@ h2,
   place-items: center;
   color: var(--hc-muted);
   font-weight: 600;
+}
+
+html {
+  scroll-padding-top: 15rem;
 }
 
 .app-frame {

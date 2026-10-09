@@ -46,6 +46,7 @@ npm run build
 | `NEXT_PUBLIC_INVENTORY_API_URL` | HealthCore API used by inventory routes |
 | `NEXT_PUBLIC_TELEMETRY_ENDPOINT` | Telemetry capture destination |
 | `NEXT_PUBLIC_TRACKER_API_BASE_URL` | 4Geeks Talent Tracker REST API used by the candidate pipeline |
+| `NEXT_PUBLIC_STAFF_WORKSPACE_URL` | This app's public origin for cross-links (optional; default documented as `http://localhost:3000`) |
 
 Example (also in `.env.example`):
 
@@ -58,7 +59,7 @@ NEXT_PUBLIC_TRACKER_API_BASE_URL=https://playground.4geeks.com/tracker/api/v1
 
 Never commit `.env.local`.
 
-Inventory calls are centralized in `lib/inventory.ts`. Components do not call `fetch` directly. Protected inventory requests send `Authorization: Bearer <token>` from `localStorage`. Candidate calls are centralized in `lib/api/client.ts` and use `NEXT_PUBLIC_TRACKER_API_BASE_URL`.
+Inventory calls are centralized in `lib/inventory.ts`. Supplier mutations are centralized in `lib/suppliers.ts` and use `apiFetch(..., { auth: true })` against the HealthCore API. Components do not call `fetch` directly for those modules. Protected inventory and supplier requests send `Authorization: Bearer <token>` from `localStorage`. Candidate calls are centralized in `lib/api/client.ts` and use `NEXT_PUBLIC_TRACKER_API_BASE_URL` only (no HealthCore JWT is sent to the external tracker API).
 
 ## Routes
 
@@ -72,6 +73,7 @@ Inventory calls are centralized in `lib/inventory.ts`. Components do not call `f
 | `/backoffice/inventory/orders/inbound` | Protected | Log a supply delivery |
 | `/backoffice/inventory/orders/outbound` | Protected | Log a supply consumption |
 | `/backoffice/inventory/orders` | Protected | Read-only supply delivery and consumption history |
+| `/backoffice/suppliers` | Protected | Supplier directory (list, register, update rate/status; no delete UI) |
 | `/backoffice/rfp` | Protected | RFP intake list |
 | `/backoffice/rfp/[ticketId]` | Protected | RFP ticket detail |
 | `/candidates` | Public to HealthCore auth | Candidate list with status, stage, and search filters |

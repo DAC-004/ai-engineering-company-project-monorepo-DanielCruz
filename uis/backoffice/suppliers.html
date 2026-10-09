@@ -6,7 +6,7 @@
     <title>HealthCore | Supplier Directory</title>
     <meta
       name="description"
-      content="HealthCore Supplier Directory — filter, register, update rates, and manage status."
+      content="HealthCore Supplier Directory — relocated to the authenticated Internal Workspace."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,126 +28,17 @@
     <main class="page">
       <section class="intro">
         <p class="eyebrow">Procurement · Compliance</p>
-        <h1>Supplier Directory</h1>
+        <h1>Supplier directory relocated</h1>
         <p class="lede">
-          Single source of truth for clinical, operational, and technology suppliers
-          across USA and UK clinics.
+          Registering suppliers and updating rates or status now requires the authenticated
+          Internal Workspace. This historical static page does not call the HealthCore API.
         </p>
-      </section>
-
-      <section class="filters" aria-label="Supplier filters">
-        <label>
-          Country
-          <select id="filter-country">
-            <option value="">All countries</option>
-            <option value="USA">USA</option>
-            <option value="UK">UK</option>
-          </select>
-        </label>
-        <label>
-          Category
-          <select id="filter-category">
-            <option value="">All categories</option>
-          </select>
-        </label>
-        <p id="list-status" class="status" role="status" aria-live="polite"></p>
-      </section>
-
-      <section aria-labelledby="directory-heading">
-        <h2 id="directory-heading">Directory</h2>
-        <div class="table-wrap">
-          <table class="supplier-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Country</th>
-                <th>Categories</th>
-                <th>Monthly rate</th>
-                <th>Compliance</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="supplier-rows"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="register" aria-labelledby="register-heading">
-        <h2 id="register-heading">Register supplier</h2>
-        <form id="register-form" novalidate>
-          <div class="form-grid">
-            <label>
-              Name
-              <input id="name" name="name" type="text" required />
-            </label>
-            <label>
-              Country
-              <select id="country" name="country" required>
-                <option value="">Select country</option>
-                <option value="USA">USA</option>
-                <option value="UK">UK</option>
-              </select>
-            </label>
-            <label>
-              Currency
-              <select id="currency" name="currency" required>
-                <option value="">Select currency</option>
-                <option value="USD">USD</option>
-                <option value="GBP">GBP</option>
-              </select>
-            </label>
-            <label>
-              Monthly rate
-              <input
-                id="monthly_rate"
-                name="monthly_rate"
-                type="number"
-                min="0.01"
-                step="0.01"
-                required
-              />
-            </label>
-            <label>
-              Status
-              <select id="status" name="status" required>
-                <option value="active">active</option>
-                <option value="suspended">suspended</option>
-              </select>
-            </label>
-            <label>
-              Compliance agreement
-              <select id="compliance_agreement" name="compliance_agreement">
-                <option value="">None</option>
-                <option value="BAA">BAA</option>
-                <option value="DPA">DPA</option>
-                <option value="both">both</option>
-              </select>
-            </label>
-            <label>
-              Contract renewal date
-              <input
-                id="contract_renewal_date"
-                name="contract_renewal_date"
-                type="date"
-              />
-            </label>
-            <label>
-              Contact email
-              <input id="contact_email" name="contact_email" type="email" />
-            </label>
-            <label class="span-2">
-              Categories (Ctrl/Cmd-click for multiple)
-              <select id="categories" name="categories" multiple required size="6"></select>
-            </label>
-            <label class="span-2">
-              Notes
-              <textarea id="notes" name="notes" rows="3"></textarea>
-            </label>
-          </div>
-          <button type="submit">Register supplier</button>
-          <p id="register-status" class="status" role="status" aria-live="polite"></p>
-        </form>
+        <p>
+          <a id="workspace-supplier-link" class="primary-link" href="http://localhost:3000/backoffice/suppliers">
+            http://localhost:3000/backoffice/suppliers
+          </a>
+        </p>
+        <p id="relocation-status" class="status" role="status" aria-live="polite"></p>
       </section>
     </main>
 

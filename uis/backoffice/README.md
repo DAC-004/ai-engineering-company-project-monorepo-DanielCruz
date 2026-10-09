@@ -10,6 +10,8 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. The home page remains the Milestone 2 operations view. Supplier Directory is at <http://localhost:3000/suppliers> and calls the HealthCore API at `http://127.0.0.1:8000`.
+Open <http://localhost:3000>. The home page remains the Milestone 2 operations view. The legacy Supplier Directory route at `/suppliers` is a visible relocation page only; it does not call the HealthCore API.
 
-The approved static files `suppliers.html`, `suppliers.js`, and `styles.css` remain in this package. The running backoffice is the Next.js app, so the same directory behavior is served from `/suppliers` instead of a separate `http-server` process.
+Authenticated supplier list/create/rate/status lives in the Internal Workspace at `uis/talent-pipeline-tracker` (`/backoffice/suppliers`). Set `NEXT_PUBLIC_STAFF_WORKSPACE_URL` in `.env.local` (see `.env.example`) so relocation links target that app.
+
+The static files `suppliers.html` and `suppliers.js` are historical relocation artifacts with no supplier API calls. `styles.css` remains shared styling.
