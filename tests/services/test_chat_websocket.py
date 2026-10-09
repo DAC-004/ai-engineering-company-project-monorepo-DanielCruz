@@ -38,7 +38,12 @@ from app.db.tinydb import reset_db_for_tests  # noqa: E402
 from app.routers.chat import router  # noqa: E402
 from app.schemas.user import UserCreate, UserRole  # noqa: E402
 from app.services import user_service  # noqa: E402
-from app.services.chat_channel import get_chat_hub, reset_chat_hub_for_tests, session_event_names  # noqa: E402
+from app.services.chat_channel import (  # noqa: E402
+    GENERATION_FAILURE_TEXT,
+    get_chat_hub,
+    reset_chat_hub_for_tests,
+    session_event_names,
+)
 
 _FIRST_QUESTION = "What does the minimum necessary standard require?"
 _NEW_INPUT = "Limit the answer to the purpose of the requested use."
@@ -228,6 +233,7 @@ def test_public_event_names_match_the_healthcore_contract() -> None:
         "token_chunk",
         "interrupt_requested",
         "generation_interrupted",
+        "generation_failed",
         "generation_completed",
         "session_snapshot",
         "user_message",
@@ -390,6 +396,117 @@ def test_auth_frame_snapshot_uses_session_id_as_thread_id(
     assert get_chat_hub().generation_starts["chat_0076"] == 1
     # Mocked ordering only: the stand-in returns before a real sample finishes.
     assert session.last_generation["replayed_kept_attempt"] is False
+
+
+def test_agent_exception_fails_the_turn_without_a_completed_answer(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _fail(_question: str, **_kwargs: Any) -> AgentRun:
+        raise ValueError("Collection healthcore_knowledge not found")
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _fail)
+    token = _staff_token("staff.fail@example.com")
+
+    async def _run() -> list[dict[str, Any]]:
+        async with _StaffSocket(chat_server, "chat_fail", token) as connection:
+            await _recv_json(connection)
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {"session_id": "chat_fail", "text": _FIRST_QUESTION},
+                    }
+                )
+            )
+            return await _collect_until(connection, "generation_failed")
+
+    events = asyncio.run(_run())
+    names = [item["event"] for item in events]
+    assert names[0] == "user_message"
+    assert "token_chunk" not in names
+    assert "generation_completed" not in names
+    assert names[-1] == "generation_failed"
+    assert events[-1]["data"]["message"] == GENERATION_FAILURE_TEXT
+    session = get_chat_hub().get_session("chat_fail")
+    assert session is not None
+    assert session.generating is False
+    assert session.last_generation["error"] == "generation_failed"
+    assert session.messages[-1].role == "user"
+    assert session.messages[-1].text == _FIRST_QUESTION
+    assert all(message.status != "completed" or message.role != "assistant" for message in session.messages)
+
+
+def test_failed_turn_clears_busy_state_and_stays_out_of_prompt_history(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def _fail_then_answer(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        from data.pipelines.rag import _GENERATION_CONVERSATION, _LOCAL_GENERATION_WATCH
+
+        watch = _LOCAL_GENERATION_WATCH.get()
+        calls.append(
+            {
+                "question": question,
+                "conversation": _GENERATION_CONVERSATION.get(),
+            }
+        )
+        if len(calls) == 1:
+            raise ValueError("Collection healthcore_knowledge not found")
+        if watch is not None:
+            watch.forward_kept = True
+            if watch.on_kept_release is not None:
+                watch.on_kept_release(_PARTIAL + _REST)
+        return AgentRun(
+            answer=_PARTIAL + _REST,
+            error="",
+            trace_id="mock-trace",
+            thread_id=thread_id or "",
+        )
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _fail_then_answer)
+    token = _staff_token("staff.failretry@example.com")
+
+    async def _run() -> list[str]:
+        async with _StaffSocket(chat_server, "chat_fail_retry", token) as connection:
+            await _recv_json(connection)
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {"session_id": "chat_fail_retry", "text": _FIRST_QUESTION},
+                    }
+                )
+            )
+            failed = await _collect_until(connection, "generation_failed")
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {"session_id": "chat_fail_retry", "text": _NEW_INPUT},
+                    }
+                )
+            )
+            completed = await _collect_until(connection, "generation_completed")
+            return [item["event"] for item in [*failed, *completed]]
+
+    names = asyncio.run(_run())
+    assert "generation_failed" in names
+    assert names.count("generation_completed") == 1
+    assert names.index("generation_failed") < names.index("generation_completed")
+    assert "generation_completed" not in names[: names.index("generation_failed") + 1]
+    assert len(calls) == 2
+    assert calls[1]["question"] == _NEW_INPUT
+    conversation = calls[1]["conversation"] or []
+    joined = " ".join(
+        item.get("content", "") if isinstance(item, dict) else str(item) for item in conversation
+    )
+    assert GENERATION_FAILURE_TEXT not in joined
+    session = get_chat_hub().get_session("chat_fail_retry")
+    assert session is not None
+    assert session.generating is False
 
 
 def test_interrupt_keeps_the_partial_and_starts_a_new_turn(
@@ -894,7 +1011,7 @@ def test_first_sample_context_overflow_does_not_complete_the_turn(
     chat_server: _ChatServer,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A first sample that cannot fit the context window is not marked completed."""
+    """A first sample that cannot fit the context window is failed, not completed."""
 
     class _FailFirst:
         def create_chat_completion(self, **_kwargs: Any) -> Any:
@@ -931,19 +1048,17 @@ def test_first_sample_context_overflow_does_not_complete_the_turn(
             )
             echoed = await _recv_json(connection)
             assert echoed["event"] == "user_message"
-            try:
-                unexpected = await _recv_json(connection, timeout=0.4)
-            except (TimeoutError, asyncio.TimeoutError):
-                return ""
-            return str(unexpected.get("event"))
+            failed = await _recv_json(connection, timeout=2)
+            return failed
 
-    assert asyncio.run(_run_socket()) == ""
+    failed = asyncio.run(_run_socket())
+    assert failed["event"] == "generation_failed"
+    assert failed["data"]["message"] == GENERATION_FAILURE_TEXT
     session = get_chat_hub().get_session("chat_first_overflow")
     assert session is not None
     assert session.generating is False
-    assert session.messages[-1].role == "assistant"
-    assert session.messages[-1].text == ""
-    assert session.messages[-1].status == "in_progress"
+    assert session.messages[-1].role == "user"
+    assert session.last_generation["error"] == "generation_failed"
 
 
 def test_a_second_user_cannot_read_the_session(chat_server: _ChatServer) -> None:

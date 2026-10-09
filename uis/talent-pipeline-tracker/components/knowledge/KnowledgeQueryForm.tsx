@@ -178,6 +178,19 @@ export const KnowledgeQueryForm = () => {
         return;
       }
 
+      if (eventName === "generation_failed") {
+        setStreaming(false);
+        setErrorMessage(readString(data.message) || "The knowledge assistant could not complete this turn.");
+        setMessages((current) => {
+          const last = current.at(-1);
+          if (last?.role === "assistant" && last.streaming) {
+            return current.slice(0, -1);
+          }
+          return current;
+        });
+        return;
+      }
+
       if (eventName === "generation_interrupted") {
         setStreaming(false);
         setMessages((current) => finishAssistant(current, readString(data.message_id), true));

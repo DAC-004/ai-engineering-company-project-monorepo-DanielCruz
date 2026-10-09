@@ -7,6 +7,7 @@ subscribe to ``chat.<session_id>`` and do not call the model themselves.
 from __future__ import annotations
 
 import asyncio
+import logging
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -22,8 +23,12 @@ from data.pipelines.rag import (
     reset_local_generation_watch,
 )
 
+logger = logging.getLogger("healthcore.chat")
+
 AGENT_ID = "compliance_assistant"
 CHANNEL_PREFIX = "chat."
+# Staff-facing socket copy. It is not model output and is not stored as a turn.
+GENERATION_FAILURE_TEXT = "The knowledge assistant could not complete this turn."
 
 
 @dataclass
@@ -129,8 +134,8 @@ class SessionHub:
                 "role": message.role,
                 "text": message.text,
             }
-            if message.role == "assistant" and message.status == "interrupted":
-                payload["status"] = "interrupted"
+            if message.role == "assistant" and message.status in {"interrupted", "failed"}:
+                payload["status"] = message.status
             messages.append(payload)
         return {
             "event": "session_snapshot",
@@ -150,7 +155,7 @@ class SessionHub:
         return [
             {"role": message.role, "content": message.text}
             for message in prior
-            if message.text
+            if message.text and message.status in {"completed", "interrupted"}
         ]
 
 
@@ -279,15 +284,43 @@ def _generate_turn(session_id: str, question: str) -> None:
         from app.agent.graph import checkpoint_database_path, trace_directory
         from app.agent.memory_store import memory_database_path
 
-        outcome = run_support_agent(
-            question,
-            caller_is_authenticated=True,
-            actor_user_id=session.user_id,
-            thread_id=session.thread_id,
-            checkpoint_path=checkpoint_database_path(),
-            trace_dir=trace_directory(),
-            memory_path=memory_database_path(),
-        )
+        try:
+            outcome = run_support_agent(
+                question,
+                caller_is_authenticated=True,
+                actor_user_id=session.user_id,
+                thread_id=session.thread_id,
+                checkpoint_path=checkpoint_database_path(),
+                trace_dir=trace_directory(),
+                memory_path=memory_database_path(),
+            )
+        except Exception:
+            # Index, retrieve, and first-sample capacity errors are not a
+            # completed answer. Do not publish token_chunk or generation_completed.
+            logger.exception("Chat generation failed session_id=%s", session_id)
+            assistant.status = "failed"
+            session.status = "active"
+            if not assistant.text:
+                with hub._lock:
+                    if session.messages and session.messages[-1] is assistant:
+                        session.messages.pop()
+            session.last_generation = {
+                **_generation_report(watch),
+                "error": "generation_failed",
+                "stored_text": assistant.text,
+            }
+            hub.publish(
+                session_id,
+                {
+                    "event": "generation_failed",
+                    "data": {
+                        "session_id": session_id,
+                        "message_id": assistant.message_id,
+                        "message": GENERATION_FAILURE_TEXT,
+                    },
+                },
+            )
+            return
         hub.thread_ids.append(outcome.thread_id)
         session.bound_thread_id = outcome.thread_id
         interrupted = watch.interrupted
@@ -343,6 +376,7 @@ def session_event_names() -> tuple[str, ...]:
         "token_chunk",
         "interrupt_requested",
         "generation_interrupted",
+        "generation_failed",
         "generation_completed",
         "session_snapshot",
         "user_message",

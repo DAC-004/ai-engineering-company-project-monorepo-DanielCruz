@@ -569,6 +569,13 @@ h2,
 .knowledge-form {
   display: grid;
   gap: 1rem;
+  isolation: isolate;
+}
+
+.knowledge-form .btn-primary {
+  position: relative;
+  z-index: 11;
+  scroll-margin-top: 12rem;
 }
 
 .knowledge-status {
@@ -599,6 +606,7 @@ h2,
   margin: 0;
   padding: 0;
   list-style: none;
+  scroll-margin-top: 12rem;
 }
 
 .knowledge-message {
