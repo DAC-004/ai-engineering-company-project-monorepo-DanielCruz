@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+
+from app.core.irreversible import require_explicit_confirmation
 
 from app.core.deps import get_current_user, require_self_or_admin
 from app.schemas.user import UserCreate, UserInDB, UserPublic, UserRole, UserUpdate
@@ -91,10 +93,12 @@ def update_user(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: str,
+    request: Request,
     current_user: UserInDB = Depends(get_current_user),
 ) -> None:
-    """Delete a user and the linked Profile. Requires self or admin."""
+    """Delete a user and the linked Profile. Requires self or admin and confirmation."""
     require_self_or_admin(target_user_id=user_id, current_user=current_user)
+    require_explicit_confirmation(request, "delete_user")
 
     if not user_service.get_user_by_id(user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

@@ -1,0 +1,7 @@
+﻿
+PATTERN: def .*(sign_|send_note|notify_|share_history|update_referral|update_appointment)
+---
+PATTERN: SOAP|soapNote|notifyPatient|labResult|chartAccess|kpiDashboard
+---
+PATTERN: referral status|appointment status
+---

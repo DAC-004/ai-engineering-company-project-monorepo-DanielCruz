@@ -15,6 +15,7 @@ from manager_constants import (
     STATUSES,
 )
 
+from app.core.prohibited_text import has_labeled_patient_field
 from app.db.tinydb import incident_seed_keys_table, incidents_table
 from app.schemas.incident import IncidentCreate, IncidentInDB, IncidentSummary
 
@@ -56,9 +57,16 @@ def _require_allowed(field: str, value: str, allowed: tuple[str, ...], label: st
 
 def validate_create_payload(payload: IncidentCreate) -> dict[str, str]:
     """Validate operator create fields against HealthCore allowed values."""
+    title = _require_non_empty("title", payload.title, "Title")
+    description = _require_non_empty("description", payload.description, "Description")
+    # Reject before insert. The message names the rule, not the submitted text.
+    if has_labeled_patient_field(title):
+        raise IncidentFieldError("title", "The submitted text was not stored.")
+    if has_labeled_patient_field(description):
+        raise IncidentFieldError("description", "The submitted text was not stored.")
     return {
-        "title": _require_non_empty("title", payload.title, "Title"),
-        "description": _require_non_empty("description", payload.description, "Description"),
+        "title": title,
+        "description": description,
         "category": _require_allowed("category", payload.category, CATEGORIES, "Category"),
         "status": _require_allowed("status", payload.status, STATUSES, "Status"),
         "origin": _require_allowed("origin", payload.origin, ORIGINS, "Origin"),

@@ -19,6 +19,7 @@ if _owns_database:
     os.environ["DATABASE_URL"] = f"sqlite:///{_sqlite_path}"
     os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
 os.environ.setdefault("SECRET_KEY", "rfp-approval-test-secret-key-32")
+os.environ.setdefault("RFP_DEMONSTRATION_PASSWORD", "rfp-approval-test-password")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 os.environ.setdefault("JWT_ALGORITHM", "HS256")
 
@@ -31,7 +32,7 @@ from app.db.tinydb import reset_db_for_tests  # noqa: E402
 from app.main import app  # noqa: E402
 from app.rfp_models import DepartmentSection, RfpFinalDocument, RfpMetadata, RfpTicket, utc_now  # noqa: E402
 from app.services import rfp_service  # noqa: E402
-from app.services.rfp_demonstration_accounts import DEMONSTRATION_ACCOUNT_PASSWORD  # noqa: E402
+from app.services.rfp_demonstration_accounts import demonstration_password  # noqa: E402
 
 get_settings.cache_clear()
 if _owns_database:
@@ -106,9 +107,10 @@ def test_approval_route_binds_the_owner_and_stores_the_document(tmp_path: Path) 
     try:
         with TestClient(app) as client:
             ticket_id = _seed_ticket()
-            revenue = _login(client, "rfp.revenue.demonstration@healthcore.com", DEMONSTRATION_ACCOUNT_PASSWORD)
-            clinical = _login(client, "rfp.clinical.demonstration@healthcore.com", DEMONSTRATION_ACCOUNT_PASSWORD)
-            compliance = _login(client, "rfp.compliance.demonstration@healthcore.com", DEMONSTRATION_ACCOUNT_PASSWORD)
+            password = demonstration_password()
+            revenue = _login(client, "rfp.revenue.demonstration@healthcore.com", password)
+            clinical = _login(client, "rfp.clinical.demonstration@healthcore.com", password)
+            compliance = _login(client, "rfp.compliance.demonstration@healthcore.com", password)
             missing = client.get(f"/rfp/tickets/{ticket_id}/final-document", headers=revenue)
             assert missing.status_code == 404
 

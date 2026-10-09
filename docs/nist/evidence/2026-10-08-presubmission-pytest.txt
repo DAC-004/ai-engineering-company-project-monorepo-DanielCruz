@@ -1,0 +1,20 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.12, pytest-9.1.1, pluggy-1.6.0 -- C:\4geeks\Projects\Secure Practices for AI Integration in Systems\ai-engineering-company-project-monorepo-DanielCruz\services\api\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\4geeks\Projects\Secure Practices for AI Integration in Systems\ai-engineering-company-project-monorepo-DanielCruz
+configfile: pyproject.toml
+plugins: anyio-4.14.2, langsmith-0.14.1
+collecting ... collected 10 items
+
+..\..\tests\pipelines\test_nist_protections.py::test_policy_override_is_blocked_before_the_model PASSED [ 10%]
+..\..\tests\pipelines\test_nist_protections.py::test_retrieved_medication_instruction_is_dropped PASSED [ 20%]
+..\..\tests\pipelines\test_nist_protections.py::test_system_instructions_stay_separate_from_user_content PASSED [ 30%]
+..\..\tests\pipelines\test_nist_protections.py::test_knowledge_endpoint_rate_limit_stops_before_the_model PASSED [ 40%]
+..\..\tests\pipelines\test_nist_protections.py::test_support_agent_records_the_block_without_the_question PASSED [ 50%]
+..\..\tests\pipelines\test_nist_protections.py::test_supplier_delete_route_rejects_a_request_without_the_header PASSED [ 60%]
+..\..\tests\pipelines\test_nist_protections.py::test_operator_flag_is_required_before_the_delete_header_is_sent PASSED [ 70%]
+..\..\tests\pipelines\test_nist_protections.py::test_note_delete_waits_for_a_second_human_action PASSED [ 80%]
+..\..\tests\pipelines\test_nist_protections.py::test_bypass_answers_cite_the_supplied_context_and_do_not_call_the_model PASSED [ 90%]
+..\..\tests\pipelines\test_nist_protections.py::test_generated_compliance_answer_cites_the_retrieved_policy PASSED [100%]
+
+============================= 10 passed in 1.94s ==============================

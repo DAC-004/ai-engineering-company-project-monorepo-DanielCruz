@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+from app.agent.decision_log import append_decision
 from app.core.deps import get_current_user
 from app.core.security import create_access_token, verify_password
 from app.schemas.auth import AuthMeResponse, Token
@@ -24,12 +25,25 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
     """
     user = user_service.get_user_by_email(form_data.username)
     if user is None or not verify_password(form_data.password, user.hashed_password):
+        # The durable line records the rejection. It does not record the account or the secret.
+        append_decision(
+            flow="auth",
+            action="reject",
+            reason="credentials_rejected",
+            route="/auth/login",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if not user.is_active:
+        append_decision(
+            flow="auth",
+            action="reject",
+            reason="inactive",
+            route="/auth/login",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive user",

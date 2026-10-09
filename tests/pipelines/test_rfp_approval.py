@@ -165,6 +165,33 @@ def test_invalid_decision_does_not_resume(tmp_path: Path) -> None:
     assert department_interrupted(tmp_path / "approvals.sqlite", "ticket-a", "revenue")
 
 
+def test_approval_note_keeps_operational_text_and_drops_a_labeled_field(tmp_path: Path) -> None:
+    """The checkpoint, trace, and revision prompt keep the commentary and drop the labeled field."""
+    seen: list[str] = []
+
+    def complete(messages: list[dict[str, str]]) -> str:
+        seen.append(messages[-1]["content"])
+        return _complete(messages)
+
+    run = _run(tmp_path, "ticket-note")
+    run.complete_fn = complete
+    run.start()
+    note = "Keep the twelve month term. patient: AUDIT-NOTE-1"
+    run.decide(
+        "revenue",
+        actor_department_id="revenue",
+        submitted_by_user_id="user-revenue",
+        approver_name="Tom Callahan",
+        decision="request_changes",
+        note=note,
+    )
+    blob = (tmp_path / "approvals.sqlite").read_bytes()
+    rendered = "\n".join(seen) + "\n" + str(run.trace)
+    assert b"AUDIT-NOTE-1" not in blob
+    assert "AUDIT-NOTE-1" not in rendered
+    assert "Keep the twelve month term." in rendered
+
+
 def test_iteration_limit_blocks_another_revision_and_still_allows_a_clean_approval(tmp_path: Path) -> None:
     calls = {"count": 0}
 

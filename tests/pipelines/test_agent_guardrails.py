@@ -529,7 +529,10 @@ def test_healthcore_breach_notification_states_the_context_comparison(
     stored = load_trace(outcome.trace_id, tmp_path / "traces")
     assert "60 days under HIPAA" in outcome.answer
     assert "72 hours to the ICO under UK GDPR" in outcome.answer
-    assert "Section" not in outcome.answer
+    assert "Cited source: the supplied HealthCore context" in outcome.answer
+    assert "healthcore-compliance-reference.en.md" in outcome.answer
+    assert "does not contain those deadlines" in outcome.answer
+    assert "https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html" in outcome.answer
     assert question not in str(stored)
 
 
@@ -542,6 +545,8 @@ def test_vendor_agreement_names_the_instrument_and_withholds_terms(
     scope = _run(tmp_path, "What agreement covers a US vendor business associate?")
     assert "Business Associate Agreement" in scope.answer
     assert "Data Processing Agreement" in scope.answer
+    assert "Cited source: the supplied HealthCore context" in scope.answer
+    assert "does not state that either agreement is signed" in scope.answer
     assert "5000" not in scope.answer
     refused = _run(
         tmp_path,
@@ -735,6 +740,37 @@ def test_model_phi_and_breach_text_are_removed_before_persistence(
     assert "Johnson" not in dumped
     assert "records were exposed" not in dumped
     assert "Austin" not in dumped
+
+
+def test_allowed_checkpoint_keeps_the_question_and_drops_a_labeled_field(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An allowed turn is stored. A labeled patient field in the model answer is not."""
+    question = "How long does an internal referral take?"
+    rejected = "The indexed referral target is 11 days. Patient name: Alex Example."
+    monkeypatch.setattr(
+        "data.pipelines.rag.retrieve",
+        lambda *_args, **_kwargs: [
+            {
+                "source_document": "referral-process",
+                "section": "Target",
+                "text": "Target completed-referral time is 11 days.",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        "data.pipelines.rag.generate_answer",
+        lambda *_args, **_kwargs: rejected,
+    )
+    outcome = _run(tmp_path, question, thread_id="thread-allowed-checkpoint")
+    stored = load_trace(outcome.trace_id, tmp_path / "traces")
+    checkpoints = _checkpoint_text(tmp_path / "checkpoints.sqlite", "thread-allowed-checkpoint")
+    assert question in checkpoints
+    assert "Alex Example" not in outcome.answer
+    assert "Alex Example" not in str(stored)
+    assert "Alex Example" not in checkpoints
+    assert rejected not in checkpoints
 
 
 def test_json_answer_fails_shape_validation_and_prose_does_not(

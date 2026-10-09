@@ -142,12 +142,12 @@ The seeder inserts the 15 HealthCore suppliers and skips names that are already 
 
 | Method | Path | Auth |
 | --- | --- | --- |
-| `POST` | `/suppliers` | Public |
+| `POST` | `/suppliers` | Protected. Bearer required. |
 | `GET` | `/suppliers` | Public. Optional `country` and `category` filters. |
 | `GET` | `/suppliers/{id}` | Public |
-| `PATCH` | `/suppliers/{id}/rate` | Public. Updates `monthly_rate` and `updated_at`. |
-| `PATCH` | `/suppliers/{id}/status` | Public. `active` or `suspended`. |
-| `DELETE` | `/suppliers/{id}` | Public |
+| `PATCH` | `/suppliers/{id}/rate` | Protected. Bearer required. Updates `monthly_rate` and `updated_at`. |
+| `PATCH` | `/suppliers/{id}/status` | Protected. Bearer required. `active` or `suspended`. |
+| `DELETE` | `/suppliers/{id}` | Protected. Bearer plus `X-HealthCore-Confirm: confirmed`. |
 
 ## Security notes
 

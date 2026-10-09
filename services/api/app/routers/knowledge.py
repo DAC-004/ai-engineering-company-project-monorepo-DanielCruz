@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 
+from app.core.model_rate_limit import enforce_model_rate_limit
 from app.core.safe_errors import log_failure
 from app.schemas.knowledge import KnowledgeQueryRequest, KnowledgeQueryResponse
 from data.pipelines.rag import query as pipeline_query
@@ -19,8 +20,9 @@ KNOWLEDGE_FAILURE_DETAIL = "The knowledge assistant could not generate an answer
 
 
 @router.post("/query", response_model=KnowledgeQueryResponse)
-def knowledge_query(body: KnowledgeQueryRequest) -> KnowledgeQueryResponse:
+def knowledge_query(body: KnowledgeQueryRequest, request: Request) -> KnowledgeQueryResponse:
     """Return only the generated answer string. No retrieval payloads leave this router."""
+    enforce_model_rate_limit("POST /knowledge/query", request)
     try:
         answer = pipeline_query(body.question)
     except ValueError:

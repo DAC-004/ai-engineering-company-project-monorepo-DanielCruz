@@ -20,6 +20,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from app.agent.decision_log import append_decision
 from app.agent.guardrails.assembly import release_assembled
 from app.agent.guardrails.audit import record
 from app.agent.guardrails.input_scope import screen_question
@@ -259,6 +260,7 @@ def run_support_agent(
     memory_path: Path | None = None,
     intent_classifier: IntentClassifier | None = None,
     clock: Any = None,
+    decision_dir: Path | None = None,
 ) -> AgentRun:
     """Compile the graph, run one question, and persist a queryable trace.
 
@@ -273,10 +275,20 @@ def run_support_agent(
     database_path = checkpoint_path or checkpoint_database_path()
     directory = trace_dir or trace_directory()
     store = MemoryStore(memory_path, clock=clock) if actor_user_id else None
+    if isinstance(question, str):
+        question = question.replace("\x00", "")
     decision = screen_question(question)
     if not decision.allowed:
         if decision.action in {"block", "redirect"}:
             record(decision.guardrail, decision.action, decision.failure_type)
+        append_decision(
+            flow="support_agent",
+            action=decision.action or "block",
+            reason=decision.trace_label or "screened",
+            route="screen",
+            trace_id=trace_id,
+            directory=decision_dir,
+        )
         persist_trace(
             _trace_payload(
                 trace_id=trace_id,
@@ -309,6 +321,14 @@ def run_support_agent(
             thread_id=resolved_thread_id,
             answer=preparation.direct_answer,
             memory_proposal=preparation.memory_proposal,
+        )
+        append_decision(
+            flow="support_agent",
+            action="answer",
+            reason="direct_turn",
+            route="memory",
+            trace_id=trace_id,
+            directory=decision_dir,
         )
         persist_trace(
             _trace_payload(
@@ -386,6 +406,14 @@ def run_support_agent(
         memory_proposal=memory_proposal,
     )
     final_state["answer"] = answer
+    append_decision(
+        flow="support_agent",
+        action="answer",
+        reason="graph_completed",
+        route=classify_question(question),
+        trace_id=trace_id,
+        directory=decision_dir,
+    )
     persist_trace(
         _trace_payload(
             trace_id=trace_id,
