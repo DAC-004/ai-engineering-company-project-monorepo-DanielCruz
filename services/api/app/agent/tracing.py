@@ -10,9 +10,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from shared.healthcore_rag.config import REPO_ROOT
+from shared.healthcore_rag.config import REPO_ROOT, runtime_data_path
 
-TRACE_DIRECTORY = REPO_ROOT / "data" / "process" / "agent_traces"
+TRACE_DIRECTORY = runtime_data_path(
+    Path("/var/lib/healthcore/agent-traces"),
+    REPO_ROOT / "data" / "process" / "agent_traces",
+)
 
 
 def trace_directory() -> Path:

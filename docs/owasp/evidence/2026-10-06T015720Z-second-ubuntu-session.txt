@@ -1,0 +1,18 @@
+Second ubuntu SSH session. Prerequisite for PermitRootLogin no. The recovery console was not open when this was recorded. sshd was not changed.
+
+Session banner time: Tue Oct 6 01:57:20 UTC 2026. Host healthcore-vcn. The shell stayed at the ubuntu prompt after these commands.
+
+whoami
+ubuntu
+
+hostname
+healthcore-vcn
+
+id
+uid=1001(ubuntu) gid=1001(ubuntu) groups=1001(ubuntu),4(adm),24(cdrom),27(sudo),30(dip),102(lxd)
+
+sudo -n true
+printf 'sudo_exit=%s\n' "$?"
+sudo_exit=0
+
+This session remains open. Do not request another ubuntu login check before the SSH policy change.

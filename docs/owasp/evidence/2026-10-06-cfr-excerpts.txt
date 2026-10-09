@@ -1,0 +1,19 @@
+https://www.law.cornell.edu/cfr/text/45/164.404 :: 60 calendar days after discovery of a breach . (c) Implementation specifications: Content of notification —(1) Elements. The notification required by paragraph (a) of this section shall include, to the extent possible: (
+
+https://www.law.cornell.edu/cfr/text/45/164.404 :: without unreasonable delay and in no case later than 60 calendar days after discovery of a breach . (c) Implementation specifications: Content of notification —(1) Elements. The notification required by paragraph (a) of 
+
+https://www.law.cornell.edu/cfr/text/45/164.404 :: media in geographic areas where the individuals affected by the breach likely reside; and (B) Include a toll-free phone number that remains active for at least 90 days where an individual can learn whether the individual
+
+https://www.law.cornell.edu/cfr/text/45/164.406 :: 60 calendar days after discovery of a breach . (c) Implementation specifications: Content of notification . The notification required by paragraph (a) of this section shall meet the requirements of § 164.404(c). [ 74 FR 
+
+https://www.law.cornell.edu/cfr/text/45/164.406 :: without unreasonable delay and in no case later than 60 calendar days after discovery of a breach . (c) Implementation specifications: Content of notification . The notification required by paragraph (a) of this section 
+
+https://www.law.cornell.edu/cfr/text/45/164.406 :: media." /> 45 CFR &sect; 164.406 - Notification to the media. | Electronic Code of Federal Regulations (e-CFR) | US Law | LII / Legal Information Institute {"@context": "http://schema.org", "@graph": [{"@type": "Breadcru
+
+https://www.law.cornell.edu/cfr/text/45/164.524 :: Right of access. Except as otherwise provided in paragraph (a)(2) or (a)(3) of this section, an individual has a right of access to inspect and obtain a copy of protected health information about the individual in a desi
+
+https://www.law.cornell.edu/cfr/text/45/164.524 :: media if the individual requests that the electronic copy be provided on portable media; (iii) Postage, when the individual has requested the copy, or the summary or explanation, be mailed; and (iv) Preparing an explanat
+
+https://www.law.cornell.edu/cfr/text/45/164.502 :: business associate may not use or disclose protected health information, except as permitted or required by this subpart or by subpart C of part 160 of this subchapter. (1) Covered entities: Permitted uses and disclosure
+
+https://www.law.cornell.edu/cfr/text/45/164.504 :: Business associate contracts. (i) The contract or other arrangement required by § 164.502(e)(2) must meet the requirements of paragraph (e)(2), (e)(3), or (e)(5) of this section, as applicable. (ii) A covered entity is n

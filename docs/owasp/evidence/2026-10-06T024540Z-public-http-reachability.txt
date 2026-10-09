@@ -1,0 +1,31 @@
+Document class: synchronized public HTTP probe and guest packet capture.
+Workstation clock: 2026-10-06T02:45:40Z.
+Guest clock: Tue Oct 6 02:45:39 UTC 2026 through Tue Oct 6 02:46:04 UTC 2026.
+Target: 150.136.171.59, guest address 10.0.0.134, interface enp0s5.
+
+Daniel later confirmed the OCI screenshot. The missing fields were TCP 80 and TCP 443 ingress on Default Security List for healthcore-vcn. Both were added as stateful TCP rules from 0.0.0.0/0, source ports All, destination ports 80 and 443. Existing rules stayed unchanged. Membership and NSG questions were not reopened. A retest at workstation 2026-10-06T03:01:58Z returned HTTP 200 and healthcore-acme-probe. The guest firewall was not changed.
+
+Earlier unsynchronized capture, guest 02:33:20Z through 02:33:45Z, filter tcp dst port 80 and not host 169.254.169.254: 0 packets. That window ended before the later successful connections. It does not classify those connections.
+
+Independent TCP check, workstation 2026-10-06T02:38:18Z:
+Command: python socket connect to 150.136.171.59 port 80, timeout 8s.
+Result: WORKSTATION_TCP80 open 0.02s.
+check-host.net request 4f3bc931kf17, host 150.136.171.59:80, Accept application/json.
+Ready nodes returned an address and a connect time, including us1.node.check-host.net time 0.053714 and uk1.node.check-host.net time 0.076152. This was not only a workstation path.
+
+Synchronized probe:
+External command: Python urllib GET http://150.136.171.59/.well-known/acme-challenge/healthcore-probe
+Workstation timestamp: 2026-10-06T02:45:40Z
+Result: HTTP 200, body healthcore-acme-probe
+Guest tcpdump, started 02:45:39Z, filter tcp port 80 and not host 169.254.169.254:
+02:45:39.931774 IP 67.84.181.68.58753 > 10.0.0.134.80: Flags [S]
+02:45:39.931809 IP 10.0.0.134.80 > 67.84.181.68.58753: Flags [S.]
+02:45:39.964283 IP 67.84.181.68.58753 > 10.0.0.134.80: Flags [P.] HTTP: GET /.well-known/acme-challenge/healthcore-probe HTTP/1.1
+02:45:39.964446 IP 10.0.0.134.80 > 67.84.181.68.58753: Flags [FP.] HTTP: HTTP/1.1 200 OK
+9 packets captured, 0 dropped by kernel.
+Classification: the TCP 80 SYN was observed at the guest, the handshake completed, and the challenge HTTP request returned 200. It was not a rejected or unanswered SYN.
+
+INPUT counters after that capture:
+NEW tcp dpt:80 65 packets, 3852 bytes, target ACCEPT
+NEW tcp dpt:443 0 packets
+REJECT icmp-host-prohibited 0 packets

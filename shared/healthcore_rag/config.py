@@ -12,6 +12,22 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def runtime_data_path(host_path: Path, repository_path: Path) -> Path:
+    """Use the host store only when that store's own directory exists.
+
+    A file such as ``agent-checkpoints/support_agent.sqlite`` requires
+    ``agent-checkpoints`` to exist. A directory such as ``agent-traces``
+    requires ``agent-traces`` itself. Existence of ``/var/lib/healthcore``
+    alone does not select the host path. The check runs at import, so
+    create the store directory before the process starts. A checkout
+    without that directory keeps the repository path.
+    """
+    store_directory = host_path if host_path.suffix == "" else host_path.parent
+    if store_directory.is_dir():
+        return host_path
+    return repository_path
 KNOWLEDGE_BASE_DIR = REPO_ROOT / "docs" / "company-knowledge-base"
 EVAL_QUERIES_PATH = REPO_ROOT / "data" / "eval" / "test-queries.json"
 DEFAULT_QDRANT_PATH = REPO_ROOT / "data" / "process" / "qdrant_storage"

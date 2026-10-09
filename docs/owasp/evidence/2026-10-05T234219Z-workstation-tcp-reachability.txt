@@ -1,0 +1,14 @@
+Workstation TCP reachability
+Target: 150.136.171.59
+Local UTC start: 2026-10-05T23:42:19Z
+Command: Test-NetConnection -ComputerName 150.136.171.59 -Port <port>
+Host changes: none
+Secret review: no credentials or PHI in this result.
+
+TCP 22 TcpTestSucceeded=True
+TCP 111 TcpTestSucceeded=False
+TCP 80 TcpTestSucceeded=False
+TCP 443 TcpTestSucceeded=False
+TCP 8000 TcpTestSucceeded=False
+
+This is before-state reachability. It does not show that the approved firewall change is complete.

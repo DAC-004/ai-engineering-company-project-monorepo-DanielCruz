@@ -16,6 +16,7 @@ from app.agent.graph import run_support_agent
 from app.agent.guardrails.audit import summary as guardrail_summary
 from app.agent.routing import classify_question
 from app.core.deps import CREDENTIALS_EXCEPTION, get_current_user
+from app.core.safe_errors import log_failure
 from app.schemas.agent import AgentQueryRequest, AgentQueryResponse
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ def agent_query(
             thread_id=body.thread_id,
         )
     except Exception:
-        logger.exception("HealthCore support agent query failed")
+        log_failure(logger, "HealthCore support agent query failed")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=AGENT_FAILURE_DETAIL,

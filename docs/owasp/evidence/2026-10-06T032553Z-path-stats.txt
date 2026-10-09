@@ -1,0 +1,18 @@
+Read-only stat of the hardening paths. Guest clock: Tue Oct 6 03:25:53 UTC 2026.
+
+root healthcore 750 /opt/healthcore/app
+root healthcore 750 /var/lib/healthcore/models
+healthcore healthcore 750 /var/lib/healthcore/qdrant
+healthcore healthcore 750 /var/lib/healthcore/cache/fastembed
+healthcore healthcore 750 /var/lib/healthcore/auth
+healthcore healthcore 750 /var/lib/healthcore/agent-checkpoints
+healthcore healthcore 750 /var/lib/healthcore/agent-traces
+healthcore healthcore 750 /var/lib/healthcore/agent-memory
+healthcore healthcore 750 /var/lib/healthcore/rfp-checkpoints
+healthcore healthcore 750 /var/lib/healthcore/web-cache
+healthcore ubuntu 750 /var/log/healthcore
+root healthcore 750 /etc/healthcore
+root healthcore 640 /etc/healthcore/healthcore.env
+healthcore healthcore 750 /var/lib/healthcore/suppliers
+
+This listing supplements docs/owasp/evidence/2026-10-06T013216Z-phase4b-permissions.txt. It does not replace that file.

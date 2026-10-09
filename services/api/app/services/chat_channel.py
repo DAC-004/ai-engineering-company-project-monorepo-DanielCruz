@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.agent.graph import run_support_agent
+from app.core.safe_errors import log_failure
 from data.pipelines.rag import (
     LocalGenerationWatch,
     bind_generation_conversation,
@@ -276,6 +277,33 @@ def _generate_turn(session_id: str, question: str) -> None:
             watch.request_stop()
         session.messages.append(assistant)
         hub.generation_starts[session_id] = hub.generation_starts.get(session_id, 0) + 1
+
+    def fail_generation() -> None:
+        """Publish a recoverable failure without exposing exception or partial error text."""
+        log_failure(logger, "HealthCore chat generation failed")
+        assistant.status = "failed"
+        session.status = "active"
+        if not assistant.text:
+            with hub._lock:
+                if session.messages and session.messages[-1] is assistant:
+                    session.messages.pop()
+        session.last_generation = {
+            **_generation_report(watch),
+            "error": "generation_failed",
+            "stored_text": assistant.text,
+        }
+        hub.publish(
+            session_id,
+            {
+                "event": "generation_failed",
+                "data": {
+                    "session_id": session_id,
+                    "message_id": assistant.message_id,
+                    "message": GENERATION_FAILURE_TEXT,
+                },
+            },
+        )
+
     prior = hub.conversation_before_latest_user(session)
     watch_token = bind_local_generation_watch(watch)
     conversation_token = bind_generation_conversation(prior)
@@ -296,30 +324,9 @@ def _generate_turn(session_id: str, question: str) -> None:
             )
         except Exception:
             # Index, retrieve, and first-sample capacity errors are not a
-            # completed answer. Do not publish token_chunk or generation_completed.
-            logger.exception("Chat generation failed session_id=%s", session_id)
-            assistant.status = "failed"
-            session.status = "active"
-            if not assistant.text:
-                with hub._lock:
-                    if session.messages and session.messages[-1] is assistant:
-                        session.messages.pop()
-            session.last_generation = {
-                **_generation_report(watch),
-                "error": "generation_failed",
-                "stored_text": assistant.text,
-            }
-            hub.publish(
-                session_id,
-                {
-                    "event": "generation_failed",
-                    "data": {
-                        "session_id": session_id,
-                        "message_id": assistant.message_id,
-                        "message": GENERATION_FAILURE_TEXT,
-                    },
-                },
-            )
+            # completed answer. The fixed log and public event omit the
+            # exception, traceback, and any model- or storage-derived text.
+            fail_generation()
             return
         hub.thread_ids.append(outcome.thread_id)
         session.bound_thread_id = outcome.thread_id
@@ -356,6 +363,10 @@ def _generate_turn(session_id: str, question: str) -> None:
                 },
             )
         session.last_generation["stored_text"] = assistant.text
+    except Exception:
+        # Failures outside the direct agent call must use the same recoverable,
+        # privacy-safe protocol and must not leave the session busy.
+        fail_generation()
     finally:
         reset_generation_conversation(conversation_token)
         reset_local_generation_watch(watch_token)

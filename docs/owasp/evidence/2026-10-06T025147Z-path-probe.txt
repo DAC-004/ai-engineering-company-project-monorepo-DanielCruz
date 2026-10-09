@@ -1,0 +1,18 @@
+Document class: new runtime-path probe output.
+This is not a reconstruction of the script that printed SELECTION_CHECKS_PASSED.
+Script retained at docs/owasp/evidence/2026-10-06-path-probe.py.
+Guest clock: Tue Oct 6 02:51:47 UTC 2026 through Tue Oct 6 02:51:50 UTC 2026.
+
+PATH_PROBE_START
+CONSTANT CHECKPOINT_DATABASE /var/lib/healthcore/agent-checkpoints/support_agent.sqlite
+CONSTANT TRACE_DIRECTORY /var/lib/healthcore/agent-traces
+CONSTANT MEMORY_DATABASE /var/lib/healthcore/agent-memory/support_agent_memory.sqlite
+CONSTANT CHECKPOINT_DIR /var/lib/healthcore/rfp-checkpoints
+CONSTANT CHECKPOINT_PATH /var/lib/healthcore/rfp-checkpoints/approvals.sqlite
+TRACE_WRITE /var/lib/healthcore/agent-traces/audit-path-probe-20261006.json
+TRACE_READBACK audit-path-probe-20261006
+SQL_READBACK /var/lib/healthcore/agent-checkpoints/support_agent.sqlite audit-path-probe-20261006
+SQL_READBACK /var/lib/healthcore/agent-memory/support_agent_memory.sqlite audit-path-probe-20261006
+SQL_READBACK /var/lib/healthcore/rfp-checkpoints/approvals.sqlite audit-path-probe-20261006
+PATH_PROBE_PASSED
+PATH_PROBE_EXIT 0

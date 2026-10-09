@@ -1,0 +1,47 @@
+﻿WORKDIR=C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\services\api
+COMMAND=uv run pytest ../../tests/pipelines/test_error_path_privacy.py ../../tests/pipelines/test_phi_surfaces.py ../../tests/pipelines/test_agent_memory.py ../../tests/pipelines/test_agent_guardrails.py ../../tests/services/test_chat_websocket.py -q --tb=line
+........................................................................ [ 93%]
+.....                                                                    [100%]
+============================== warnings summary ===============================
+tests/services/test_chat_websocket.py::test_first_sample_context_overflow_does_not_complete_the_turn
+  C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\services\api\.venv\Lib\site-packages\_pytest\threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread chat-generation-chat_first_overflow
+
+  Traceback (most recent call last):
+    File "C:\Users\cruzd\AppData\Roaming\uv\python\cpython-3.13-windows-x86_64-none\Lib\threading.py", line 1044, in _bootstrap_inner
+      self.run()
+      ~~~~~~~~^^
+    File "C:\Users\cruzd\AppData\Roaming\uv\python\cpython-3.13-windows-x86_64-none\Lib\threading.py", line 995, in run
+      self._target(*self._args, **self._kwargs)
+      ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\services\api\app\services\chat_channel.py", line 282, in _generate_turn
+      outcome = run_support_agent(
+          question,
+      ...<5 lines>...
+          memory_path=memory_database_path(),
+      )
+    File "C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\tests\services\test_chat_websocket.py", line 909, in _run
+      answer = generate_answer(
+          question,
+          [{"source_document": "referral-process", "text": "The indexed referral target is recorded separately."}],
+      )
+    File "C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\data\pipelines\rag.py", line 1436, in generate_answer
+      answer = _run_generation_model(messages)
+    File "C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\data\pipelines\rag.py", line 1379, in _run_generation_model
+      return _local_llm_complete(messages)
+    File "C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\data\pipelines\rag.py", line 1317, in _local_llm_complete
+      iterator = llm.create_chat_completion(
+          messages=messages,
+      ...<2 lines>...
+          stream=True,
+      )
+    File "C:\4geeks\Projects\Web_Vulnerability_Audit_and_Remediation\ai-engineering-company-project-monorepo-DanielCruz\tests\services\test_chat_websocket.py", line 901, in create_chat_completion
+      raise ValueError("Requested tokens (2086) exceed context window of 2048")
+  ValueError: Requested tokens (2086) exceed context window of 2048
+
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+77 passed, 1 warning in 22.63s
+EXIT_CODE=0

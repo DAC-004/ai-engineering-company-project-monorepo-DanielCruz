@@ -1,0 +1,46 @@
+Document class: renewal scheduler and deploy-hook proof.
+The log path recorded below is historical. The current hook log is /var/log/healthcore-renewal/certbot-deploy-hook.log. See docs/owasp/evidence/2026-10-06T223214Z-renewal-log-boundary.txt.
+Guest clock: Tue Oct 6 03:09:23 UTC 2026.
+No certificate was requested. The existing production certificate remained present.
+The earlier dry-run, which is not this hook proof, is in docs/owasp/evidence/2026-10-06T025146Z-certificate-and-tls.txt and finished at guest 02:55:05Z with DRY_RUN_EXIT 0.
+
+TIMER_ENABLED
+enabled
+TIMER_ENABLED_EXIT 0
+TIMER_ACTIVE
+active
+TIMER_ACTIVE_EXIT 0
+TIMER_NEXT
+Tue 2026-10-06 12:12:46 UTC
+LEFT 9h
+UNIT certbot-renew.timer
+ACTIVATES certbot-renew.service
+
+Service command:
+ExecStart=/opt/certbot/bin/certbot renew --quiet --non-interactive
+
+Timer calendar:
+OnCalendar=*-*-* 00,12:00:00
+RandomizedDelaySec=3600
+Persistent=true
+
+HOOK_RUN
+Tue Oct 6 03:09:23 UTC 2026
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+NGINX_TEST_EXIT 0
+NGINX_RELOAD_EXIT 0
+DEPLOY_HOOK_EXIT 0
+HOOK_EXIT 0
+
+ExecReload start_time Tue 2026-10-06 03:09:23 UTC, status 0.
+journalctl at the same second:
+Reloading nginx.service
+nginx[27360]: signal process started
+Reloaded nginx.service
+
+Issuer after the hook remained C=US, O=Let's Encrypt, CN=YE1.
+notBefore=Oct 6 01:51:44 2026 GMT
+notAfter=Oct 12 17:51:43 2026 GMT
+FULLCHAIN_PRESENT
+The guest firewall was not changed.

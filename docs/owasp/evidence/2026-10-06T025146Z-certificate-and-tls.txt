@@ -1,0 +1,59 @@
+Document class: staging issuance, production issuance, TLS activation, and renewal check.
+Guest clock for activation: Tue Oct 6 02:51:46 UTC 2026. Dry-run finished Tue Oct 6 02:55:05 UTC 2026.
+No private key material is included.
+
+Staging, guest 02:48:50Z through 02:48:56Z, Certbot 5.8.0:
+certonly --staging --preferred-profile shortlived --webroot -w /var/www/letsencrypt --ip-address 150.136.171.59 --cert-name 150.136.171.59
+STAGING_EXIT 0
+Issuer: C=US, O=Let's Encrypt, CN=(STAGING) Baloney Bulgur YE2
+Expiry Date: 2026-10-12 17:50:21+00:00 (INVALID: TEST_CERT)
+certbot delete --cert-name 150.136.171.59: DELETE_EXIT 0, STAGING_LINEAGE_REMOVED
+
+Production, guest 02:50:12Z through 02:50:17Z, same flags without --staging:
+PRODUCTION_EXIT 0
+Issuer: C=US, O=Let's Encrypt, CN=YE1
+Subject alternative name: IP Address:150.136.171.59
+notBefore=Oct 6 01:51:44 2026 GMT
+notAfter=Oct 12 17:51:43 2026 GMT
+Expiry Date: 2026-10-12 17:51:43+00:00 (VALID: 6 days)
+Serial Number: 6f491928784ed5438e151d70dfe418a9c87
+Key Type: ECDSA
+Renewal config: preferred_profile = shortlived, authenticator = webroot, webroot_path = /var/www/letsencrypt, server = https://acme-v02.api.letsencrypt.org/directory
+FULLCHAIN_PRESENT and PRIVKEY_PRESENT before any TLS nginx lines were enabled.
+
+Deploy hook /etc/letsencrypt/renewal-hooks/deploy/healthcore-nginx
+Guest 02:51:46Z:
+DEPLOY_HOOK_START
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+NGINX_TEST_EXIT 0
+NGINX_RELOAD_EXIT 0
+DEPLOY_HOOK_EXIT 0
+HOOK_EXIT 0
+systemctl show nginx -p ExecReload recorded start_time Tue 2026-10-06 02:51:46 UTC, status 0.
+journalctl: Reloading nginx.service at Oct 06 02:51:46 and Reloaded nginx.service at the same second.
+ExecMainStartTimestamp was not used as reload proof.
+
+Timer: certbot-renew.timer is-enabled enabled, is-active active.
+certbot renew --dry-run finished 02:55:05Z, DRY_RUN_EXIT 0: simulated renewal succeeded for /etc/letsencrypt/live/150.136.171.59/fullchain.pem.
+The dry-run is separate from the deploy-hook proof. Certbot does not run deploy hooks during a dry-run unless --run-deploy-hooks is set. That flag was not set.
+
+Listeners after the reload: 0.0.0.0:80, [::]:80, 0.0.0.0:443, [::]:443, and 127.0.0.1:8000.
+INPUT at guest 02:57:48Z: NEW tcp dpt:80 ACCEPT 85 packets, NEW tcp dpt:443 ACCEPT 10 packets, REJECT 0 packets.
+
+Public checks, workstation 2026-10-06T02:52:26Z:
+http://150.136.171.59/.well-known/acme-challenge/healthcore-probe HTTP 200 body healthcore-acme-probe
+http://150.136.171.59/ HTTP 301 Location https://150.136.171.59/
+https://150.136.171.59/.well-known/acme-challenge/healthcore-probe HTTP 200 body healthcore-acme-probe
+https://150.136.171.59/openapi.json HTTP 200, title HealthCore API
+https://150.136.171.59/ HTTP 200, tracker HTML
+
+Authenticated WSS, workstation 2026-10-06T02:55:00Z, script docs/owasp/evidence/2026-10-06-public-wss-check.py:
+REGISTER_STATUS 201
+LOGIN_STATUS 200
+TOKEN_PRESENT True
+WSS_STATUS_LINE HTTP/1.1 101 Switching Protocols
+WSS_EVENT session_snapshot
+WSS_SESSION auditprobe1
+WSS_MESSAGE_COUNT 0
+PUBLIC_WSS_PASSED
+The token and password were not printed. The account was removed while the API was stopped for the retrieval fixture: PROBE_USERS_REMOVED 1, PROBE_PROFILES_REMOVED 1.
