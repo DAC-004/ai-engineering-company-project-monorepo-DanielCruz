@@ -5,6 +5,10 @@ node_modules/
 **/__pycache__/
 *.py[cod]
 .pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+**/coverage/
 results.csv
 services/api/.venv/
 services/api/data/

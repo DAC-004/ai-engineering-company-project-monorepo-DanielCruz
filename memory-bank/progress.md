@@ -283,3 +283,9 @@
 - **Tests:** `tests/services/test_chat_websocket.py` — five new cases (non-streamed publish, interrupt + non-streamed replacement, withheld blocks fallback, empty fails, prohibited PHI blocked).
 - **Automated (post-fix):** `test_chat_websocket.py` **22** passed; chat/qdrant/gate bundle **93** passed; `services/api/tests` **39** passed; NIST **18** passed.
 - **B1/B2 (real GGUF + browser):** PASS — evidence under `services/api/data/f05-main-4255287/` (`browser-knowledge-journey-b1-postfix.md`, `browser-knowledge-journey-b2-postfix.md`, `diag-ws-postfix-run.txt`, `diag-ws-b2-postfix-run.txt`, `b1-browser-transcript-postfix.png`). Publication / push still not executed.
+
+## I02b R-3 Article 9 regression (worktree `healthcore-i02-auth`, 2026-10-10)
+
+- **Gap closed:** I02b pre-commit R-3 re-run with F05 replacement `What does UK GDPR Article 9 require for processing health data?` (not the earlier wrong minimum-necessary re-ask).
+- **Non-streamed path:** `run_support_agent` → empty trace nodes, 230-char `GENERAL_REGULATION` answer; WS after interrupt → 33 gate `token_chunk` events summing 230 chars vs Q1 streamed profile (~63 chunks); browser shows **That is general industry context.** after interrupt.
+- **Evidence (gitignored):** `healthcore-i02-auth/services/api/data/i02-evidence/i02b-precommit/` — `R3-ARTICLE9-BROWSER-EVIDENCE.md`, `r3-article9-ws-summary.json`, `r3-article9-agent-direct.txt`, `I02B-PRECOMMIT-RECONCILIATION.md`. External main-owning Qdrant used read-only with `HEALTHCORE_ALLOW_EXTERNAL_QDRANT=1` (validation opt-in only). I02b user merge commit still pending; main promotion/L2/push not approved.

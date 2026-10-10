@@ -34,6 +34,7 @@ seed = "app.seed_runner:main"
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
 ]
 
 [build-system]
@@ -44,5 +45,17 @@ build-backend = "hatchling.build"
 packages = ["app"]
 
 [tool.pytest.ini_options]
-pythonpath = [".", "../..", "../../packages/shared"]
 testpaths = ["tests"]
+pythonpath = [".", "../..", "../../packages/shared"]
+
+[tool.coverage.run]
+source = [
+    "app.routers.auth",
+    "app.core.security",
+    "app.core.deps",
+]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
