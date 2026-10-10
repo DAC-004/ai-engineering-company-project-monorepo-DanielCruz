@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.core.deps import get_current_user
 from app.db.database import get_db, get_engine
 from app.schemas.rfp import DepartmentDecision, FinalDocumentPublic, RfpTicketCreated, RfpTicketPublic
 from app.schemas.user import UserInDB
-from app.services import rfp_service
+from app.services import rfp_notifications, rfp_service
 
 router = APIRouter(prefix="/rfp", tags=["rfp-intake"])
 
@@ -125,6 +126,23 @@ def read_final_document(
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Final document not stored.")
     return document
+
+
+@router.get("/tickets/stream")
+def stream_rfp_tickets(
+    request: Request,
+    _current_user: UserInDB = Depends(get_current_user),
+) -> StreamingResponse:
+    """Push rfp_ticket_created frames. Registered before the ticket-id route."""
+    last_event_id = request.headers.get("last-event-id")
+    return StreamingResponse(
+        rfp_notifications.event_stream(last_event_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/tickets/{ticket_id}", response_model=RfpTicketPublic)
