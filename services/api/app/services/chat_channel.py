@@ -12,6 +12,7 @@ import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from collections.abc import Callable
 from typing import Any
 
 from app.agent.graph import run_support_agent
@@ -268,6 +269,84 @@ def start_user_turn(session_id: str, text: str) -> bool:
     return True
 
 
+def _may_publish_non_streamed_outcome(watch: LocalGenerationWatch) -> bool:
+    """True when the agent finished without any kept local-generation publish.
+
+    Do not treat an empty assistant row alone as eligibility. A grounding retry,
+    a replaced kept sample, or a local sample that withheld or stopped the gate
+    must not replay the raw return value through this path.
+    """
+    if watch.replacement_unpublished or watch.replaced_kept_text:
+        return False
+    if watch.published_text:
+        return False
+    for observation in watch.observations:
+        if (
+            observation.releases
+            or observation.gate_stopped
+            or observation.withheld_text
+            or observation.interrupted
+        ):
+            return False
+    return True
+
+
+def _publish_through_release_gate(watch: LocalGenerationWatch, text: str) -> bool:
+    """Release ``text`` through the streaming gate and the kept-publish callback."""
+    from app.services.streaming_release_gate import StreamingReleaseGate
+    from data.pipelines.rag import _emit_kept_release
+
+    if not text.strip():
+        return False
+    gate = StreamingReleaseGate()
+    for character in text:
+        released = gate.push(character)
+        if released:
+            _emit_kept_release(watch, released)
+    final = gate.complete()
+    if final:
+        _emit_kept_release(watch, final)
+    return bool(watch.published_text.strip())
+
+
+def _finalize_successful_generation(
+    session_id: str,
+    hub: SessionHub,
+    session: ChatSession,
+    assistant: ChatMessage,
+    watch: LocalGenerationWatch,
+    outcome_answer: str,
+    fail_generation: Callable[[], None],
+) -> bool:
+    """Publish a completed turn or invoke ``fail_generation``. Return False on failure."""
+    if not assistant.text.strip():
+        if outcome_answer.strip():
+            if _may_publish_non_streamed_outcome(watch):
+                if not _publish_through_release_gate(watch, outcome_answer):
+                    fail_generation()
+                    return False
+            else:
+                fail_generation()
+                return False
+        else:
+            fail_generation()
+            return False
+    session.last_generation = _generation_report(watch)
+    if outcome_answer != assistant.text:
+        session.last_generation["unpublished_agent_answer"] = outcome_answer
+    assistant.status = "completed"
+    session.status = "active"
+    hub.publish(
+        session_id,
+        {
+            "event": "generation_completed",
+            "data": {"session_id": session_id, "message_id": assistant.message_id},
+        },
+    )
+    session.last_generation["stored_text"] = assistant.text
+    return True
+
+
 def request_interrupt(session_id: str, new_input: str) -> None:
     """Stop the active sample. ``new_input`` becomes the next user turn after it stops."""
     hub = get_chat_hub()
@@ -365,24 +444,22 @@ def _generate_turn(session_id: str, question: str) -> None:
         hub.thread_ids.append(outcome.thread_id)
         session.bound_thread_id = outcome.thread_id
         interrupted = watch.interrupted
-        session.last_generation = _generation_report(watch)
         if not interrupted:
             # Subscribers already have assistant.text from token_chunk events.
-            # The agent may return a grounding retry that was not published.
-            # That return value stays off the transcript, the snapshot, and
-            # the next turn's conversation.
-            if outcome.answer != assistant.text:
-                session.last_generation["unpublished_agent_answer"] = outcome.answer
-            assistant.status = "completed"
-            session.status = "active"
-            hub.publish(
+            # Non-streaming graph outcomes publish here through the same gate.
+            # A grounding retry that was not published stays off the transcript.
+            if not _finalize_successful_generation(
                 session_id,
-                {
-                    "event": "generation_completed",
-                    "data": {"session_id": session_id, "message_id": assistant.message_id},
-                },
-            )
+                hub,
+                session,
+                assistant,
+                watch,
+                outcome.answer,
+                fail_generation,
+            ):
+                return
         else:
+            session.last_generation = _generation_report(watch)
             assistant.status = "interrupted"
             session.status = "interrupted"
             hub.publish(
@@ -396,7 +473,7 @@ def _generate_turn(session_id: str, question: str) -> None:
                     },
                 },
             )
-        session.last_generation["stored_text"] = assistant.text
+            session.last_generation["stored_text"] = assistant.text
     except Exception:
         # Failures outside the direct agent call must use the same recoverable,
         # privacy-safe protocol and must not leave the session busy.

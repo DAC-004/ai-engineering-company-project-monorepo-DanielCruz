@@ -1123,6 +1123,294 @@ def test_worker_failure_omits_exception_text_from_stderr_logs_and_public_output(
     assert session.status != "completed"
 
 
+_NON_STREAMED_ANSWER = (
+    "That is general industry context. Ask a HealthCore question about what HIPAA permits."
+)
+
+
+def test_non_streamed_agent_answer_publishes_through_the_socket(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Graph paths that skip the local stream must still emit kept token events."""
+
+    def _run(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        return AgentRun(
+            answer=_NON_STREAMED_ANSWER,
+            error="",
+            trace_id="mock-non-stream",
+            thread_id=thread_id or "",
+        )
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _run)
+    token = _staff_token("staff.nonstream@example.com")
+
+    async def _run_socket() -> list[dict[str, Any]]:
+        async with _StaffSocket(chat_server, "chat_non_stream", token) as connection:
+            assert (await _recv_json(connection))["event"] == "session_snapshot"
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_non_stream",
+                            "text": "What does UK GDPR Article 9 require for processing health data?",
+                        },
+                    }
+                )
+            )
+            return await _collect_until(connection, "generation_completed")
+
+    events = asyncio.run(_run_socket())
+    tokens = [item["data"]["token"] for item in events if item["event"] == "token_chunk"]
+    assert tokens
+    assert "".join(tokens) == _NON_STREAMED_ANSWER
+    session = get_chat_hub().get_session("chat_non_stream")
+    assert session is not None
+    assert session.messages[-1].role == "assistant"
+    assert session.messages[-1].text == _NON_STREAMED_ANSWER
+    assert session.messages[-1].status == "completed"
+    assert "unpublished_agent_answer" not in session.last_generation
+
+
+def test_interrupt_followed_by_non_streamed_replacement_publishes(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    release = threading.Event()
+    first_token = threading.Event()
+    article_nine = "What does UK GDPR Article 9 require for processing health data?"
+
+    def _run(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        from data.pipelines.rag import _LOCAL_GENERATION_WATCH
+
+        watch = _LOCAL_GENERATION_WATCH.get()
+        calls.append(question)
+        if watch is not None and watch.on_kept_release is not None:
+            watch.forward_kept = True
+        if len(calls) == 1:
+            if watch is not None and watch.on_kept_release is not None:
+                watch.on_kept_release(_PARTIAL)
+                watch.on_kept_release(_REST)
+            return AgentRun(
+                answer=_PARTIAL + _REST,
+                error="",
+                trace_id="mock-stream-1",
+                thread_id=thread_id or "",
+            )
+        if len(calls) == 2:
+            if watch is None or watch.on_kept_release is None:
+                raise AssertionError("expected a generation watch during streaming")
+            watch.on_kept_release(_PARTIAL)
+            first_token.set()
+            release.wait(5)
+            if watch.stop_requested():
+                watch.interrupted = True
+                return AgentRun(
+                    answer=_PARTIAL,
+                    error="",
+                    trace_id="mock-stream-2",
+                    thread_id=thread_id or "",
+                )
+            watch.on_kept_release(_REST)
+            return AgentRun(
+                answer=_PARTIAL + _REST,
+                error="",
+                trace_id="mock-stream-2b",
+                thread_id=thread_id or "",
+            )
+        return AgentRun(
+            answer=_NON_STREAMED_ANSWER,
+            error="",
+            trace_id="mock-non-stream",
+            thread_id=thread_id or "",
+        )
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _run)
+    token = _staff_token("staff.interrupt.nonstream@example.com")
+
+    async def _run_socket() -> list[dict[str, Any]]:
+        async with _StaffSocket(chat_server, "chat_int_nonstream", token) as connection:
+            assert (await _recv_json(connection))["event"] == "session_snapshot"
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {"session_id": "chat_int_nonstream", "text": _FIRST_QUESTION},
+                    }
+                )
+            )
+            await _collect_until(connection, "generation_completed")
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_int_nonstream",
+                            "text": "What is and isn't permissible under HIPAA and UK GDPR?",
+                        },
+                    }
+                )
+            )
+            await _collect_until(connection, "token_chunk")
+            assert first_token.wait(5)
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "interrupt_requested",
+                        "data": {"session_id": "chat_int_nonstream", "new_input": article_nine},
+                    }
+                )
+            )
+            deadline = time.time() + 5
+            while time.time() < deadline:
+                active = get_chat_hub().active_watch("chat_int_nonstream")
+                if active is not None and active.stop:
+                    break
+                await asyncio.sleep(0.02)
+            else:
+                raise AssertionError("interrupt was not visible to the generation watch")
+            release.set()
+            return await _collect_until(connection, "generation_completed", timeout=10)
+
+    events = asyncio.run(_run_socket())
+    names = [item["event"] for item in events]
+    assert "generation_interrupted" in names
+    interrupted_at = names.index("generation_interrupted")
+    replacement_tokens = [
+        item["data"]["token"]
+        for index, item in enumerate(events)
+        if item["event"] == "token_chunk" and index > interrupted_at
+    ]
+    assert replacement_tokens
+    assert "".join(replacement_tokens) == _NON_STREAMED_ANSWER
+    session = get_chat_hub().get_session("chat_int_nonstream")
+    assert session is not None
+    assert session.messages[-1].text == _NON_STREAMED_ANSWER
+    assert len(calls) == 3
+    assert calls[2] == article_nine
+
+
+def test_withheld_local_generation_blocks_non_streamed_fallback(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from data.pipelines.rag import GenerationObservation
+
+    def _run(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        from data.pipelines.rag import _LOCAL_GENERATION_WATCH
+
+        watch = _LOCAL_GENERATION_WATCH.get()
+        if watch is not None:
+            watch.observations.append(
+                GenerationObservation(gate_stopped=True, withheld_text="withheld suffix")
+            )
+        return AgentRun(
+            answer="This raw answer must not bypass the gate.",
+            error="",
+            trace_id="mock-withheld",
+            thread_id=thread_id or "",
+        )
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _run)
+    token = _staff_token("staff.withheld@example.com")
+
+    async def _run_socket() -> list[dict[str, Any]]:
+        async with _StaffSocket(chat_server, "chat_withheld", token) as connection:
+            assert (await _recv_json(connection))["event"] == "session_snapshot"
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_withheld",
+                            "text": "What is the indexed referral target?",
+                        },
+                    }
+                )
+            )
+            await _recv_json(connection)
+            failed = await _recv_json(connection)
+            return [failed]
+
+    events = asyncio.run(_run_socket())
+    assert events[-1]["event"] == "generation_failed"
+    session = get_chat_hub().get_session("chat_withheld")
+    assert session is not None
+    assert session.messages[-1].role == "user"
+    assert "raw answer" not in json.dumps(events)
+
+
+def test_empty_non_streamed_outcome_fails_the_turn(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _run(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        return AgentRun(answer="", error="", trace_id="mock-empty", thread_id=thread_id or "")
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _run)
+    token = _staff_token("staff.empty@example.com")
+
+    async def _run_socket() -> dict[str, Any]:
+        async with _StaffSocket(chat_server, "chat_empty", token) as connection:
+            assert (await _recv_json(connection))["event"] == "session_snapshot"
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_empty",
+                            "text": "What does the minimum necessary standard require?",
+                        },
+                    }
+                )
+            )
+            await _recv_json(connection)
+            return await _recv_json(connection)
+
+    failed = asyncio.run(_run_socket())
+    assert failed["event"] == "generation_failed"
+    session = get_chat_hub().get_session("chat_empty")
+    assert session is not None
+    assert session.messages[-1].role == "user"
+
+
+def test_prohibited_non_streamed_answer_is_not_published(
+    chat_server: _ChatServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    blocked = "The diagnosis for patient John Smith was recorded in the chart."
+
+    def _run(question: str, *, thread_id: str | None = None, **_kwargs: Any) -> AgentRun:
+        return AgentRun(answer=blocked, error="", trace_id="mock-blocked", thread_id=thread_id or "")
+
+    monkeypatch.setattr("app.services.chat_channel.run_support_agent", _run)
+    token = _staff_token("staff.blocked@example.com")
+
+    async def _run_socket() -> list[dict[str, Any]]:
+        async with _StaffSocket(chat_server, "chat_blocked", token) as connection:
+            assert (await _recv_json(connection))["event"] == "session_snapshot"
+            await connection.send(
+                json.dumps(
+                    {
+                        "event": "user_message",
+                        "data": {
+                            "session_id": "chat_blocked",
+                            "text": "What is the indexed referral target?",
+                        },
+                    }
+                )
+            )
+            await _recv_json(connection)
+            failed = await _recv_json(connection)
+            return [failed]
+
+    events = asyncio.run(_run_socket())
+    assert events[-1]["event"] == "generation_failed"
+    assert "John Smith" not in json.dumps(events)
+
+
 def test_a_second_user_cannot_read_the_session(chat_server: _ChatServer) -> None:
     owner = _staff_token("owner.staff@example.com")
     other = _staff_token("other.staff@example.com")
