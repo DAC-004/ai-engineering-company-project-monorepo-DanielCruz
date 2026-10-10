@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { ApiError } from "@/lib/auth/types";
@@ -10,10 +10,16 @@ import { track } from "@/src/services/telemetry";
 
 export const LoginForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const resetSuccessMessage =
+    searchParams.get("reset") === "success"
+      ? "Password updated. Sign in with your new password."
+      : null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,6 +55,12 @@ export const LoginForm = () => {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      {resetSuccessMessage ? (
+        <p className="form-success" role="status">
+          {resetSuccessMessage}
+        </p>
+      ) : null}
+
       <div className="field">
         <label htmlFor="login-email">Email</label>
         <input
@@ -84,6 +96,10 @@ export const LoginForm = () => {
       <button type="submit" className="btn-primary" disabled={isSubmitting}>
         {isSubmitting ? "Signing in…" : "Sign in"}
       </button>
+
+      <p className="auth-switch">
+        <Link href="/forgot-password">Forgot your password?</Link>
+      </p>
 
       <p className="auth-switch">
         Need an account? <Link href="/register">Register</Link>

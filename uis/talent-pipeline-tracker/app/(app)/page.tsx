@@ -38,6 +38,9 @@ export default function HomePage() {
         <Link href="/candidates" className="btn-secondary">
           Talent pipeline
         </Link>
+        <Link href="/account/change-password" className="btn-secondary">
+          Change password
+        </Link>
       </div>
     </section>
   );

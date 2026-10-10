@@ -1,6 +1,6 @@
 # HealthCore Internal Workspace (`uis/talent-pipeline-tracker`)
 
-Next.js application for AUTH-02 (login, registration, JWT session handling, protected views, and profile management), the HealthCore medical-supply inventory backoffice, and the Milestone 3 candidate pipeline.
+Next.js application for AUTH-02 (login, registration, JWT session handling, protected views, and profile management), the HealthCore medical-supply inventory backoffice, password recovery and change (AUTH-03), and the Milestone 3 candidate pipeline.
 
 The candidate pipeline calls the 4Geeks Talent Tracker API. Login, profile, inventory, telemetry, and RFP intake call the HealthCore API (`services/api`).
 
@@ -65,10 +65,13 @@ Inventory calls are centralized in `lib/inventory.ts`. Supplier mutations are ce
 
 | Path | Auth | Purpose |
 | --- | --- | --- |
-| `/login` | Public | Email/password login, stores JWT in `localStorage`, redirects to `/` |
-| `/register` | Public | `POST /users` then `POST /auth/login`, stores JWT, redirects to `/` |
-| `/` | Protected | Main authenticated workspace |
+| `/login` | Public | Email/password login → stores JWT in `localStorage` → redirects to `/`; includes **Forgot your password?** |
+| `/register` | Public | `POST /users` then `POST /auth/login` → stores JWT → redirects to `/` |
+| `/forgot-password` | Public | Requests `POST /auth/forgot-password`; always shows the anti-enumeration confirmation and disables the form after submit |
+| `/reset-password` | Public | Reads `token` from the query string; `POST /auth/reset-password`; redirects to `/login?reset=success` on success |
+| `/` | Protected | Main authenticated workspace (inventory, suppliers, knowledge, profile, change password, talent pipeline) |
 | `/account/profile` | Protected | Shows email and profile; updates via `PUT /profiles/me` |
+| `/account/change-password` | Protected | Current + new + confirmation; `POST /auth/change-password` |
 | `/backoffice/inventory/products` | Protected | Medical supplies with current stock and stock-level indicators |
 | `/backoffice/inventory/orders/inbound` | Protected | Log a supply delivery |
 | `/backoffice/inventory/orders/outbound` | Protected | Log a supply consumption |
@@ -90,6 +93,8 @@ Logout clears the JWT and returns to `/login`. Any protected API response of HTT
 ## API
 
 Candidate records integrate with the [4Geeks Talent Tracker API](https://playground.4geeks.com/tracker/api/v1/docs).
+
+Password-reset emails are sent by the API via **Resend** (`RESEND_API_KEY` in `services/api/.env`).
 
 ## Out of scope
 
