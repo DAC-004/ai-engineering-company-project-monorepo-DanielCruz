@@ -12,12 +12,15 @@ The candidate pipeline calls the 4Geeks Talent Tracker API. Login, profile, inve
 
 ## Reviewer setup
 
-Run these commands from the app directory in the monorepo:
+Run these commands from the monorepo (incident UI modules live in the sibling
+`uis/incidents` package and must be installed before lint/build):
 
 ```bash
-cd uis/talent-pipeline-tracker
+cd uis/incidents
+npm ci
+cd ../talent-pipeline-tracker
 cp .env.example .env.local
-npm install
+npm ci
 npm run dev
 ```
 
@@ -69,7 +72,10 @@ Inventory calls are centralized in `lib/inventory.ts`. Supplier mutations are ce
 | `/register` | Public | `POST /users` then `POST /auth/login` → stores JWT → redirects to `/` |
 | `/forgot-password` | Public | Requests `POST /auth/forgot-password`; always shows the anti-enumeration confirmation and disables the form after submit |
 | `/reset-password` | Public | Reads `token` from the query string; `POST /auth/reset-password`; redirects to `/login?reset=success` on success |
-| `/` | Protected | Main authenticated workspace (inventory, suppliers, knowledge, profile, change password, talent pipeline) |
+| `/` | Protected | Main authenticated workspace (incidents, inventory, suppliers, knowledge, profile, change password, talent pipeline) |
+| `/incidents/new` | Protected | Register an incident |
+| `/incidents` | Protected | Incident list and status updates |
+| `/incidents/summary` | Protected | Aggregate incident metrics |
 | `/account/profile` | Protected | Shows email and profile; updates via `PUT /profiles/me` |
 | `/account/change-password` | Protected | Current + new + confirmation; `POST /auth/change-password` |
 | `/backoffice/inventory/products` | Protected | Medical supplies with current stock and stock-level indicators |
@@ -79,6 +85,7 @@ Inventory calls are centralized in `lib/inventory.ts`. Supplier mutations are ce
 | `/backoffice/suppliers` | Protected | Supplier directory (list, register, update rate/status; no delete UI) |
 | `/backoffice/rfp` | Protected | RFP intake list |
 | `/backoffice/rfp/[ticketId]` | Protected | RFP ticket detail |
+| `/backoffice/knowledge` | Protected | Knowledge assistant (WebSocket chat) |
 | `/candidates` | Public to HealthCore auth | Candidate list with status, stage, and search filters |
 | `/candidates/new` | Public to HealthCore auth | Register a new candidate |
 | `/candidates/[id]` | Public to HealthCore auth | Candidate detail, status and stage updates, notes |

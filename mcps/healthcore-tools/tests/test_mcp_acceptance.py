@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import socket
@@ -46,6 +47,10 @@ TEST_API_EMAIL = "mcp-inventory-reader@healthcore.com"
 TEST_API_PASSWORD = "HealthCoreMcpTest1!"
 
 
+class ApiProcessCleanupError(RuntimeError):
+    """Raised when owned API processes or the owned listener were not released."""
+
+
 def _free_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -82,6 +87,125 @@ def _start_mcp(app: object, port: int) -> RunningMcp:
     return RunningMcp(server, thread, f"http://127.0.0.1:{port}/mcp")
 
 
+def _services_api_venv_python() -> Path:
+    """Return the services/api virtualenv interpreter (must exist before ApiProcess starts)."""
+    if os.name == "nt":
+        candidate = API_DIR / ".venv" / "Scripts" / "python.exe"
+    else:
+        candidate = API_DIR / ".venv" / "bin" / "python"
+    if not candidate.is_file():
+        raise FileNotFoundError(
+            f"HealthCore API virtualenv interpreter not found at {candidate}. "
+            "Run `uv sync` in services/api before MCP acceptance."
+        )
+    resolved = candidate.resolve()
+    venv_root = (API_DIR / ".venv").resolve()
+    if venv_root not in resolved.parents:
+        raise RuntimeError(
+            f"Interpreter {resolved} is not under services/api virtualenv {venv_root}"
+        )
+    return resolved
+
+
+def _api_launch_command(port: int) -> list[str]:
+    uvicorn_args = [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(port),
+        "--log-level",
+        "warning",
+    ]
+    if os.name == "nt":
+        return [str(_services_api_venv_python()), *uvicorn_args]
+    return ["uv", "run", *uvicorn_args]
+
+
+def _pid_is_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        result = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                f"exit [int](-not (Get-Process -Id {pid} -ErrorAction SilentlyContinue))",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        return result.returncode == 0
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def _windows_process_tree_pids(root_pid: int) -> set[int]:
+    """Collect root_pid and its descendant PIDs using Win32_Process parent links."""
+    result = subprocess.run(
+        [
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            (
+                "$rows = Get-CimInstance Win32_Process | "
+                "Select-Object ProcessId, ParentProcessId; "
+                "$rows | ConvertTo-Json -Compress"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=True,
+    )
+    payload = json.loads(result.stdout.strip() or "[]")
+    if isinstance(payload, dict):
+        payload = [payload]
+    children: dict[int, list[int]] = {}
+    for row in payload:
+        pid = int(row["ProcessId"])
+        parent = int(row["ParentProcessId"])
+        children.setdefault(parent, []).append(pid)
+    owned = {root_pid}
+    pending = [root_pid]
+    while pending:
+        current = pending.pop()
+        for child in children.get(current, []):
+            if child not in owned:
+                owned.add(child)
+                pending.append(child)
+    return owned
+
+
+def _owned_process_snapshot(root_pid: int) -> set[int]:
+    """Snapshot PIDs tied to this ApiProcess launch.
+
+    On Windows, walks the Win32 parent graph from the recorded root PID at capture
+    time so descendants spawned after health are included before shutdown.
+    On other platforms only the direct Popen PID is tracked (no tree walk).
+    """
+    if os.name == "nt":
+        return _windows_process_tree_pids(root_pid)
+    return {root_pid}
+
+
+def _port_is_available(port: int) -> bool:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("127.0.0.1", port))
+    except OSError:
+        return False
+    return True
+
+
 class ApiProcess:
     """The existing HealthCore API, started with its own uv environment."""
 
@@ -91,6 +215,10 @@ class ApiProcess:
         self.base_url = f"http://127.0.0.1:{self.port}"
         self.log_path = self.temp_dir / "api.log"
         self.log_file = self.log_path.open("w", encoding="utf-8")
+        self._root_pid: int | None = None
+        self._owned_pids: set[int] = set()
+        self._cleanup_succeeded = False
+        self.process: subprocess.Popen[bytes] | None = None
         env = os.environ.copy()
         env["SECRET_KEY"] = "mcp-acceptance-secret-key-32"
         env["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
@@ -99,27 +227,22 @@ class ApiProcess:
         env["DATABASE_URL"] = f"sqlite:///{(self.temp_dir / 'inventory.db').resolve().as_posix()}"
         if extra_env:
             env.update(extra_env)
-        self.process = subprocess.Popen(
-            [
-                "uv",
-                "run",
-                "uvicorn",
-                "app.main:app",
-                "--host",
-                "127.0.0.1",
-                "--port",
-                str(self.port),
-                "--log-level",
-                "warning",
-            ],
-            cwd=API_DIR,
-            env=env,
-            stdout=self.log_file,
-            stderr=subprocess.STDOUT,
-        )
-        self._wait_until_healthy()
+        try:
+            self.process = subprocess.Popen(
+                _api_launch_command(self.port),
+                cwd=API_DIR,
+                env=env,
+                stdout=self.log_file,
+                stderr=subprocess.STDOUT,
+            )
+            self._root_pid = self.process.pid
+            self._wait_until_healthy()
+        except Exception:
+            self.stop()
+            raise
 
     def _wait_until_healthy(self) -> None:
+        assert self.process is not None
         deadline = time.time() + 30
         last_error = "no response"
         while time.time() < deadline:
@@ -132,6 +255,7 @@ class ApiProcess:
                 time.sleep(0.2)
                 continue
             if response.status_code == 200:
+                self._owned_pids = _owned_process_snapshot(self.process.pid)
                 return
             last_error = f"HTTP {response.status_code}"
             time.sleep(0.2)
@@ -140,7 +264,9 @@ class ApiProcess:
             f"HealthCore API did not start ({last_error}). Log:\n{log_text[-2000:]}"
         )
 
-    def stop(self) -> None:
+    def _shutdown_process(self) -> None:
+        if self.process is None:
+            return
         if self.process.poll() is None:
             self.process.terminate()
             try:
@@ -148,7 +274,44 @@ class ApiProcess:
             except subprocess.TimeoutExpired:
                 self.process.kill()
                 self.process.wait(timeout=5)
-        self.log_file.close()
+
+    def _refresh_owned_pids_before_shutdown(self) -> None:
+        if (
+            os.name == "nt"
+            and self._root_pid is not None
+            and self.process is not None
+            and self.process.poll() is None
+        ):
+            self._owned_pids = _owned_process_snapshot(self._root_pid)
+
+    def _verify_cleanup(self) -> None:
+        survivors = sorted(pid for pid in self._owned_pids if _pid_is_running(pid))
+        port_busy = not _port_is_available(self.port)
+        if survivors or port_busy:
+            raise ApiProcessCleanupError(
+                "Owned API teardown incomplete "
+                f"(survivor_pids={survivors}, port={self.port}, "
+                f"port_released={not port_busy}, root_pid={self._root_pid})"
+            )
+
+    def stop(self) -> None:
+        if self._cleanup_succeeded:
+            return
+        error: BaseException | None = None
+        try:
+            self._refresh_owned_pids_before_shutdown()
+            if self._root_pid is not None and not self._owned_pids:
+                self._owned_pids = {self._root_pid}
+            self._shutdown_process()
+            self._verify_cleanup()
+            self._cleanup_succeeded = True
+        except BaseException as exc:
+            error = exc
+        finally:
+            if not self.log_file.closed:
+                self.log_file.close()
+        if error is not None:
+            raise error
 
 
 class AcceptanceStack:
