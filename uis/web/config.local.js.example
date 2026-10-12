@@ -1,0 +1,2 @@
+// Copy to config.local.js (gitignored) to override the workspace URL on static relocation pages.
+window.STAFF_WORKSPACE_URL = "http://127.0.0.1:3000";

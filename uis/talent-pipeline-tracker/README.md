@@ -62,7 +62,9 @@ NEXT_PUBLIC_TRACKER_API_BASE_URL=https://playground.4geeks.com/tracker/api/v1
 
 Never commit `.env.local`.
 
-Inventory calls are centralized in `lib/inventory.ts`. Supplier mutations are centralized in `lib/suppliers.ts` and use `apiFetch(..., { auth: true })` against the HealthCore API. Components do not call `fetch` directly for those modules. Protected inventory and supplier requests send `Authorization: Bearer <token>` from `localStorage`. Candidate calls are centralized in `lib/api/client.ts` and use `NEXT_PUBLIC_TRACKER_API_BASE_URL` only (no HealthCore JWT is sent to the external tracker API).
+Inventory calls are centralized in `lib/inventory.ts`. Supplier mutations are centralized in `lib/suppliers.ts` and use `apiFetch(..., { auth: true })` against the HealthCore API. Incident CSV analysis uses `lib/incidentAnalyzer.ts` (multipart upload and CSV blob download with the session JWT; not the JSON `apiFetch` parser). Components do not call `fetch` directly for those modules. Protected inventory and supplier requests send `Authorization: Bearer <token>` from `localStorage`. Candidate calls are centralized in `lib/api/client.ts` and use `NEXT_PUBLIC_TRACKER_API_BASE_URL` only (no HealthCore JWT is sent to the external tracker API).
+
+The legacy static site at `uis/web` links to `/incident-analysis` via `window.STAFF_WORKSPACE_URL` (default `http://localhost:3000`) and does not call analyzer API routes.
 
 ## Routes
 
@@ -76,6 +78,7 @@ Inventory calls are centralized in `lib/inventory.ts`. Supplier mutations are ce
 | `/incidents/new` | Protected | Register an incident |
 | `/incidents` | Protected | Incident list and status updates |
 | `/incidents/summary` | Protected | Aggregate incident metrics |
+| `/incident-analysis` | Protected | Incident CSV upload, analysis summary, and authenticated results export |
 | `/account/profile` | Protected | Shows email and profile; updates via `PUT /profiles/me` |
 | `/account/change-password` | Protected | Current + new + confirmation; `POST /auth/change-password` |
 | `/backoffice/inventory/products` | Protected | Medical supplies with current stock and stock-level indicators |

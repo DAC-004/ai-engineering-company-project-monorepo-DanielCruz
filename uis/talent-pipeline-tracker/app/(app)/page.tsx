@@ -23,6 +23,9 @@ export default function HomePage() {
         <Link href="/incidents/summary" className="btn-secondary">
           Incident summary
         </Link>
+        <Link href="/incident-analysis" className="btn-secondary">
+          Incident analysis
+        </Link>
         <Link href="/backoffice/inventory/products" className="btn-secondary">
           Medical supplies
         </Link>

@@ -74,6 +74,16 @@ export const AppShell = ({ children }: AppShellProps) => {
             Incident summary
           </Link>
           <Link
+            href="/incident-analysis"
+            className={
+              pathname.startsWith("/incident-analysis")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Incident analysis
+          </Link>
+          <Link
             href="/backoffice/inventory/products"
             className={
               pathname.startsWith("/backoffice/inventory/products")

@@ -34,3 +34,4 @@ dist/
 .project-input/
 services/api/*.egg-info/
 .uv/
+uis/web/config.local.js
