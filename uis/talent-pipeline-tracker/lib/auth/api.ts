@@ -3,28 +3,33 @@ import { isJwtExpired } from "@/lib/telemetry/identity";
 import { toApiRouteTemplate, toRoutePath } from "@/lib/telemetry/mapping";
 import { clearAccessToken, getAccessToken } from "@/lib/auth/token";
 import { ApiError, type FieldErrors } from "@/lib/auth/types";
+import {
+  CONFIG_ERROR_MESSAGE,
+  GENERIC_ERROR_MESSAGE,
+  NETWORK_ERROR_MESSAGE,
+  resolveUserFacingApiText,
+  toUserFacingFieldErrors,
+  toUserFacingMessage,
+} from "@/lib/auth/userFacingError";
 
 const getBaseUrl = (): string => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   if (!baseUrl) {
-    throw new ApiError(
-      "NEXT_PUBLIC_API_BASE_URL is not configured. Copy .env.example to .env.local.",
-      0,
-    );
+    throw new ApiError(CONFIG_ERROR_MESSAGE, 0);
   }
 
   return baseUrl.replace(/\/$/, "");
 };
 
 /**
- * Parse FastAPI error bodies into a message plus optional field-level errors.
- * Registration (422) returns `detail` as an array of validation objects with `loc`/`msg`.
+ * Parse FastAPI error bodies into a user-safe message plus optional field errors.
+ * Raw status text, parser errors, and implementation details never reach the UI.
  */
 const parseErrorBody = async (
   response: Response,
 ): Promise<{ message: string; fieldErrors: FieldErrors }> => {
-  const fallback = `Request failed with status ${response.status}`;
+  const fallback = toUserFacingMessage(response.status);
 
   try {
     const body = (await response.json()) as {
@@ -34,50 +39,61 @@ const parseErrorBody = async (
     };
 
     if (typeof body.field === "string" && typeof body.message === "string") {
+      const safeMessage = resolveUserFacingApiText(
+        response.status,
+        body.message,
+      );
       return {
-        message: body.message,
-        fieldErrors: { [body.field]: body.message },
+        message: safeMessage,
+        fieldErrors: { [body.field]: safeMessage },
+      };
+    }
+
+    if (typeof body.message === "string" && typeof body.field !== "string") {
+      return {
+        message: resolveUserFacingApiText(response.status, body.message),
+        fieldErrors: {},
       };
     }
 
     if (typeof body.detail === "string") {
-      return { message: body.detail, fieldErrors: {} };
+      return {
+        message: resolveUserFacingApiText(response.status, body.detail),
+        fieldErrors: {},
+      };
     }
 
     if (Array.isArray(body.detail)) {
       const fieldErrors: FieldErrors = {};
-      const messages: string[] = [];
 
       for (const item of body.detail) {
         if (typeof item !== "object" || item === null) {
-          messages.push(String(item));
           continue;
         }
 
         const entry = item as { loc?: unknown; msg?: unknown };
-        const message =
-          typeof entry.msg === "string" ? entry.msg : "Invalid value";
-        messages.push(message);
+        if (!Array.isArray(entry.loc)) {
+          continue;
+        }
 
-        if (Array.isArray(entry.loc)) {
-          const fieldName = entry.loc
-            .filter((part): part is string => typeof part === "string")
-            .filter((part) => part !== "body")
-            .at(-1);
+        const fieldName = entry.loc
+          .filter((part): part is string => typeof part === "string")
+          .filter((part) => part !== "body")
+          .at(-1);
 
-          if (fieldName && !fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = message;
-          }
+        if (fieldName && !fieldErrors[fieldName]) {
+          fieldErrors[fieldName] =
+            typeof entry.msg === "string" ? entry.msg : "Invalid value";
         }
       }
 
       return {
-        message: messages.join(", ") || fallback,
-        fieldErrors,
+        message: toUserFacingMessage(response.status),
+        fieldErrors: toUserFacingFieldErrors(fieldErrors),
       };
     }
   } catch {
-    // Keep the status fallback when the body is not JSON.
+    // Non-JSON bodies use the status-mapped fallback, never a parse error.
   }
 
   return { message: fallback, fieldErrors: {} };
@@ -208,7 +224,7 @@ export const apiFetch = async <T>(
         ),
       });
       clearSessionAndRedirectToLogin();
-      throw new ApiError("Authentication required", 401);
+      throw new ApiError(toUserFacingMessage(401), 401);
     }
     requestHeaders.set("Authorization", `Bearer ${token}`);
   }
@@ -225,8 +241,8 @@ export const apiFetch = async <T>(
       ...rest,
       headers: requestHeaders,
     });
-  } catch (error) {
-    throw error;
+  } catch {
+    throw new ApiError(NETWORK_ERROR_MESSAGE, 0);
   }
 
   const durationMs = performance.now() - startedAt;
@@ -253,7 +269,7 @@ export const apiFetch = async <T>(
     });
     track("user_logout_completed", { logout_method: "forced_401" });
     clearSessionAndRedirectToLogin();
-    throw new ApiError("Session expired or unauthorized", 401);
+    throw new ApiError(toUserFacingMessage(401), 401);
   }
 
   if (!response.ok) {
@@ -273,5 +289,9 @@ export const apiFetch = async <T>(
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new ApiError(GENERIC_ERROR_MESSAGE, response.status);
+  }
 };

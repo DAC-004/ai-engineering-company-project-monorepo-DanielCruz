@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { ErrorRecovery } from "@/components/auth/ErrorRecovery";
 import { ApiError } from "@/lib/auth/types";
 import { fetchCurrentUser, loginWithPassword, storeSessionToken } from "@/lib/auth/session";
+import { GENERIC_ERROR_MESSAGE } from "@/lib/auth/userFacingError";
 import { track } from "@/src/services/telemetry";
 
 export const LoginForm = () => {
@@ -46,7 +48,7 @@ export const LoginForm = () => {
         track("user_login_failed", { failure_reason: failureReason });
         setErrorMessage(error.message);
       } else {
-        setErrorMessage("Unable to sign in. Check the API connection and try again.");
+        setErrorMessage(GENERIC_ERROR_MESSAGE);
       }
     } finally {
       setIsSubmitting(false);
@@ -87,11 +89,7 @@ export const LoginForm = () => {
         />
       </div>
 
-      {errorMessage ? (
-        <p className="form-error" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      {errorMessage ? <ErrorRecovery message={errorMessage} /> : null}
 
       <button type="submit" className="btn-primary" disabled={isSubmitting}>
         {isSubmitting ? "Signing in…" : "Sign in"}

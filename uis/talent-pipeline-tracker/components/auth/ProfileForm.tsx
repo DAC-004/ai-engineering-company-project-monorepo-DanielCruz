@@ -2,7 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
+import { ErrorRecovery } from "@/components/auth/ErrorRecovery";
 import { ApiError } from "@/lib/auth/types";
+import { GENERIC_ERROR_MESSAGE } from "@/lib/auth/userFacingError";
 import { fetchCurrentUser, updateMyProfile } from "@/lib/auth/session";
 
 type ProfileFormState = {
@@ -24,6 +26,7 @@ export const ProfileForm = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +42,7 @@ export const ProfileForm = () => {
         }
 
         setFormState({
-          email: me.email,
+          email: me.email ?? "",
           name: me.profile?.name ?? "",
           phone: me.profile?.phone ?? "",
           address: me.profile?.address ?? "",
@@ -52,9 +55,7 @@ export const ProfileForm = () => {
           return;
         }
         setLoadError(
-          error instanceof ApiError
-            ? error.message
-            : "Unable to load profile information.",
+          error instanceof ApiError ? error.message : GENERIC_ERROR_MESSAGE,
         );
       } finally {
         if (!cancelled) {
@@ -68,7 +69,7 @@ export const ProfileForm = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -95,9 +96,7 @@ export const ProfileForm = () => {
         return;
       }
       setSaveError(
-        error instanceof ApiError
-          ? error.message
-          : "Unable to update profile. Try again.",
+        error instanceof ApiError ? error.message : GENERIC_ERROR_MESSAGE,
       );
     } finally {
       setIsSaving(false);
@@ -114,9 +113,11 @@ export const ProfileForm = () => {
 
   if (loadError) {
     return (
-      <p className="form-error" role="alert">
-        {loadError}
-      </p>
+      <ErrorRecovery
+        message={loadError}
+        onRetry={() => setReloadKey((current) => current + 1)}
+        homeHref="/"
+      />
     );
   }
 
@@ -180,11 +181,7 @@ export const ProfileForm = () => {
         />
       </div>
 
-      {saveError ? (
-        <p className="form-error" role="alert">
-          {saveError}
-        </p>
-      ) : null}
+      {saveError ? <ErrorRecovery message={saveError} /> : null}
       {saveSuccess ? (
         <p className="form-success" role="status">
           {saveSuccess}

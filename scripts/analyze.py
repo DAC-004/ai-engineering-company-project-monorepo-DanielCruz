@@ -34,10 +34,13 @@ def main(argv: list[str] | None = None) -> int:
         result = analyze_csv_path(csv_path)
     except IncidentCsvError as exc:
         print(f"Error: {exc}", file=sys.stderr)
-        return 1
-    except OSError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
-        return 1
+        sys.exit(1)
+    except OSError:
+        print(
+            "Error: The CSV file could not be read. Check the path and try again.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     print(format_console_report(result))
     try:
@@ -47,7 +50,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if answer == "y":
         output = Path.cwd() / "results.csv"
-        write_results_csv(result, output)
+        try:
+            write_results_csv(result, output)
+        except OSError:
+            print(
+                "Error: Results could not be written to CSV. Check file permissions and try again.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         print(f"Results exported to {output}")
     else:
         print("Export skipped.")
