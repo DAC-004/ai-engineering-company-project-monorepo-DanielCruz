@@ -12,15 +12,19 @@ uv sync
 cp .env.example .env   # then set SECRET_KEY and DATABASE_URL
 ```
 
-`DATABASE_URL` must be the Supabase **transaction pooler** URI (Connect → Direct → Transaction pooler → URI). Do not commit `.env`.
+`DATABASE_URL` is required. Outside Docker it may be the Supabase **transaction pooler** URI (Connect → Direct → Transaction pooler → URI). Local Docker Compose uses SQLite via the repository-root `.env` (`sqlite:////app/services/api/data/inventory.db`). TinyDB remains the identity store either way. Do not commit `.env`.
 
 This API uses Python 3.13. `markitdown[pdf]` depends on `onnxruntime`, which does not publish a Python 3.14 wheel. `services/api/.python-version` pins 3.13 so `uv` does not recreate the environment on the system default.
 
+Dependency versions are locked in `uv.lock`. `requirements.txt` is the installable export used by `services/Dockerfile` (`uv pip install -r requirements.txt`). Prefer `uv sync` for local non-Docker work. Do not use Poetry.
+
 RFP intake also needs the local file `qwen2.5-3b-instruct-q4_k_m.gguf` at `data/process/models/` (or in the directory named by `RAG_MODELS_DIR`). Part 1 does not download that file and does not call a remote chat API. Without the file, an upload stays `analyzing` with `processing_failed` and code `model_asset_missing`.
 
-Do not use `pip install` or Poetry for dependency changes.
+## Docker
 
-## Run
+From the repository root, `docker compose up` starts this API on host port `8000` with `--reload`.
+
+## Run (local, without Docker)
 
 Index the knowledge base once from the repository root before the first API start. That writes the gitignored 384-d collection `healthcore_knowledge` under `data/process/qdrant_storage`. Later API starts reopen that directory. They do not ingest again.
 

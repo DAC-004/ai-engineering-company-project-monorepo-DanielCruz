@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 if str(PACKAGES_SHARED) not in sys.path:
     sys.path.insert(0, str(PACKAGES_SHARED))
 
+from app.core.config import get_settings  # noqa: E402
 from app.core.safe_errors import (  # noqa: E402
     log_failure,
     public_validation_errors,
@@ -53,6 +54,15 @@ from app.services.rfp_demonstration_accounts import ensure_demonstration_account
 logger = logging.getLogger("healthcore.api")
 
 
+def _cors_allow_origins() -> list[str]:
+    """Development origins from CORS_ORIGINS; includes tracker and backoffice ports."""
+    return [
+        origin.strip()
+        for origin in get_settings().cors_origins.split(",")
+        if origin.strip()
+    ]
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Open TinyDB + Supabase engines, create inventory tables, then seed if empty."""
@@ -81,17 +91,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:3000",
-        "http://localhost:3000",
-        "http://127.0.0.1:3001",
-        "http://localhost:3001",
-        "http://127.0.0.1:3002",
-        "http://localhost:3002",
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "null",
-    ],
+    allow_origins=_cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,8 +1,8 @@
 # HealthCore Internal Workspace (`uis/talent-pipeline-tracker`)
 
-Next.js application for AUTH-02 (login, registration, JWT session handling, protected views, and profile management), the HealthCore medical-supply inventory backoffice, password recovery and change (AUTH-03), and the Milestone 3 candidate pipeline.
+Next.js application for AUTH-02 (login, registration, JWT session handling, protected views, and profile management), the HealthCore medical-supply inventory backoffice, password recovery and change (AUTH-03), incident manager and analyzer routes, and the Milestone 3 candidate pipeline.
 
-The candidate pipeline calls the 4Geeks Talent Tracker API. Login, profile, inventory, telemetry, and RFP intake call the HealthCore API (`services/api`).
+The candidate pipeline calls the 4Geeks Talent Tracker API. Login, profile, inventory, telemetry, RFP intake, and other staff modules call the HealthCore API (`services/api`). Docker Compose does not replace this app; run it locally on port 3000 while using Compose for the public website (also 3000) only when ports are remapped or one stack is stopped.
 
 ## Prerequisites
 

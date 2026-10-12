@@ -30,12 +30,23 @@ class Settings(BaseSettings):
     # Instructor stack: JWT algorithm is environment-configurable; HS256 remains the default.
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM", min_length=1)
     tinydb_path: Path = Field(default=DEFAULT_TINYDB_PATH, alias="TINYDB_PATH")
-    # Supabase transaction-pooler URI (or sqlite for isolated tests). Never hard-code credentials.
+    # Supabase transaction-pooler URI (or sqlite for local Docker / tests). Never hard-code credentials.
     database_url: str = Field(..., alias="DATABASE_URL", min_length=1)
     # Capture-phase destination. The stub does not redirect; Phase 3 will reuse this name.
     telemetry_endpoint: str = Field(
         default="http://localhost:8000/telemetry/events",
         alias="TELEMETRY_ENDPOINT",
+        min_length=1,
+    )
+    # Comma-separated browser origins. Docker backoffice uses 3001; tracker workspace uses 3000/3002.
+    cors_origins: str = Field(
+        default=(
+            "http://127.0.0.1:3000,http://localhost:3000,"
+            "http://127.0.0.1:3001,http://localhost:3001,"
+            "http://127.0.0.1:3002,http://localhost:3002,"
+            "http://127.0.0.1:5500,http://localhost:5500,null"
+        ),
+        alias="CORS_ORIGINS",
         min_length=1,
     )
 

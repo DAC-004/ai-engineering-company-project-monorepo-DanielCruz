@@ -7,6 +7,81 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
+    networks:
+      - healthcore-dev
+
+  backend:
+    build:
+      context: ./services
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      TINYDB_PATH: ${TINYDB_PATH:-/app/services/api/data/auth.json}
+      DATABASE_URL: ${DATABASE_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      RFP_DEMONSTRATION_PASSWORD: ${RFP_DEMONSTRATION_PASSWORD:-docker-dev-only}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+    volumes:
+      - ./services/api:/app/services/api
+      - ./shared:/app/shared
+      - ./data:/app/data
+      - ./packages:/app/packages
+    depends_on:
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 60s
+    networks:
+      - healthcore-dev
+
+  ui:
+    build:
+      context: .
+      dockerfile: uis/Dockerfile
+    # Host 3010 leaves port 3000 for the staff workspace (uis/talent-pipeline-tracker on the host).
+    ports:
+      - "3010:3000"
+      - "3001:3001"
+    environment:
+      API_PROXY_TARGET: ${API_PROXY_TARGET:-http://backend:8000}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/backend}
+      NEXT_PUBLIC_INVENTORY_API_URL: ${NEXT_PUBLIC_INVENTORY_API_URL:-/backend}
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+    volumes:
+      - ./uis/start.sh:/uis/start.sh
+      - ./uis/website:/uis/website
+      - ./uis/backoffice:/uis/backoffice
+      - ./src:/src
+      - ./assets:/assets
+      - ui_website_node_modules:/uis/website/node_modules
+      - ui_backoffice_node_modules:/uis/backoffice/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - healthcore-dev
+
+networks:
+  healthcore-dev:
+    name: healthcore-dev
 
 volumes:
   qdrant_data:
+  ui_website_node_modules:
+  ui_backoffice_node_modules:
