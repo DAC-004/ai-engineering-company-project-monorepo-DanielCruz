@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import json
 import logging
 import os
@@ -148,6 +149,63 @@ def _pid_is_running(pid: int) -> bool:
     return True
 
 
+def _windows_process_row(pid: int) -> dict[str, object] | None:
+    result = subprocess.run(
+        [
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            (
+                f"$p = Get-CimInstance Win32_Process -Filter \"ProcessId = {pid}\" | "
+                "Select-Object ProcessId, ParentProcessId, CommandLine, ExecutablePath; "
+                "if ($null -eq $p) {{ exit 1 }}; "
+                "$p | ConvertTo-Json -Compress"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    payload = json.loads(result.stdout.strip())
+    if not isinstance(payload, dict):
+        return None
+    return payload
+
+
+def _parent_chain_contains(pid: int, ancestor_pid: int, *, max_depth: int = 32) -> bool:
+    if pid <= 0 or ancestor_pid <= 0:
+        return False
+    current = pid
+    for _ in range(max_depth):
+        if current == ancestor_pid:
+            return True
+        row = _windows_process_row(current)
+        if row is None:
+            return False
+        parent = int(row.get("ParentProcessId", 0))
+        if parent <= 0:
+            return False
+        current = parent
+    return False
+
+
+def _launcher_command_line_binds_port(row: dict[str, object], port: int, venv_python: Path) -> bool:
+    command = str(row.get("CommandLine") or "")
+    executable = str(row.get("ExecutablePath") or "")
+    if str(port) not in command:
+        return False
+    if "uvicorn" not in command or "app.main:app" not in command:
+        return False
+    venv_markers = {venv_python.name.lower(), str(venv_python).lower(), str(venv_python.resolve()).lower()}
+    haystack = f"{command} {executable}".lower()
+    if not any(marker and marker in haystack for marker in venv_markers):
+        return False
+    return True
+
+
 def _windows_process_tree_pids(root_pid: int) -> set[int]:
     """Collect root_pid and its descendant PIDs using Win32_Process parent links."""
     result = subprocess.run(
@@ -206,6 +264,196 @@ def _port_is_available(port: int) -> bool:
     return True
 
 
+if os.name == "nt":
+    _KERNEL32: ctypes.WinDLL | None = ctypes.WinDLL("kernel32", use_last_error=True)
+else:
+    _KERNEL32 = None
+
+
+if os.name == "nt":
+    _STILL_ACTIVE = 259
+    _PROCESS_TERMINATE = 0x0001
+    _SYNCHRONIZE = 0x00100000
+    _PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    _KERNEL32.GetProcessId.argtypes = [ctypes.c_void_p]
+    _KERNEL32.GetProcessId.restype = ctypes.c_uint32
+    _KERNEL32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+    _KERNEL32.OpenProcess.restype = ctypes.c_void_p
+    _KERNEL32.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _KERNEL32.TerminateProcess.restype = ctypes.c_int
+    _KERNEL32.GetExitCodeProcess.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32)]
+    _KERNEL32.GetExitCodeProcess.restype = ctypes.c_int
+    _KERNEL32.CloseHandle.argtypes = [ctypes.c_void_p]
+    _KERNEL32.CloseHandle.restype = ctypes.c_int
+    _KERNEL32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _KERNEL32.WaitForSingleObject.restype = ctypes.c_uint32
+    _KERNEL32.GetCurrentProcess.argtypes = []
+    _KERNEL32.GetCurrentProcess.restype = ctypes.c_void_p
+    _KERNEL32.DuplicateHandle.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_void_p),
+        ctypes.c_uint32,
+        ctypes.c_int,
+        ctypes.c_uint32,
+    ]
+    _KERNEL32.DuplicateHandle.restype = ctypes.c_int
+    _DUPLICATE_SAME_ACCESS = 0x00000002
+
+
+class _WindowsOwnedProcessHandle:
+    """Kernel handle to one API launcher process captured while lineage was valid."""
+
+    def __init__(self, pid_at_registration: int, handle: int) -> None:
+        self.pid_at_registration = pid_at_registration
+        self.handle = handle
+
+    def identity_matches(self) -> bool:
+        if not self.handle:
+            return False
+        return int(_KERNEL32.GetProcessId(self.handle)) == self.pid_at_registration
+
+    def is_still_running(self) -> bool:
+        if not self.handle or not self.identity_matches():
+            return False
+        exit_code = ctypes.c_uint32()
+        if not _KERNEL32.GetExitCodeProcess(self.handle, ctypes.byref(exit_code)):
+            return False
+        return exit_code.value == _STILL_ACTIVE
+
+    def terminate(self) -> None:
+        if self.handle and self.identity_matches() and self.is_still_running():
+            _KERNEL32.TerminateProcess(self.handle, 1)
+
+    def close(self) -> None:
+        if self.handle:
+            _KERNEL32.CloseHandle(self.handle)
+            self.handle = 0
+
+
+class _WindowsProcessRegistry:
+    """Registers OpenProcess handles for the Popen root and verified descendants.
+
+    Termination uses only registered handles (never taskkill /T by numeric PID).
+    """
+
+    def __init__(
+        self,
+        *,
+        root_pid: int,
+        port: int,
+        venv_python: Path,
+        popen: subprocess.Popen[bytes],
+    ) -> None:
+        self._root_pid = root_pid
+        self._port = port
+        self._venv_python = venv_python
+        self._popen = popen
+        self._entries: dict[int, _WindowsOwnedProcessHandle] = {}
+
+    def registered_pids(self) -> set[int]:
+        return set(self._entries)
+
+    def _corroborate_launcher_pid(self, pid: int) -> bool:
+        if pid == self._root_pid:
+            return self._popen.pid == pid
+        if pid not in _windows_process_tree_pids(self._root_pid):
+            return False
+        row = _windows_process_row(pid)
+        if row is None:
+            return False
+        if not _launcher_command_line_binds_port(row, self._port, self._venv_python):
+            return False
+        return _parent_chain_contains(pid, self._root_pid)
+
+    def _open_registration_handle(self, pid: int) -> int:
+        """Open a handle bound to the process instance corroborated for ``pid``.
+
+        The root uses DuplicateHandle on the Popen-owned handle (same kernel object
+        as ``subprocess.Popen``). Descendants use OpenProcess immediately after
+        corroboration in this call (minimal discover→open gap).
+        """
+        if pid == self._root_pid:
+            popen_handle = getattr(self._popen, "_handle", None)
+            if popen_handle is not None:
+                source = ctypes.c_void_p(int(popen_handle))
+                if int(_KERNEL32.GetProcessId(source)) != pid:
+                    return 0
+                duplicated = ctypes.c_void_p()
+                ok = _KERNEL32.DuplicateHandle(
+                    _KERNEL32.GetCurrentProcess(),
+                    source,
+                    _KERNEL32.GetCurrentProcess(),
+                    ctypes.byref(duplicated),
+                    0,
+                    False,
+                    _DUPLICATE_SAME_ACCESS,
+                )
+                if ok and duplicated.value:
+                    return int(duplicated.value)
+        return int(
+            _KERNEL32.OpenProcess(
+                _PROCESS_TERMINATE | _SYNCHRONIZE | _PROCESS_QUERY_LIMITED_INFORMATION,
+                False,
+                pid,
+            )
+            or 0
+        )
+
+    def register_pid(self, pid: int) -> bool:
+        if pid in self._entries:
+            return self._entries[pid].identity_matches()
+        if not self._corroborate_launcher_pid(pid):
+            return False
+        handle = self._open_registration_handle(pid)
+        if not handle:
+            return False
+        if int(_KERNEL32.GetProcessId(handle)) != pid:
+            _KERNEL32.CloseHandle(handle)
+            return False
+        if pid == self._root_pid and self._popen.pid != pid:
+            _KERNEL32.CloseHandle(handle)
+            return False
+        self._entries[pid] = _WindowsOwnedProcessHandle(pid, handle)
+        return True
+
+    def register_launch_tree(self) -> None:
+        if not _pid_is_running(self._root_pid):
+            return
+        self.register_pid(self._root_pid)
+        for pid in _owned_process_snapshot(self._root_pid):
+            self.register_pid(pid)
+
+    def terminate_registered(self) -> None:
+        if self._popen.poll() is None:
+            self._popen.terminate()
+            try:
+                self._popen.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+        self.register_launch_tree()
+        for pid in sorted(self._entries, reverse=True):
+            self._entries[pid].terminate()
+        deadline = time.time() + 10.0
+        while time.time() < deadline:
+            if not any(entry.is_still_running() for entry in self._entries.values()):
+                break
+            time.sleep(0.15)
+
+    def survivor_pids(self) -> list[int]:
+        return sorted(
+            pid
+            for pid, entry in self._entries.items()
+            if entry.identity_matches() and entry.is_still_running()
+        )
+
+    def close_all(self) -> None:
+        for entry in self._entries.values():
+            entry.close()
+        self._entries.clear()
+
+
 class ApiProcess:
     """The existing HealthCore API, started with its own uv environment."""
 
@@ -218,6 +466,8 @@ class ApiProcess:
         self._root_pid: int | None = None
         self._owned_pids: set[int] = set()
         self._cleanup_succeeded = False
+        self._venv_python = _services_api_venv_python()
+        self._windows_registry: _WindowsProcessRegistry | None = None
         self.process: subprocess.Popen[bytes] | None = None
         env = os.environ.copy()
         env["SECRET_KEY"] = "mcp-acceptance-secret-key-32"
@@ -255,7 +505,7 @@ class ApiProcess:
                 time.sleep(0.2)
                 continue
             if response.status_code == 200:
-                self._owned_pids = _owned_process_snapshot(self.process.pid)
+                self._register_owned_windows_processes()
                 return
             last_error = f"HTTP {response.status_code}"
             time.sleep(0.2)
@@ -264,9 +514,44 @@ class ApiProcess:
             f"HealthCore API did not start ({last_error}). Log:\n{log_text[-2000:]}"
         )
 
+    def _register_owned_windows_processes(self) -> None:
+        if os.name != "nt" or self.process is None or self._root_pid is None:
+            self._owned_pids = (
+                _owned_process_snapshot(self._root_pid) if self._root_pid is not None else set()
+            )
+            return
+        if self._windows_registry is None:
+            self._windows_registry = _WindowsProcessRegistry(
+                root_pid=self._root_pid,
+                port=self.port,
+                venv_python=self._venv_python,
+                popen=self.process,
+            )
+        self._windows_registry.register_launch_tree()
+        self._owned_pids = self._windows_registry.registered_pids()
+
+    def _shutdown_windows_owned_tree(self) -> None:
+        assert self.process is not None
+        assert self._root_pid is not None
+        if self._windows_registry is None:
+            self._windows_registry = _WindowsProcessRegistry(
+                root_pid=self._root_pid,
+                port=self.port,
+                venv_python=self._venv_python,
+                popen=self.process,
+            )
+        self._windows_registry.register_launch_tree()
+        self._owned_pids = self._windows_registry.registered_pids()
+        self._windows_registry.terminate_registered()
+        self._owned_pids = self._windows_registry.registered_pids()
+
     def _shutdown_process(self) -> None:
         if self.process is None:
             return
+        if os.name == "nt" and self._root_pid is not None:
+            self._shutdown_windows_owned_tree()
+            return
+
         if self.process.poll() is None:
             self.process.terminate()
             try:
@@ -275,17 +560,11 @@ class ApiProcess:
                 self.process.kill()
                 self.process.wait(timeout=5)
 
-    def _refresh_owned_pids_before_shutdown(self) -> None:
-        if (
-            os.name == "nt"
-            and self._root_pid is not None
-            and self.process is not None
-            and self.process.poll() is None
-        ):
-            self._owned_pids = _owned_process_snapshot(self._root_pid)
-
     def _verify_cleanup(self) -> None:
-        survivors = sorted(pid for pid in self._owned_pids if _pid_is_running(pid))
+        if os.name == "nt" and self._windows_registry is not None:
+            survivors = self._windows_registry.survivor_pids()
+        else:
+            survivors = sorted(pid for pid in self._owned_pids if _pid_is_running(pid))
         port_busy = not _port_is_available(self.port)
         if survivors or port_busy:
             raise ApiProcessCleanupError(
@@ -299,15 +578,14 @@ class ApiProcess:
             return
         error: BaseException | None = None
         try:
-            self._refresh_owned_pids_before_shutdown()
-            if self._root_pid is not None and not self._owned_pids:
-                self._owned_pids = {self._root_pid}
             self._shutdown_process()
             self._verify_cleanup()
             self._cleanup_succeeded = True
         except BaseException as exc:
             error = exc
         finally:
+            if self._windows_registry is not None:
+                self._windows_registry.close_all()
             if not self.log_file.closed:
                 self.log_file.close()
         if error is not None:
