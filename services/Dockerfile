@@ -18,6 +18,12 @@ RUN sed '/^-e \.$/d' requirements.docker.txt > requirements.txt \
     && uv pip install --system -r requirements.txt
 
 COPY api/ ./
+COPY reporting/ /app/services/reporting/
+COPY telemetry/ /app/services/telemetry/
+COPY __init__.py /app/services/__init__.py
+
+# Dependency smoke only: reporting.router also needs repo-root data/ at runtime.
+RUN python -c "import pandas, prefect; import services.reporting, services.telemetry"
 
 EXPOSE 8000
 

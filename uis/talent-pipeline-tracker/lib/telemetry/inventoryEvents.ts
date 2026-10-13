@@ -76,10 +76,14 @@ export const trackInboundOrderCreated = (input: {
   quantity: number;
   vendorName: string;
   inboundOrderId: number;
+  totalCost: number;
 }): void => {
   const country = countryFromClinicId(input.clinicId);
   const productCategory = mapProductCategory(input.liveCategory);
-  if (!country || !productCategory) {
+  // total_cost is required on inbound_order_created. Emit the submitted
+  // form value only when it is finite and >= 0. Zero is valid when the
+  // clinician submitted zero. Do not invent a fallback cost.
+  if (!country || !productCategory || !Number.isFinite(input.totalCost) || input.totalCost < 0) {
     return;
   }
   track("inbound_order_created", {
@@ -90,6 +94,7 @@ export const trackInboundOrderCreated = (input: {
     quantity: input.quantity,
     vendor_name: input.vendorName,
     inbound_order_id: input.inboundOrderId,
+    total_cost: input.totalCost,
   });
 };
 

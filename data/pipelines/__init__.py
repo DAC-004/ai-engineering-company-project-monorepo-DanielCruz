@@ -1,1 +1,1 @@
-"""Runtime data pipelines, including HealthCore RAG retrieval and generation."""
+"""Runtime data pipelines, including HealthCore RAG retrieval, generation, and reporting."""

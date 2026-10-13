@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -152,6 +152,16 @@ export const AppShell = ({ children }: AppShellProps) => {
             }
           >
             Knowledge assistant
+          </Link>
+          <Link
+            href="/backoffice/reporting"
+            className={
+              pathname.startsWith("/backoffice/reporting")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Clinic supply report
           </Link>
           <Link
             href="/account/profile"

@@ -315,6 +315,7 @@ The five mandatory events always require `clinic_id`, `country`, `product_id`, `
 | `quantity` | integer (`>= 1`) | required | Units received. |
 | `vendor_name` | string (`1`–`200` chars) | required | Vendor that shipped the supply. |
 | `inbound_order_id` | integer (`>= 1`) | required | `SupplyDelivery.id`. |
+| `total_cost` | number (`>= 0`) | required | Supply purchase cost for this inbound order, in the clinic's local currency (`USD` for US clinics, `GBP` for UK clinics). Added as an extension of this existing mandatory event so the Monthly Clinic Supply Performance Report can compute Supply Cost per Clinic. Never a patient charge. |
 
 Example:
 
@@ -334,7 +335,8 @@ Example:
     "product_category": "ppe",
     "quantity": 80,
     "vendor_name": "MedLine Industries",
-    "inbound_order_id": 41
+    "inbound_order_id": 41,
+    "total_cost": 18420.50
   }
 }
 ```

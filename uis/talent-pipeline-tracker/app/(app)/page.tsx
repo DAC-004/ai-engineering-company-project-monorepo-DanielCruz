@@ -44,6 +44,9 @@ export default function HomePage() {
         <Link href="/backoffice/knowledge" className="btn-secondary">
           Knowledge assistant
         </Link>
+        <Link href="/backoffice/reporting" className="btn-secondary">
+          Clinic supply report
+        </Link>
         <Link href="/account/profile" className="btn-secondary">
           Manage profile
         </Link>

@@ -39,6 +39,7 @@ export const EVENT_PROPERTY_ALLOWLIST: Record<
     "quantity",
     "vendor_name",
     "inbound_order_id",
+    "total_cost",
   ],
   outbound_order_created: [
     "clinic_id",
@@ -135,6 +136,7 @@ export const EVENT_REQUIRED_PROPERTIES: Record<
     "quantity",
     "vendor_name",
     "inbound_order_id",
+    "total_cost",
   ],
   outbound_order_created: [
     "clinic_id",

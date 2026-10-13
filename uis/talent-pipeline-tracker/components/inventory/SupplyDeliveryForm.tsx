@@ -10,6 +10,7 @@ import {
   listMedicalSupplies,
   type MedicalSupply,
 } from "@/lib/inventory";
+import { countryFromClinicId } from "@/lib/telemetry/mapping";
 import { trackInboundOrderCreated } from "@/lib/telemetry/inventoryEvents";
 import { useInventoryFlowTelemetry } from "@/lib/telemetry/useInventoryFlow";
 
@@ -18,6 +19,7 @@ const emptyForm = {
   quantity: "",
   vendorName: "",
   clinicId: "",
+  totalCost: "",
 };
 
 export const SupplyDeliveryForm = () => {
@@ -37,11 +39,19 @@ export const SupplyDeliveryForm = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
+  const parsedTotalCost = Number(formState.totalCost);
   const readyToSubmit =
     formState.supplyId !== "" &&
     Number(formState.quantity) > 0 &&
     formState.vendorName.trim().length > 0 &&
-    formState.clinicId !== "";
+    formState.clinicId !== "" &&
+    formState.totalCost !== "" &&
+    Number.isFinite(parsedTotalCost) &&
+    parsedTotalCost >= 0;
+
+  const selectedCountry = countryFromClinicId(Number(formState.clinicId));
+  const costCurrencyLabel =
+    selectedCountry === "UK" ? "GBP" : selectedCountry === "US" ? "USD" : null;
 
   useInventoryFlowTelemetry("inbound_order", {
     productId: formState.supplyId,
@@ -97,6 +107,7 @@ export const SupplyDeliveryForm = () => {
     setIsSubmitting(true);
 
     try {
+      const submittedTotalCost = Number(formState.totalCost);
       const delivery = await createSupplyDelivery({
         supply_id: Number(formState.supplyId),
         quantity: Number(formState.quantity),
@@ -114,6 +125,7 @@ export const SupplyDeliveryForm = () => {
           quantity: delivery.quantity,
           vendorName: delivery.vendor_name,
           inboundOrderId: delivery.id,
+          totalCost: submittedTotalCost,
         });
       }
       setSubmitted(true);
@@ -265,6 +277,39 @@ export const SupplyDeliveryForm = () => {
         ) : (
           <p className="field-hint">
             Clinic IDs range from 1 to 12 (9 US clinics, 3 UK clinics).
+          </p>
+        )}
+      </div>
+
+      <div className="field">
+        <label htmlFor="delivery-total-cost">
+          Total supply cost{costCurrencyLabel ? ` (${costCurrencyLabel})` : ""}
+        </label>
+        <input
+          id="delivery-total-cost"
+          name="total_cost"
+          type="number"
+          min={0}
+          step="0.01"
+          required
+          value={formState.totalCost}
+          onChange={(event) =>
+            setFormState((current) => ({
+              ...current,
+              totalCost: event.target.value,
+            }))
+          }
+          aria-invalid={Boolean(fieldErrors.total_cost)}
+        />
+        {fieldErrors.total_cost ? (
+          <p className="field-error" role="alert">
+            {fieldErrors.total_cost}
+          </p>
+        ) : (
+          <p className="field-hint">
+            Cost of this inbound supply delivery in the local currency of
+            the receiving clinic. US clinics use USD. UK clinics use GBP. Do
+            not convert currencies.
           </p>
         )}
       </div>
