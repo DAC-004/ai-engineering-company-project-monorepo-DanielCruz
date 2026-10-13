@@ -49,6 +49,7 @@ export type RfpMetadata = {
 
 export type RfpTicket = {
   ticket_id: string;
+  rfp_id: string | null;
   status: string;
   raw_pdf_path: string | null;
   created_at: string;

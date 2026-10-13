@@ -17,7 +17,9 @@ from app.schemas.rfp import (
     RfpMetadataPublic,
     RfpTicketPublic,
 )
+from app.services import rfp_notifications
 from data.pipelines.rfp_intake.generation import ChatComplete, ModelAssetMissing, PipelineFailure, complete_local
+from data.pipelines.rfp_intake.graph import bind_accept_callback, reset_accept_callback
 from data.pipelines.rfp_intake.phi import screen_structure
 from data.pipelines.rfp_intake.readiness import assess_readiness
 from data.pipelines.rfp_intake.response_loop import run_response_generation
@@ -293,9 +295,37 @@ def _apply_run(session: Session, ticket: RfpTicket, result: IntakeRun) -> None:
     session.commit()
 
 
+def notify_classified_accept(session: Session, ticket_id: str) -> None:
+    """Store rfp_id and publish while the ticket is still analyzing.
+
+    Uses the caller's session so the later intake commit keeps the same id.
+    A second accept does not replace an id already stored. Discarded tickets
+    and any status other than analyzing publish nothing.
+    """
+    ticket = session.get(RfpTicket, ticket_id)
+    if ticket is None or ticket.status != "analyzing":
+        return
+    if not ticket.rfp_id:
+        assigned = str(uuid.uuid4())
+        while assigned == ticket.ticket_id:
+            assigned = str(uuid.uuid4())
+        ticket.rfp_id = assigned
+        session.add(ticket)
+        session.commit()
+        session.refresh(ticket)
+    created_at = _as_utc(ticket.created_at).isoformat().replace("+00:00", "Z")
+    rfp_notifications.publish_ticket_created(
+        ticket_id=ticket.ticket_id,
+        rfp_id=ticket.rfp_id,
+        status=ticket.status,
+        created_at=created_at,
+    )
+
+
 def run_ticket(session: Session, ticket_id: str, pdf_bytes: bytes) -> None:
     """Background entry. Failures stay on analyzing and do not store exception text."""
     RUNNING_TICKETS.add(ticket_id)
+    callback_token = bind_accept_callback(lambda: notify_classified_accept(session, ticket_id))
     try:
         ticket = session.get(RfpTicket, ticket_id)
         if ticket is None:
@@ -323,6 +353,7 @@ def run_ticket(session: Session, ticket_id: str, pdf_bytes: bytes) -> None:
             session.add(stored)
             session.commit()
     finally:
+        reset_accept_callback(callback_token)
         RUNNING_TICKETS.discard(ticket_id)
 
 
@@ -392,6 +423,7 @@ def _public_from_rows(
     assert isinstance(screened, dict)
     return RfpTicketPublic(
         ticket_id=ticket.ticket_id,
+        rfp_id=ticket.rfp_id,
         status=ticket.status,
         raw_pdf_path=ticket.raw_pdf_path,
         created_at=ticket.created_at,

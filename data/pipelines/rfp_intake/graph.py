@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextvars
 import operator
+from collections.abc import Callable
 from typing import Annotated, Any, TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -23,6 +24,21 @@ _complete_fn: contextvars.ContextVar[ChatComplete | None] = contextvars.ContextV
     "rfp_complete_fn",
     default=None,
 )
+# The API installs this for one ticket run. The graph does not import the
+# notification service, and the callback receives no document text.
+_accept_callback: contextvars.ContextVar[Callable[[], None] | None] = contextvars.ContextVar(
+    "rfp_accept_callback",
+    default=None,
+)
+
+
+def bind_accept_callback(callback: Callable[[], None]):
+    """Install the accept observer for the current ticket run."""
+    return _accept_callback.set(callback)
+
+
+def reset_accept_callback(token: contextvars.Token[Callable[[], None] | None]) -> None:
+    _accept_callback.reset(token)
 
 
 class IntakeState(TypedDict):
@@ -44,6 +60,12 @@ def _trace(node: str, agent: str, node_input: object, node_output: object) -> di
 
 def _classify(state: IntakeState) -> dict[str, Any]:
     classification = classify_rfp(state["screened_markdown"], _complete_fn.get())
+    # Notify only after a valid classification, before orchestrate or workers.
+    # The callback sees the decision result, not the screened document.
+    if classification.get("decision") == "accept":
+        callback = _accept_callback.get()
+        if callback is not None:
+            callback()
     return {
         "classification": classification,
         "node_trace": [_trace("classify", "classifier", {"source": "screened_markdown"}, classification)],

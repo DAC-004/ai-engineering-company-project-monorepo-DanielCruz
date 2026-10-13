@@ -44,6 +44,7 @@ class RfpMetadataPublic(BaseModel):
 
 class RfpTicketPublic(BaseModel):
     ticket_id: str
+    rfp_id: str | None = None
     status: str
     raw_pdf_path: str | None
     created_at: datetime
