@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 API_DIR = Path(__file__).resolve().parents[1]
@@ -31,6 +32,10 @@ os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["TINYDB_PATH"] = str(_isolated_tinydb)
 os.environ["DATABASE_URL"] = f"sqlite:///{_isolated_inventory.resolve().as_posix()}"
+# Async analyze (DEV-55) returns 202; eager mode keeps this validator Redis-free.
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "true"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+os.environ["INCIDENT_DATA_DIR"] = str(Path(_tmpdir) / "incident-data")
 os.environ.setdefault("RESEND_API_KEY", "re_incident_validator_placeholder")
 os.environ.setdefault("RESEND_FROM_EMAIL", "HealthCore <onboarding@resend.dev>")
 os.environ.setdefault("FRONTEND_BASE_URL", "http://localhost:3000")
@@ -222,15 +227,43 @@ def main() -> int:
         str(auth_422.status_code),
     )
 
+    # I06b / DEV-55 contract only: HTTP 202 + task_id, then authenticated poll
+    # to success and last-analysis valid_count. Eager Celery keeps this
+    # validator Redis-free; it is not real-worker evidence.
     analyze = client.post(
         "/api/incidents/analyze",
         headers=headers,
         files={"file": ("incidents-healthcore.csv", SAMPLE_CSV.read_bytes(), "text/csv")},
     )
+    task_id = analyze.json().get("task_id") if analyze.status_code == 202 else None
+    result_body = None
+    valid_count = None
+    if analyze.status_code == 202 and task_id:
+        deadline = time.time() + 60
+        while time.time() < deadline:
+            polled = client.get(f"/tasks/{task_id}", headers=headers)
+            if polled.status_code == 200:
+                result_body = polled.json()
+                if result_body.get("status") in {"success", "failure"}:
+                    break
+            time.sleep(0.25)
+        results = client.get("/api/incidents/results", headers=headers)
+        if results.status_code == 200:
+            payload = results.json()
+            valid_count = payload.get("valid_count")
+            if valid_count is None and isinstance(payload.get("result"), dict):
+                valid_count = payload["result"].get("valid_count")
+    analyze_ok = (
+        analyze.status_code == 202
+        and bool(task_id)
+        and bool(result_body)
+        and result_body.get("status") == "success"
+        and valid_count == 94
+    )
     check(
         "Analyzer route still works",
-        analyze.status_code == 200 and analyze.json().get("valid_count") == 94,
-        f"{analyze.status_code} {analyze.json().get('valid_count')}",
+        analyze_ok,
+        f"status={analyze.status_code} task={task_id} poll={result_body} results_valid={valid_count}",
     )
 
     first = seed(SAMPLE_CSV)

@@ -253,7 +253,13 @@ def test_supplier_extra_field_key_is_redacted_from_loc(
 def test_telemetry_validation_omits_input_and_submitted_keys(
     api_client: TestClient,
 ) -> None:
-    """Telemetry validates manually; must still use public_validation_errors."""
+    """Telemetry soft-rejects invalid items with HTTP 200 and must not echo input.
+
+    Capture validates each event independently (see POST /telemetry/events).
+    Unexpected event keys are counted rejected rather than raised as FastAPI
+    422 RequestValidationError; privacy still requires the submitted marker
+    never appear in the response body.
+    """
     response = api_client.post(
         "/telemetry/events",
         json={
@@ -272,16 +278,13 @@ def test_telemetry_validation_omits_input_and_submitted_keys(
             ]
         },
     )
-    assert response.status_code == 422
+    assert response.status_code == 200
     assert MARKER not in response.text
-    detail = response.json()["detail"]
-    assert isinstance(detail, list)
-    assert detail
-    assert detail[0]["type"] == "extra_forbidden"
-    assert detail[0]["msg"] == "Unexpected field."
-    assert detail[0]["loc"] == ["events", 0, "*"]
-    assert "input" not in detail[0]
-    assert "ctx" not in detail[0]
+    body = response.json()
+    assert body["received"] == 1
+    assert body["stored"] == 0
+    assert body["rejected"] == 1
+    assert "detail" not in body
 
 
 def test_inventory_create_validation_omits_input_and_submitted_keys(

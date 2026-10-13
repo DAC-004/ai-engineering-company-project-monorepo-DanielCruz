@@ -288,6 +288,13 @@ def main() -> int:
         "uis/talent-pipeline-tracker/lib/incidentAnalyzer.ts",
         "uis/talent-pipeline-tracker/components/incident-analysis/IncidentAnalysisPanel.tsx",
         "uis/talent-pipeline-tracker/__tests__/incidentAnalyzer.auth.test.ts",
+        # I07 SSE + I09 workspace navigation (approved campaign integration surfaces).
+        "uis/talent-pipeline-tracker/components/layout/AppHeader.tsx",
+        "uis/talent-pipeline-tracker/app/(pipeline)/layout.tsx",
+        "uis/talent-pipeline-tracker/components/rfp/RfpArrivalNotifications.tsx",
+        "uis/talent-pipeline-tracker/lib/rfp.ts",
+        "uis/talent-pipeline-tracker/lib/rfpNotifications.ts",
+        "uis/README.md",
     }
     unexpected_frontend_changes = sorted(
         set(frontend_changed) - approved_frontend_changes
