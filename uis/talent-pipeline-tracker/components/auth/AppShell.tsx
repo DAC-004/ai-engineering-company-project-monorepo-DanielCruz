@@ -174,6 +174,16 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Profile
           </Link>
+          <Link
+            href="/account/change-password"
+            className={
+              pathname.startsWith("/account/change-password")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Change password
+          </Link>
           <button type="button" className="btn-secondary" onClick={handleLogout}>
             Log out
           </button>

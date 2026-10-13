@@ -6,7 +6,7 @@ Current HealthCore UIs:
 
 - **`website`** — public Next.js site (port **3000** in Docker Compose `ui` service).
 - **`backoffice`** — lightweight supplier directory and legacy static artifacts (port **3001** in Docker). Not the authenticated staff workspace.
-- **`talent-pipeline-tracker`** — authenticated Internal Workspace (login, inventory, incidents, RFP, knowledge, analyzer). Run on host port **3000** for normal development; do not map it to the same host port as Docker `ui` without changing one service's port.
+- **`talent-pipeline-tracker`** — authenticated Internal Workspace (login, inventory, incidents, RFP, knowledge, analyzer, suppliers, clinic reporting, talent pipeline). Talent routes share the same authenticated `AppShell` as other modules (return navigation to Home). Run on host port **3000** for normal development; do not map it to the same host port as Docker `ui` without changing one service's port.
 - **`incidents`** — shared incident UI modules consumed by the tracker (`npm ci` in `uis/incidents` before tracker lint/build).
 - **`web`** — relocated static incident analyzer assets (see narrow I09).
 

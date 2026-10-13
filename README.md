@@ -30,6 +30,15 @@ This repository is the **starter template** for transversal projects. You will w
 
 ---
 
+## Integrated campaign runtime (current)
+
+Operational topology for the integrated HealthCore tree (staff workspace, API, Compose ports, model paths, evidence dirs, and branch disposition) is documented in:
+
+- [`docs/campaign/CAMPAIGN_RUNTIME.md`](docs/campaign/CAMPAIGN_RUNTIME.md)
+- [`docs/campaign/BRANCH_DISPOSITION.md`](docs/campaign/BRANCH_DISPOSITION.md)
+
+UI roles and ports: [`uis/README.md`](uis/README.md). Async Celery details remain in the section below.
+
 ## HealthCore async task queue (Redis + Celery)
 
 Incident CSV analysis runs on an independent Celery worker. The API enqueues `upload_id` only (the CSV is stored under `services/api/data/`, which is gitignored) and returns `202 Accepted` with a `task_id`.
