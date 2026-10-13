@@ -60,4 +60,53 @@ Low MSE alone is not enough: it ignores ranking quality, visit-volume shift, res
 
 The shaded band is an **empirical residual variability range**, not a formal confidence interval or prediction interval. Residual scale is estimated with a chronological expanding-window walk-forward inside the training period only. Test-period targets are not used. In-sample training residuals are not used.
 
+## Nightly telemetry export (Ticket #DEV-53)
+
+Independent worker. It does not start FastAPI. The CSV under `data/raw/` is an audit backup only; the pipeline continues to read `telemetry_events` from the database. Orchestration status is stored in `job_runs`. The pipeline continues to write ETL status to `pipeline_runs`.
+
+```bash
+# Logical assignment command, from the repository root:
+python scripts/nightly_export.py
+
+# Local development when system Python does not have project packages:
+#   services/api/.venv/Scripts/python.exe scripts/nightly_export.py
+#   (or: cd services/api && uv run python ../../scripts/nightly_export.py)
+```
+
+Requires `SECRET_KEY` and `DATABASE_URL` from the environment or `services/api/.env`. The worker never prints those values.
+
+Override the UTC target date without changing code:
+
+```bash
+# PowerShell
+$env:TARGET_DATE="2026-09-07"; python scripts/nightly_export.py
+# bash
+TARGET_DATE=2026-09-07 python scripts/nightly_export.py
+```
+
+Production pipeline CLI (default, when the testing override is unset):
+
+`python data/pipelines/pipeline.py`
+
+That entrypoint is the I05 Monthly Clinic Supply Performance pipeline already integrated on this branch. Nightly export must invoke that reconciled CLI; it must not replace reporting pipeline modules with older nightly-branch copies.
+
+`NIGHTLY_EXPORT_PIPELINE_COMMAND` is a validation-only subprocess override. Production must leave it unset. The worker ignores it unless `NIGHTLY_EXPORT_ALLOW_PIPELINE_OVERRIDE=1`.
+
+### Sole production trigger: OS crontab
+
+File: `infra/cron/nightly-export.crontab`
+
+- Expression: `5 0 * * *`
+- Timezone: `CRON_TZ=UTC` so the default target date is the completed previous UTC calendar day
+- Command: `/bin/sh /path/to/repo/scripts/run_nightly_export.sh`
+
+Replace every `/path/to/repo` with the absolute checkout path on the host (the directory that contains `scripts/` and `data/`). The launcher derives the repository root from its own location, uses `services/api/.venv/bin/python` when that interpreter exists, sets `PYTHONPATH`, and execs `python scripts/nightly_export.py`. Secrets stay in `services/api/.env`. Do not install the crontab into a shared host merely to validate this unit; inspect the file and launcher instead.
+
+Unattended validation:
+
+```bash
+python scripts/validate_nightly_export.py
+```
+
+
 > _Spanish version: [README.es.md](./README.es.md)._

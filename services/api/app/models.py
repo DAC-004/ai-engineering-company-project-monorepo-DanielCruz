@@ -5,15 +5,17 @@ shapes live in app/schemas/inventory.py and must not be returned as ORM
 objects. There is no SQLModel User table; user_uuid stores a TinyDB id.
 
 telemetry_events is write-only: eight envelope-mapped columns, no service
-column, and no surrogate id.
+column, and no surrogate id. The nightly CSV backup reads this table.
+job_runs is nightly orchestration state and is not pipeline_runs.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from enum import Enum
 from typing import Any
 
-from sqlalchemy import CheckConstraint, Column, DateTime, JSON, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, Index, JSON, Text, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -93,3 +95,46 @@ class TelemetryEventRecord(SQLModel, table=True):
             nullable=False,
         )
     )
+
+
+class JobRunStatus(str, Enum):
+    """Allowed nightly orchestration states. pipeline_runs uses a different lifecycle."""
+
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+
+
+class JobRun(SQLModel, table=True):
+    """Nightly CSV-export and pipeline-trigger orchestration row.
+
+    `processing` is the distributed lock: at most one nightly_export row may
+    hold that status. The partial unique index enforces that rule without a
+    separate lock table, column, or flag.
+    """
+
+    __tablename__ = "job_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'processing', 'completed', 'failed')",
+            name="job_runs_status_allowed",
+        ),
+        Index("ix_job_runs_job_name_target_date", "job_name", "target_date"),
+        Index(
+            "ux_job_runs_job_name_processing",
+            "job_name",
+            unique=True,
+            sqlite_where=text("status = 'processing'"),
+            postgresql_where=text("status = 'processing'"),
+        ),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    job_name: str = Field(min_length=1, max_length=64, index=True)
+    target_date: date
+    status: str = Field(default=JobRunStatus.pending.value, max_length=16)
+    started_at: datetime | None = Field(default=None)
+    finished_at: datetime | None = Field(default=None)
+    error_message: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

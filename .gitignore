@@ -10,6 +10,8 @@ htmlcov/
 coverage.xml
 **/coverage/
 results.csv
+data/raw/telemetry_*.csv
+data/raw/*.log
 data/eval/monthly_clinic_supply_performance_*.json
 .prefect/
 services/api/.venv/
