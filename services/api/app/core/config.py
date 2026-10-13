@@ -68,6 +68,18 @@ class Settings(BaseSettings):
         alias="PASSWORD_RESET_TOKEN_EXPIRE_MINUTES",
     )
 
+    # Celery broker and result backend. Same Redis instance for API and workers.
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        alias="REDIS_URL",
+        min_length=1,
+    )
+    # Runtime uploads and last-analysis JSON (gitignored via services/api/data/).
+    incident_data_dir: Path = Field(
+        default=API_DIR / "data",
+        alias="INCIDENT_DATA_DIR",
+    )
+
     @field_validator("password_reset_token_expire_minutes")
     @classmethod
     def validate_reset_token_lifetime(cls, value: int) -> int:

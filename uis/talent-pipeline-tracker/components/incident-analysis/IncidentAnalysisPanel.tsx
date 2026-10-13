@@ -71,10 +71,18 @@ export const IncidentAnalysisPanel = () => {
     setIsAnalyzing(true);
     setErrorMessage(null);
     setLastFailedAction(null);
-    setStatus("Analyzing…");
+    setStatus("Queuing analysis…");
 
     try {
-      const payload = await analyzeIncidentCsv(file);
+      const payload = await analyzeIncidentCsv(file, (lifecycle) => {
+        if (lifecycle === "pending") {
+          setStatus("Waiting for worker…");
+          return;
+        }
+        if (lifecycle === "started") {
+          setStatus("Analyzing…");
+        }
+      });
       setResults(payload);
       setStatus(
         payload.invalid_count > 0

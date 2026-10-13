@@ -2,25 +2,29 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+import logging
+import time
 
-from app.core.irreversible import require_explicit_confirmation
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import Response
 
-from shared.incident_analyzer import analysis_to_csv_rows, analyze_csv_bytes
-from shared.incident_analyzer.analyze import IncidentCsvError
+from shared.incident_analyzer import analysis_to_csv_rows
 from shared.incident_analyzer.export_csv import rows_to_csv_text
 
 from app.core.deps import get_current_user
+from app.core.irreversible import require_explicit_confirmation
 from app.incidents_store import (
     clear_last_analysis,
     get_last_analysis,
     get_last_record,
-    save_analysis,
 )
+from app.schemas.tasks import TaskEnqueueResponse
 from app.schemas.user import UserInDB, UserRole
+from app.storage import save_upload
+from app.tasks import analyze_incidents_task
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
+logger = logging.getLogger("uvicorn.error")
 
 
 def _require_analysis_owner_or_admin(current_user: UserInDB) -> None:
@@ -41,12 +45,12 @@ def _require_analysis_owner_or_admin(current_user: UserInDB) -> None:
     )
 
 
-@router.post("/analyze")
+@router.post("/analyze", status_code=status.HTTP_202_ACCEPTED)
 async def analyze_incidents(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_user),
-) -> dict:
-    """Protected: analyze an uploaded incident CSV (sensitive operational data)."""
+) -> TaskEnqueueResponse:
+    """Protected: enqueue incident CSV analysis and return a task_id immediately."""
     filename = file.filename or "upload.csv"
     if not filename.lower().endswith(".csv"):
         raise HTTPException(
@@ -64,13 +68,25 @@ async def analyze_incidents(
     if not data or not data.strip():
         raise HTTPException(status_code=400, detail="The CSV file is empty.")
 
-    try:
-        result = analyze_csv_bytes(data, source_name=filename)
-    except IncidentCsvError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    save_analysis(result, owner_user_id=current_user.id)
-    return result.to_dict()
+    started = time.perf_counter()
+    upload_id = save_upload(
+        data=data,
+        owner_user_id=current_user.id,
+        source_name=filename,
+    )
+    save_ms = (time.perf_counter() - started) * 1000
+    broker_started = time.perf_counter()
+    async_result = analyze_incidents_task.delay(upload_id)
+    broker_ms = (time.perf_counter() - broker_started) * 1000
+    total_ms = (time.perf_counter() - started) * 1000
+    logger.info(
+        "analyze_enqueue task_id=%s save_ms=%.1f broker_ms=%.1f total_ms=%.1f",
+        async_result.id,
+        save_ms,
+        broker_ms,
+        total_ms,
+    )
+    return TaskEnqueueResponse(task_id=str(async_result.id))
 
 
 @router.get("/results")

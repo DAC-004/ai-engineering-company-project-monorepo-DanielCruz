@@ -29,7 +29,9 @@ from app.core.safe_errors import (  # noqa: E402
     public_validation_errors,
     safe_route_template,
 )
+from app.celery_app import ensure_broker_connection  # noqa: E402
 from app.db.database import get_engine, init_databases  # noqa: E402
+from app.storage import ensure_runtime_dirs  # noqa: E402
 from app.routers import (  # noqa: E402
     agent,
     auth,
@@ -41,6 +43,7 @@ from app.routers import (  # noqa: E402
     profiles,
     rfp_intake,
     suppliers,
+    tasks,
     telemetry,
     users,
 )
@@ -69,6 +72,8 @@ def _cors_allow_origins() -> list[str]:
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Open TinyDB + Supabase engines, create inventory tables, then seed if empty."""
     init_databases()
+    ensure_runtime_dirs()
+    ensure_broker_connection()
     ensure_reporting_tables(get_engine())
     with Session(get_engine()) as session:
         seed_inventory_if_empty(session)
@@ -108,6 +113,7 @@ app.include_router(incidents.router)
 app.include_router(incident_manager.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
+app.include_router(tasks.router)
 app.include_router(reporting_router)
 app.include_router(rfp_intake.router)
 app.include_router(suppliers.router)

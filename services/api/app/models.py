@@ -138,3 +138,15 @@ class JobRun(SQLModel, table=True):
     finished_at: datetime | None = Field(default=None)
     error_message: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class TaskFailure(SQLModel, table=True):
+    """Terminal Celery failure after three consecutive attempts (DEV-55 DLQ record)."""
+
+    __tablename__ = "task_failure"
+
+    id: int | None = Field(default=None, primary_key=True)
+    task_id: str = Field(min_length=1, max_length=64, unique=True, index=True)
+    attempt: int = Field(ge=1)
+    error_message: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)

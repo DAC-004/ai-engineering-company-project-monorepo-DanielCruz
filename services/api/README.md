@@ -226,3 +226,18 @@ uv run python tests/pipelines/record_agent_traces.py
 ```
 
 That command runs the compiled graph with patched retrieval and generation. It does not call the live generation model. See `docs/rag/langgraph-agent.md`.
+
+## Async incident analysis (DEV-55)
+
+`POST /api/incidents/analyze` enqueues Celery work and returns HTTP 202 with `{ "task_id": "..." }`. Poll `GET /tasks/{task_id}` for `pending` / `started` / `success` / `failure`. Successful results remain available from `GET /api/incidents/results` and CSV export. Set `REDIS_URL` (default `redis://localhost:6379/0`). Run a worker:
+
+```bash
+uv run celery -A app.celery_app.celery_app worker --loglevel=INFO -Q celery
+```
+
+Validate:
+
+```bash
+uv run python scripts/validate_async_tasks.py
+uv run python scripts/validate_async_tasks.py --runtime
+```

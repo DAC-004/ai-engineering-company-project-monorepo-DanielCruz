@@ -26,7 +26,7 @@ Instructor clarification authorizes creating three additional legitimate Inciden
 
 | # | Method | Path | Notes |
 | --- | --- | --- | --- |
-| 1 | `POST` | `/api/incidents/analyze` | Pre-AUTH-01; protected |
+| 1 | `POST` | `/api/incidents/analyze` | Pre-AUTH-01; protected; DEV-55 returns `202` + `task_id` |
 | 2 | `GET` | `/api/incidents/results` | Additional; JSON last analysis |
 | 3 | `GET` | `/api/incidents/results/summary` | Additional; aggregate metrics |
 | 4 | `GET` | `/api/incidents/results/export` | Pre-AUTH-01; protected |

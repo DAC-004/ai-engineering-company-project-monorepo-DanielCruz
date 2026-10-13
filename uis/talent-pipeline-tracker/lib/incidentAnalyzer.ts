@@ -24,6 +24,25 @@ export type IncidentAnalysisResult = {
   };
 };
 
+export type IncidentTaskLifecycleStatus =
+  | "pending"
+  | "started"
+  | "success"
+  | "failure";
+
+type TaskEnqueueResponse = {
+  task_id: string;
+};
+
+type TaskStatusResponse = {
+  task_id: string;
+  status: string;
+  result?: IncidentAnalysisResult | null;
+};
+
+const POLL_INTERVAL_MS = 250;
+const POLL_TIMEOUT_MS = 120_000;
+
 const getBaseUrl = (): string => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -72,8 +91,90 @@ const authorizedFetch = async (path: string, init: RequestInit): Promise<Respons
   return response;
 };
 
-/** Upload and analyze an incident CSV (multipart; not JSON). */
-export const analyzeIncidentCsv = async (file: File): Promise<IncidentAnalysisResult> => {
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const isAnalysisResult = (value: unknown): value is IncidentAnalysisResult => {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const candidate = value as Partial<IncidentAnalysisResult>;
+  return (
+    typeof candidate.total_records === "number" &&
+    typeof candidate.valid_count === "number" &&
+    typeof candidate.invalid_count === "number" &&
+    typeof candidate.satisfaction === "object" &&
+    candidate.satisfaction !== null
+  );
+};
+
+/**
+ * Poll GET /tasks/{task_id} until terminal success/failure (or timeout).
+ * 401 during polling clears the session the same way as the upload call.
+ */
+export const waitForIncidentTaskResult = async (
+  taskId: string,
+  onStatus?: (status: IncidentTaskLifecycleStatus) => void,
+): Promise<IncidentAnalysisResult> => {
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  let lastStatus: string | undefined;
+
+  while (Date.now() < deadline) {
+    const response = await authorizedFetch(`/tasks/${encodeURIComponent(taskId)}`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new ApiError(await parseErrorResponse(response), response.status);
+    }
+
+    const payload = (await response.json()) as TaskStatusResponse;
+    const status = String(payload.status || "pending").toLowerCase();
+    if (status !== lastStatus) {
+      lastStatus = status;
+      if (
+        status === "pending" ||
+        status === "started" ||
+        status === "success" ||
+        status === "failure"
+      ) {
+        onStatus?.(status);
+      }
+    }
+
+    if (status === "success") {
+      if (!isAnalysisResult(payload.result)) {
+        throw new ApiError("Analysis completed without a usable result.", 500);
+      }
+      return payload.result;
+    }
+
+    if (status === "failure") {
+      throw new ApiError(
+        "Incident analysis failed. Review the file and try again.",
+        500,
+      );
+    }
+
+    await sleep(POLL_INTERVAL_MS);
+  }
+
+  throw new ApiError(
+    "Analysis is still running. Wait a moment and try exporting, or upload again.",
+    408,
+  );
+};
+
+/**
+ * Enqueue incident CSV analysis (202 + task_id), then wait for the task result.
+ * Multipart upload; not JSON.
+ */
+export const analyzeIncidentCsv = async (
+  file: File,
+  onStatus?: (status: IncidentTaskLifecycleStatus) => void,
+): Promise<IncidentAnalysisResult> => {
   const body = new FormData();
   body.append("file", file, file.name);
 
@@ -82,11 +183,17 @@ export const analyzeIncidentCsv = async (file: File): Promise<IncidentAnalysisRe
     body,
   });
 
-  if (!response.ok) {
+  if (response.status !== 202) {
     throw new ApiError(await parseErrorResponse(response), response.status);
   }
 
-  return (await response.json()) as IncidentAnalysisResult;
+  const enqueued = (await response.json()) as TaskEnqueueResponse;
+  if (!enqueued.task_id) {
+    throw new ApiError("Analysis was accepted without a task id.", 500);
+  }
+
+  onStatus?.("pending");
+  return waitForIncidentTaskResult(enqueued.task_id, onStatus);
 };
 
 /** Download the last analysis export as CSV text (blob response; not JSON). */

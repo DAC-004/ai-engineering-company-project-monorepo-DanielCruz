@@ -1,3 +1,6 @@
+# HealthCore local stack: Qdrant + API + website/backoffice UIs + Redis/Celery/Flower.
+# Redis is in-memory (no volume / AOF). Queued messages remain available while the
+# Redis container keeps running; a container restart is not a durability guarantee.
 services:
   qdrant:
     image: qdrant/qdrant:latest
@@ -7,6 +10,14 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
+    networks:
+      - healthcore-dev
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory-policy", "noeviction"]
     networks:
       - healthcore-dev
 
@@ -26,6 +37,8 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       RFP_DEMONSTRATION_PASSWORD: ${RFP_DEMONSTRATION_PASSWORD:-docker-dev-only}
       QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      INCIDENT_DATA_DIR: ${INCIDENT_DATA_DIR:-/app/services/api/data}
     volumes:
       - ./services/api:/app/services/api
       - ./services/reporting:/app/services/reporting
@@ -35,6 +48,8 @@ services:
       - ./packages:/app/packages
     depends_on:
       qdrant:
+        condition: service_started
+      redis:
         condition: service_started
     healthcheck:
       test:
@@ -48,6 +63,64 @@ services:
       timeout: 3s
       retries: 12
       start_period: 60s
+    networks:
+      - healthcore-dev
+
+  worker:
+    build:
+      context: ./services
+    command:
+      [
+        "celery",
+        "-A",
+        "app.celery_app.celery_app",
+        "worker",
+        "--loglevel=INFO",
+        "-Q",
+        "celery",
+      ]
+    working_dir: /app/services/api
+    env_file:
+      - .env
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      TINYDB_PATH: ${TINYDB_PATH:-/app/services/api/data/auth.json}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      INCIDENT_DATA_DIR: ${INCIDENT_DATA_DIR:-/app/services/api/data}
+    volumes:
+      - ./services/api:/app/services/api
+      - ./shared:/app/shared
+      - ./data:/app/data
+      - ./packages:/app/packages
+    depends_on:
+      redis:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    networks:
+      - healthcore-dev
+
+  flower:
+    image: mher/flower:2.0
+    command:
+      [
+        "celery",
+        "--broker=redis://redis:6379/0",
+        "flower",
+        "--port=5555",
+        "--unauthenticated_api",
+      ]
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      FLOWER_UNAUTHENTICATED_API: "true"
+    depends_on:
+      - redis
     networks:
       - healthcore-dev
 

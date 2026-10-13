@@ -272,10 +272,10 @@ def _ensure_job_runs_schema(engine) -> None:
 
 def init_databases() -> None:
     """
-    Open both stores and create inventory, telemetry, RFP, and job_runs tables.
+    Open both stores and create inventory, telemetry, RFP, job_runs, and task_failure tables.
 
     TinyDB stores users, profiles, and incidents. SQLModel.metadata.create_all builds
-    inventory, RFP, telemetry, and job_runs tables on the DATABASE_URL engine
+    inventory, RFP, telemetry, job_runs, and task_failure tables on the DATABASE_URL engine
     (Supabase in the live app).
     """
     get_tinydb()

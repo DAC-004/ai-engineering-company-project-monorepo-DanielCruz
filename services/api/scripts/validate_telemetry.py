@@ -26,6 +26,9 @@ os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
 os.environ["DATABASE_URL"] = f"sqlite:///{_sqlite_path}"
 os.environ["TELEMETRY_ENDPOINT"] = "http://localhost:8000/telemetry/events"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "true"
+os.environ["INCIDENT_DATA_DIR"] = str(Path(_tmpdir) / "incident-data")
 
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import event as sqlalchemy_event  # noqa: E402
@@ -281,13 +284,17 @@ def main() -> int:
         "uis/talent-pipeline-tracker/app/layout.tsx",
         "uis/talent-pipeline-tracker/app/(app)/page.tsx",
         "uis/talent-pipeline-tracker/components/auth/AppShell.tsx",
+        # I06b: async analyze client (202 + task poll) for /incident-analysis.
+        "uis/talent-pipeline-tracker/lib/incidentAnalyzer.ts",
+        "uis/talent-pipeline-tracker/components/incident-analysis/IncidentAnalysisPanel.tsx",
+        "uis/talent-pipeline-tracker/__tests__/incidentAnalyzer.auth.test.ts",
     }
     unexpected_frontend_changes = sorted(
         set(frontend_changed) - approved_frontend_changes
     )
     specs_changed = [path for path in all_changed if path.startswith(".project_specs/")]
     check(
-        "no unexpected frontend changes beyond approved I05 tracker surfaces",
+        "no unexpected frontend changes beyond approved I05/I06b tracker surfaces",
         unexpected_frontend_changes == [],
         str(unexpected_frontend_changes),
     )
