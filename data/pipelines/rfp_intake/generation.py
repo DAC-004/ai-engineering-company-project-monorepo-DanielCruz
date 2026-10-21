@@ -49,9 +49,22 @@ def local_gguf_path() -> Path:
     return directory / GGUF_FILENAME
 
 
-def complete_local(messages: list[dict[str, str]]) -> str:
-    """Run one local chat completion. Tests pass their own callable instead."""
+def complete_local(
+    messages: list[dict[str, str]],
+    *,
+    max_tokens: int = 320,
+    temperature: float = 0.0,
+) -> str:
+    """Run one local chat completion. Tests pass their own callable instead.
+
+    ``max_tokens`` defaults to 320 for short agent JSON. The synthesizer may
+    request a higher limit so a long summary is not cut off mid-object.
+    Section continuations may raise ``temperature`` slightly so the model does
+    not repeat the same short draft at temperature 0.
+    """
     global _local_llm
+    if max_tokens < 1:
+        raise PipelineFailure("model_output_invalid")
     model_path = local_gguf_path()
     if not model_path.is_file() or model_path.stat().st_size <= 0:
         raise ModelAssetMissing()
@@ -71,8 +84,8 @@ def complete_local(messages: list[dict[str, str]]) -> str:
             )
         completion = _local_llm.create_chat_completion(
             messages=messages,
-            temperature=0.0,
-            max_tokens=320,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
     content = completion["choices"][0]["message"]["content"]
     return str(content).strip()

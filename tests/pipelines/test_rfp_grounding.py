@@ -10,7 +10,7 @@ import pytest
 from data.pipelines.rfp_intake.agents import analyze_department, synthesize_findings
 from data.pipelines.rfp_intake.generation import PipelineFailure, _local_llm_lock
 from data.pipelines.rfp_intake.graph import build_intake_graph
-from data.pipelines.rfp_intake.grounding import apply_source_grounding
+from data.pipelines.rfp_intake.grounding import apply_source_grounding, proposed_service_start_clause
 from data.pipelines.rfp_intake.readability import readability_metrics
 
 
@@ -404,6 +404,50 @@ def test_malformed_model_object_is_rejected() -> None:
     assert caught.value.code == "model_output_invalid"
 
 
+def test_truncated_synthesizer_json_mid_string_is_rejected() -> None:
+    """Observed failure: max_tokens cut the summary string before the object closed."""
+
+    def complete(_messages: list[dict[str, str]]) -> str:
+        return (
+            '{\n  "summary": "To summarize the contacts:\\n\\n**Revenue Cycle**\\n'
+            '- Contact: Tom Callahan\\n- Open Questions: Is there'
+        )
+
+    with pytest.raises(PipelineFailure) as caught:
+        synthesize_findings({"client_country": "US"}, [], complete)
+
+    assert caught.value.code == "model_output_invalid"
+
+
+def test_synthesizer_requests_higher_local_completion_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, int] = {}
+
+    def fake_complete(messages: list[dict[str, str]], *, max_tokens: int = 320) -> str:
+        seen["max_tokens"] = max_tokens
+        return (
+            '{"summary": "Ask Tom Callahan about pricing. Ask Dr. Marcus Reid about volume. '
+            'Ask Claire Whitfield about the BAA.", "unresolved_disagreements": []}'
+        )
+
+    monkeypatch.setattr("data.pipelines.rfp_intake.agents.complete_local", fake_complete)
+    result = synthesize_findings(
+        {"client_country": "US", "budget_range": None},
+        [
+            {
+                "department_id": "revenue",
+                "department_name": "Revenue Cycle",
+                "contact_name": "Tom Callahan",
+                "aspects": ["No prices agreed."],
+                "open_questions": ["Budget or payment terms were not stated."],
+            }
+        ],
+        None,
+    )
+
+    assert seen["max_tokens"] >= 1024
+    assert "Tom Callahan" in result["summary"]
+
+
 def test_schema_invalid_summary_is_rejected() -> None:
     def complete(_messages: list[dict[str, str]]) -> str:
         return '{"summary": {"text": "not a string"}, "unresolved_disagreements": "none"}'
@@ -528,6 +572,185 @@ def test_budget_omission_is_attributed_to_the_source_request() -> None:
     assert "Tom Callahan" in summary
     assert "Dr. Marcus Reid" in summary
     assert "Claire Whitfield" in summary
+
+
+def test_invented_relative_deadline_is_cleared_when_source_has_none() -> None:
+    source = (
+        "Northbridge Community Services invites a proposal for outpatient consultations. "
+        "We anticipate approximately 40 appointments per month, with a proposed start in January 2027. "
+        "No proposal deadline is stated. No budget is stated."
+    )
+    metadata, sections, summary = apply_source_grounding(
+        source,
+        {
+            "client_country": "US",
+            "deadline": "about 25 days",
+            "budget_range": None,
+            "covered_population": "Employees in the United States",
+        },
+        [
+            {
+                "department_id": "clinical",
+                "department_name": "Clinical Operations",
+                "contact_name": "Dr. Marcus Reid",
+                "aspects": ["staffing volume is not specified"],
+                "open_questions": ["What is the staffing volume for each site?"],
+            },
+            {
+                "department_id": "revenue",
+                "department_name": "Revenue Cycle",
+                "contact_name": "Tom Callahan",
+                "aspects": ["No prices or discounts have been agreed."],
+                "open_questions": ["Is there a budget for this project?"],
+            },
+        ],
+        (
+            "Contact Tom Callahan from Revenue Cycle to confirm there is no budget for this project "
+            "and to request a final quotation."
+        ),
+    )
+    clinical = next(section for section in sections if section["department_id"] == "clinical")
+    aspects_text = " ".join(clinical["aspects"]).lower()
+
+    assert metadata["deadline"] is None
+    assert "about 25 days" not in (summary or "").lower()
+    assert "there is no budget" not in summary.lower()
+    assert "source request did not state a budget" in summary.lower()
+    assert "40 appointments per month" in aspects_text
+    assert "proposed start in january 2027" in aspects_text
+
+
+def test_stated_calendar_deadline_without_about_is_kept_when_present_in_source() -> None:
+    metadata, _sections, _summary = apply_source_grounding(
+        "Proposal deadline is August 23, 2026. No budget is stated.",
+        {"deadline": "August 23, 2026", "budget_range": None},
+        [
+            {
+                "department_id": "revenue",
+                "aspects": [],
+                "open_questions": ["Budget or payment terms were not stated."],
+            }
+        ],
+        "Ask Tom Callahan about the missing budget.",
+    )
+
+    assert metadata["deadline"] == "August 23, 2026"
+
+
+def test_literal_null_budget_string_is_treated_as_missing() -> None:
+    metadata, sections, summary = apply_source_grounding(
+        "No budget amount is stated. Approximately 40 appointments per month.",
+        {"budget_range": "null", "deadline": "null"},
+        [
+            {
+                "department_id": "revenue",
+                "department_name": "Revenue Cycle",
+                "contact_name": "Tom Callahan",
+                "aspects": ["No prices have been agreed."],
+                "open_questions": [],
+            },
+            {
+                "department_id": "clinical",
+                "department_name": "Clinical Operations",
+                "contact_name": "Dr. Marcus Reid",
+                "aspects": [],
+                "open_questions": [],
+            },
+        ],
+        "Ask Tom Callahan about pricing.",
+    )
+    revenue = next(section for section in sections if section["department_id"] == "revenue")
+
+    assert metadata["budget_range"] is None
+    assert metadata["deadline"] is None
+    assert any("budget" in question.lower() for question in revenue["open_questions"])
+    assert "source request did not state a budget" in summary.lower() or "budget" in summary.lower()
+
+
+def test_known_volume_and_start_month_drop_entire_absence_asks_not_exact_day() -> None:
+    source = (
+        "We anticipate approximately 40 appointments per month, "
+        "with a proposed start in January 2027. No budget is stated."
+    )
+    metadata, sections, summary = apply_source_grounding(
+        source,
+        {"budget_range": "null", "client_country": "US"},
+        [
+            {
+                "department_id": "clinical",
+                "department_name": "Clinical Operations",
+                "contact_name": "Dr. Marcus Reid",
+                "aspects": ["expected appointment volume"],
+                "open_questions": [
+                    "What is the proposed service start date?",
+                    "What exact day should service begin?",
+                    "What is the expected appointment volume?",
+                ],
+            },
+            {
+                "department_id": "revenue",
+                "department_name": "Revenue Cycle",
+                "contact_name": "Tom Callahan",
+                "aspects": ["No prices or discounts have been agreed."],
+                "open_questions": ["Is there a budget or payment terms for this service?"],
+            },
+        ],
+        (
+            "To Dr. Marcus Reid, Clinical Operations: Please provide the expected appointment volume. "
+            "To Tom Callahan, Revenue Cycle: Clarify if there is a budget or payment terms."
+        ),
+    )
+    clinical = next(section for section in sections if section["department_id"] == "clinical")
+    questions = " | ".join(clinical["open_questions"]).lower()
+    aspects = " | ".join(clinical["aspects"]).lower()
+
+    assert metadata["budget_range"] is None
+    assert "40 appointments per month" in aspects
+    assert "proposed start in january 2027" in aspects
+    assert "expected appointment volume" not in aspects
+    assert "what is the proposed service start date?" not in questions
+    assert "expected appointment volume?" not in questions
+    assert "exact day" in questions
+    assert "provide the expected appointment volume" not in summary.lower()
+    assert "source request did not state a budget" in summary.lower() or "budget" in summary.lower()
+
+
+def test_on_site_visits_per_month_are_grounded_on_clinical() -> None:
+    source = (
+        "Cedar Ridge Employers Alliance requests outpatient occupational health in Portland, Oregon, United States. "
+        "We expect about 15 on-site visits per month. "
+        "Proposed service start in June 2028, subject to agreement."
+    )
+    _metadata, sections, _summary = apply_source_grounding(
+        source,
+        {"client_country": "US", "budget_range": None, "deadline": None},
+        [
+            {
+                "department_id": "clinical",
+                "department_name": "Clinical Operations",
+                "contact_name": "Dr. Marcus Reid",
+                "aspects": ["Proposed service start in June 2028"],
+                "open_questions": ["What is the expected appointment volume?"],
+            },
+            {
+                "department_id": "revenue",
+                "department_name": "Revenue Cycle",
+                "contact_name": "Tom Callahan",
+                "aspects": ["No prices have been agreed."],
+                "open_questions": [],
+            },
+        ],
+        "Ask Tom Callahan about pricing.",
+    )
+    clinical = next(section for section in sections if section["department_id"] == "clinical")
+    aspects = " | ".join(clinical["aspects"]).lower()
+    questions = " | ".join(clinical["open_questions"]).lower()
+
+    assert "15" in aspects
+    assert "visits per month" in aspects
+    assert "june 2028" in aspects
+    assert proposed_service_start_clause(source) is not None
+    assert "expected appointment volume" not in questions
 
 
 def test_department_workers_stay_separate_while_model_access_is_locked() -> None:

@@ -95,8 +95,17 @@ def evaluate_readability(draft: str) -> dict[str, Any]:
     }
 
 
-def evaluate_relevance(draft: str, aspects: list[str]) -> dict[str, Any]:
+def evaluate_relevance(
+    draft: str,
+    aspects: list[str],
+    *,
+    department_id: str | None = None,
+) -> dict[str, Any]:
     """An aspect is missing when none of its significant words appear in the draft."""
+    from data.pipelines.rfp_intake.grounding import is_proposal_deadline_absence_aspect
+
+    if department_id and department_id != "revenue":
+        aspects = [aspect for aspect in aspects if not is_proposal_deadline_absence_aspect(aspect)]
     draft_tokens = _tokens(draft)
     missing: list[str] = []
     for aspect in aspects:
@@ -269,7 +278,7 @@ def evaluate_in_parallel(
     """Run the three evaluators together. None of them waits for another department."""
     with ThreadPoolExecutor(max_workers=3) as pool:
         readability_task = pool.submit(evaluate_readability, draft)
-        relevance_task = pool.submit(evaluate_relevance, draft, aspects)
+        relevance_task = pool.submit(evaluate_relevance, draft, aspects, department_id=department_id)
         compliance_task = pool.submit(
             evaluate_compliance,
             draft,

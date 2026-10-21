@@ -90,6 +90,19 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
   }, []);
 
   useEffect(() => {
+    // Remember visited tickets so RFP intake can reopen them without typing a URL.
+    try {
+      const key = "healthcore.rfp.recentTickets";
+      const raw = window.localStorage.getItem(key);
+      const prior: string[] = raw ? (JSON.parse(raw) as string[]) : [];
+      const next = [ticketId, ...prior.filter((id) => id !== ticketId)].slice(0, 8);
+      window.localStorage.setItem(key, JSON.stringify(next));
+    } catch {
+      // Ignore storage failures; navigation still works from arrivals.
+    }
+  }, [ticketId]);
+
+  useEffect(() => {
     let cancelled = false;
     let timer: number | undefined;
 
@@ -132,12 +145,15 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
 
   const handleGenerate = async () => {
     setGenerationError(null);
+    setActionInFlight("generate");
     try {
       await startRfpResponse(ticketId);
       setWatchGeneration(true);
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Proposal generation could not be started.";
       setGenerationError(message);
+    } finally {
+      setActionInFlight(null);
     }
   };
 
@@ -217,17 +233,29 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
       ) : null}
       {ticket.status === "discarded" ? <p>This request was discarded. No department work was stored.</p> : null}
       {ticket.status === "intake_complete" && !responseComplete(ticket) ? (
-        <p>
-          <button type="button" onClick={() => void handleGenerate()} disabled={actionInFlight !== null}>
-            Generate proposal sections
+        <p className="action-row">
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => void handleGenerate()}
+            disabled={actionInFlight !== null}
+            aria-busy={actionInFlight === "generate"}
+          >
+            {actionInFlight === "generate" ? "Starting generation…" : "Generate proposal sections"}
           </button>
         </p>
       ) : null}
       {generationError ? <p className="form-error">{generationError}</p> : null}
       {readyToStartApproval(ticket) ? (
-        <p>
-          <button type="button" onClick={() => void handleStartApproval()} disabled={actionInFlight !== null}>
-            Start department approval
+        <p className="action-row">
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => void handleStartApproval()}
+            disabled={actionInFlight !== null}
+            aria-busy={actionInFlight === "start"}
+          >
+            {actionInFlight === "start" ? "Starting approval…" : "Start department approval"}
           </button>
         </p>
       ) : null}
@@ -255,15 +283,21 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
           </p>
           {regulatoryOpen ? <p>Compliance must clear PHI and the country clause before that choice.</p> : null}
           {!regulatoryOpen && ticket.status === "waiting_for_approval" ? (
-            <p>
+            <p className="action-row">
               <button
                 type="button"
+                className="btn-secondary"
                 onClick={() => void handleResolution("reduce_covered_population")}
                 disabled={actionInFlight !== null}
               >
                 Reduce covered population
-              </button>{" "}
-              <button type="button" onClick={() => void handleResolution("add_sites")} disabled={actionInFlight !== null}>
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => void handleResolution("add_sites")}
+                disabled={actionInFlight !== null}
+              >
                 Add sites
               </button>
             </p>
@@ -338,8 +372,8 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
               )}
             </ul>
             {waiting ? (
-              <>
-                <label htmlFor={`note-${section.department_id}`}>
+              <div className="decision-controls">
+                <label htmlFor={`note-${section.department_id}`} className="field">
                   Note, required for reject or request changes
                   <textarea
                     id={`note-${section.department_id}`}
@@ -347,24 +381,37 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
                     onChange={(event) =>
                       setNotes((current) => ({ ...current, [section.department_id]: event.target.value }))
                     }
+                    disabled={busy}
                   />
                 </label>
-                <p>
-                  <button type="button" onClick={() => void handleDecision(section.department_id, "approve")} disabled={busy}>
-                    Approve
-                  </button>{" "}
-                  <button type="button" onClick={() => void handleDecision(section.department_id, "reject")} disabled={busy}>
-                    Reject
-                  </button>{" "}
+                <p className="action-row">
                   <button
                     type="button"
+                    className="btn-primary"
+                    onClick={() => void handleDecision(section.department_id, "approve")}
+                    disabled={busy}
+                    aria-busy={actionInFlight === section.department_id}
+                  >
+                    {actionInFlight === section.department_id ? "Submitting…" : "Approve"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    onClick={() => void handleDecision(section.department_id, "reject")}
+                    disabled={busy}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
                     onClick={() => void handleDecision(section.department_id, "request_changes")}
                     disabled={busy}
                   >
                     Request changes
                   </button>
                 </p>
-              </>
+              </div>
             ) : null}
           </section>
         );
@@ -388,8 +435,13 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
           ))}
         </section>
       ) : null}
-      <p>
-        <Link href="/backoffice/rfp">Upload another request</Link>
+      <p className="action-row">
+        <Link href="/backoffice/rfp" className="btn-secondary">
+          Back to RFP intake
+        </Link>
+        <Link href="/" className="text-link">
+          Workspace home
+        </Link>
       </p>
     </div>
   );

@@ -115,14 +115,51 @@ h2,
   gap: 0.75rem;
 }
 
-.rfp-arrival-list a {
+.rfp-arrival-list a,
+.rfp-recent-list a {
   display: grid;
   gap: 0.2rem;
   padding: 0.85rem 1rem;
   background: var(--hc-panel);
+  border: 1px solid var(--hc-line);
   border-radius: 0.75rem;
   text-decoration: none;
+  box-shadow: 0 1px 2px rgba(16, 39, 47, 0.06);
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
+
+.rfp-arrival-list a:hover,
+.rfp-recent-list a:hover {
+  border-color: var(--hc-accent);
+  box-shadow: 0 8px 20px -16px var(--hc-glow);
+  transform: translateY(-1px);
+}
+
+.rfp-arrival-list a::after,
+.rfp-recent-list a::after {
+  content: "Open ticket →";
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--hc-accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.rfp-recent-panel {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--hc-line);
+}
+
+.rfp-recent-list {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
 
 .inventory-panel {
   width: min(100%, 76rem);
@@ -246,10 +283,8 @@ h2,
 
 @media (max-width: 72rem) {
   .app-header {
-    max-height: min(38vh, 14rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .app-nav {
@@ -387,20 +422,31 @@ h2,
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-danger {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   border: 0;
   border-radius: 999px;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
   padding: 0.8rem 1.2rem;
-  transition: background-color 140ms ease, transform 140ms ease;
+  text-decoration: none;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    outline-offset 140ms ease;
 }
 
 .btn-primary {
   background: var(--hc-accent);
   color: #fff;
+  box-shadow: 0 1px 2px rgba(16, 39, 47, 0.12);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -408,18 +454,73 @@ h2,
   transform: translateY(-1px);
 }
 
-.btn-primary:disabled {
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled {
   opacity: 0.65;
   cursor: wait;
+  transform: none;
 }
 
 .btn-secondary {
   background: var(--hc-accent-soft);
   color: var(--hc-accent-deep);
+  border: 1px solid color-mix(in srgb, var(--hc-accent) 28%, var(--hc-line));
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--hc-accent-soft) 70%, white);
+}
+
+.btn-danger {
+  background: var(--hc-danger-soft);
+  color: var(--hc-danger);
+  border: 1px solid color-mix(in srgb, var(--hc-danger) 35%, var(--hc-line));
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--hc-danger-soft) 70%, white);
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-danger:focus-visible,
+.app-nav__link:focus-visible,
+.text-link:focus-visible,
+.rfp-arrival-list a:focus-visible,
+.rfp-recent-list a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hc-accent) 55%, white);
+  outline-offset: 3px;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin: 0.35rem 0 0;
+}
+
+.decision-controls {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--hc-accent-soft) 28%, var(--hc-panel));
+}
+
+.text-link {
+  color: var(--hc-accent-deep);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+}
+
+.text-link:hover {
+  color: var(--hc-accent);
 }
 
 .auth-switch {
@@ -441,6 +542,7 @@ html {
 
 .app-frame {
   min-height: 100vh;
+  isolation: isolate;
 }
 
 .app-header {
@@ -448,14 +550,14 @@ html {
   flex-wrap: wrap;
   gap: 1rem;
   justify-content: space-between;
-  align-items: end;
+  align-items: flex-start;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--hc-line);
   background: color-mix(in srgb, #ffffff 88%, transparent);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
 }
 
 .app-header__title {
@@ -475,7 +577,11 @@ html {
 }
 
 .app-nav__link {
-  text-decoration: none;
+  position: relative;
+  z-index: 1;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.18em;
   color: var(--hc-muted);
   font-weight: 650;
   padding: 0.45rem 0.7rem;
@@ -486,12 +592,21 @@ html {
 .app-nav__link:hover {
   color: var(--hc-accent-deep);
   background: var(--hc-accent-soft);
+  text-decoration-color: color-mix(in srgb, var(--hc-accent) 55%, transparent);
 }
 
 .app-main {
+  position: relative;
+  z-index: 0;
   padding: 1.75rem 1.25rem 2.5rem;
   display: grid;
   justify-items: center;
+}
+
+.home-panel,
+.rfp-arrival-panel {
+  position: relative;
+  z-index: 0;
 }
 
 .home-actions {

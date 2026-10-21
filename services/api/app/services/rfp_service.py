@@ -85,10 +85,18 @@ def begin_response(session: Session, ticket_id: str) -> RfpTicket:
     return ticket
 
 
+# Proposal sections need multi-paragraph prose (100+ words). The default
+# complete_local budget of 320 tokens is sized for short Part 1 JSON agents.
+_SECTION_MAX_TOKENS = 768
+
+
 def _complete_for_response(messages: list[dict[str, str]]) -> str:
     if complete_override_fn is not None:
         return complete_override_fn(messages)
-    return complete_local(messages)
+    # Slight temperature on continuation turns only. First-pass section drafts stay
+    # near-deterministic; repeats of the same short draft need variation to grow.
+    temperature = 0.35 if any(message.get("role") == "assistant" for message in messages) else 0.0
+    return complete_local(messages, max_tokens=_SECTION_MAX_TOKENS, temperature=temperature)
 
 
 def _mark_response_failed(ticket_id: str, code: str) -> None:
@@ -376,13 +384,17 @@ def _public_from_rows(
         summary = raw_summary if isinstance(raw_summary, str) else None
     metadata_public = None
     if metadata is not None:
+        # Model JSON sometimes stores the string "null". Present that as missing
+        # so the workspace shows "Not stated" without rewriting the row.
+        from data.pipelines.rfp_intake.grounding import normalize_optional_metadata_text
+
         metadata_public = RfpMetadataPublic(
             client_name=metadata.client_name,
             client_country=metadata.client_country,
             program_type=metadata.program_type,
             covered_population=metadata.covered_population,
-            deadline=metadata.deadline,
-            budget_range=metadata.budget_range,
+            deadline=normalize_optional_metadata_text(metadata.deadline),
+            budget_range=normalize_optional_metadata_text(metadata.budget_range),
             departments_needed=list(metadata.departments_needed or []),
             flesch_kincaid_grade=metadata.flesch_kincaid_grade,
             gunning_fog=metadata.gunning_fog,

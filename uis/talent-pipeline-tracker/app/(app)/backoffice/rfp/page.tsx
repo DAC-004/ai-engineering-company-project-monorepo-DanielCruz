@@ -1,3 +1,4 @@
+import { RfpRecentTickets } from "@/components/rfp/RfpRecentTickets";
 import { RfpUploadForm } from "@/components/rfp/RfpUploadForm";
 
 export default function RfpUploadPage() {
@@ -10,6 +11,7 @@ export default function RfpUploadPage() {
         when intake finishes or the request is discarded.
       </p>
       <RfpUploadForm />
+      <RfpRecentTickets />
     </section>
   );
 }

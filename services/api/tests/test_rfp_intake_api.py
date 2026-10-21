@@ -224,7 +224,16 @@ def test_vendor_pitch_is_discarded_without_changing_another_ticket() -> None:
             accepted = client.post(
                 "/rfp/tickets",
                 headers=headers,
-                files={"file": ("ok.pdf", _pdf("Thames Valley University requests a referral partnership."), "application/pdf")},
+                files={
+                    "file": (
+                        "ok.pdf",
+                        _pdf(
+                            "Thames Valley University requests a referral partnership. "
+                            "Proposal deadline about 25 days, around August 28."
+                        ),
+                        "application/pdf",
+                    )
+                },
             )
             discarded = client.post(
                 "/rfp/tickets",
@@ -531,9 +540,20 @@ def test_exhausted_revenue_section_sets_ticket_needs_human_review(monkeypatch: p
     def refuse_pdf(*_args, **_kwargs):
         raise AssertionError("Part 2 must not parse the PDF")
 
+    def _department_id(messages: list[dict[str, str]]) -> str:
+        try:
+            payload = json.loads(messages[-1]["content"])
+            return str(payload["department_id"])
+        except (json.JSONDecodeError, KeyError, TypeError):
+            system = messages[0]["content"]
+            if "Revenue Cycle" in system:
+                return "revenue"
+            if "Clinical Operations" in system:
+                return "clinical"
+            return "compliance"
+
     def complete(messages: list[dict[str, str]]) -> str:
-        payload = json.loads(messages[-1]["content"])
-        department_id = payload["department_id"]
+        department_id = _department_id(messages)
         if department_id == "revenue":
             return "This quote uses GBP."
         if department_id == "clinical":

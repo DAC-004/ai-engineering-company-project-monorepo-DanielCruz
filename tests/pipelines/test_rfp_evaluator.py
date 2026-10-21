@@ -44,6 +44,21 @@ def test_relevance_fails_when_a_handoff_aspect_is_missing() -> None:
     assert result["missing_aspects"] == ["Satellite clinic coverage for the campus."]
 
 
+def test_compliance_does_not_require_deadline_absence_boilerplate_in_the_draft() -> None:
+    draft = (
+        "For this United States client, HealthCore will address HIPAA, consent, and a "
+        "Business Associate Agreement in USD before any exchange of health information."
+    )
+    result = evaluate_relevance(
+        draft,
+        ["No proposal deadline is stated.", "Business Associate Agreement required."],
+        department_id="compliance",
+    )
+
+    assert result["pass"] is True
+    assert result["missing_aspects"] == []
+
+
 def test_uk_compliance_requires_gbp_and_a_dpa_referencing_uk_gdpr() -> None:
     metadata = {"client_country": "UK", "covered_population": "students"}
 

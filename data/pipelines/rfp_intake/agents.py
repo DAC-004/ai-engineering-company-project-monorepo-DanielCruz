@@ -34,12 +34,17 @@ ORCHESTRATOR_ROLE = (
     "You do not write department key aspects. "
     "Split the document into shared metadata and one extract each for revenue, clinical, and compliance. "
     "Copy figures only when they appear in the document. "
-    "Keep approximate wording such as 'about 3,000' and relative timing such as 'about 25 days' or 'around August 28'. "
+    "Keep approximate wording such as 'about 3,000' and relative timing such as 'around August 28' "
+    "only when those phrases appear in the document. "
     "When the document states more than one deadline qualifier, keep every qualifier. "
     "Do not add a year the document does not state. "
+    "deadline is a proposal-response deadline only. A proposed service start month is not a deadline; "
+    "put a stated service start and appointment volume in the clinical extract and leave deadline null "
+    "when the document states no proposal deadline. "
     "A clinic staffing schedule belongs in the clinical extract. "
     "A stated contract duration and renewal option belongs in the revenue extract. "
     "Use null for a missing budget, headcount, or deadline. "
+    "Do not invent a country; client_country is US or UK only when the document states that jurisdiction, otherwise null. "
     "unknown_departments lists names outside revenue, clinical, and compliance. "
     "Return JSON with keys client_name, client_country, program_type, covered_population, deadline, "
     "budget_range, unknown_departments, and extracts. "
@@ -64,6 +69,7 @@ WORKER_ROLES = {
         "You see shared metadata and the clinical extract only. "
         "Return JSON with keys aspects and open_questions, both arrays of strings. "
         "If headcount, sites, or staffing volume is absent, add an open question. Do not invent figures. "
+        "If the extract states an expected appointment volume or a proposed service start, include those as key aspects. "
         "If the extract states how many days a clinic is staffed, include that schedule as a key aspect. "
         "Do not ask whether another department is staffed."
     ),
@@ -81,7 +87,8 @@ WORKER_ROLES = {
 SYNTHESIZER_ROLE = (
     "You are the HealthCore synthesizer agent. "
     "You see worker results and the fixed contacts only. You do not read the original document. "
-    "Write one Sales summary that names every department contact and states what to ask that contact. "
+    "Write one compact Sales summary of at most six sentences that names every department contact "
+    "and states what to ask that contact. Use plain sentences only. Do not use markdown headings or bullet lists. "
     "When budget or payment terms are missing, say the source request did not state them. "
     "Do not say a department contact failed to provide a figure the source request omitted. "
     "If two workers state conflicting figures or facts, keep both and mark that disagreement unresolved. "
@@ -90,14 +97,23 @@ SYNTHESIZER_ROLE = (
     "Do not ask about revenue staffing unless the revenue section states it. "
     "Do not describe a deadline as reasonable. "
     "Keep every deadline qualifier the workers stated, and do not add a year. "
-    "Return JSON with keys summary and unresolved_disagreements. "
+    "Return JSON with keys summary and unresolved_disagreements only. "
     "summary is a string. unresolved_disagreements is an array of strings."
 )
 
+# The synthesizer returns one JSON object with a multi-sentence summary. A 320-token
+# ceiling cuts that object mid-string and fails parsing. Keep other agents on 320.
+_SYNTHESIZER_MAX_TOKENS = 1024
 
-def _complete(messages: list[dict[str, str]], complete_fn: ChatComplete | None) -> str:
+
+def _complete(
+    messages: list[dict[str, str]],
+    complete_fn: ChatComplete | None,
+    *,
+    max_tokens: int = 320,
+) -> str:
     if complete_fn is None:
-        return complete_local(messages)
+        return complete_local(messages, max_tokens=max_tokens)
     return complete_fn(messages)
 
 
@@ -212,11 +228,30 @@ def _scrub_summary(summary: str, sections: list[dict[str, Any]]) -> str:
     return " ".join(kept)
 
 
+_NULL_LIKE_TEXT = frozenset(
+    {
+        "null",
+        "none",
+        "n/a",
+        "na",
+        "nil",
+        "undefined",
+        "unknown",
+        "not stated",
+        "not provided",
+        "not specified",
+    }
+)
+
+
 def _optional_text(value: object) -> str | None:
+    """Keep real wording. Model JSON often emits the string \"null\" for missing fields."""
     if not isinstance(value, str):
         return None
     stripped = value.strip()
-    return stripped or None
+    if not stripped or stripped.casefold() in _NULL_LIKE_TEXT:
+        return None
+    return stripped
 
 
 def classify_rfp(markdown: str, complete_fn: ChatComplete | None = None) -> dict[str, str]:
@@ -329,6 +364,7 @@ def synthesize_findings(
             {"role": "user", "content": user_payload},
         ],
         complete_fn,
+        max_tokens=_SYNTHESIZER_MAX_TOKENS,
     )
     parsed = _parse_object(raw)
     summary_value = parsed.get("summary")

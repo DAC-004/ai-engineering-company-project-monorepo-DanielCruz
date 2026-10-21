@@ -29,6 +29,15 @@ _SCHEDULE = re.compile(
     r"\b(\d+|two|three|four|five)\s+days?\s*(?:/|a|per)\s*week\b",
     re.IGNORECASE,
 )
+_PROPOSAL_DEADLINE_ABSENCE = re.compile(
+    r"no\s+proposal\s+deadline|proposal\s+deadline\s+(?:is\s+)?not\s+stated",
+    re.IGNORECASE,
+)
+
+
+def is_proposal_deadline_absence_aspect(text: str) -> bool:
+    """True when an aspect only records that the source omitted a proposal deadline."""
+    return bool(_PROPOSAL_DEADLINE_ABSENCE.search(text.strip()))
 _CLINIC_SCHEDULE = re.compile(
     r"\bclinic\s+staffed\s+\d+\s*days?\s*/\s*week\b",
     re.IGNORECASE,
@@ -51,6 +60,21 @@ _CONTRACT_TERM = re.compile(
 _CONTACT_WITHHELD_BUDGET = re.compile(
     r"\b(?:has not|have not|did not|hasn't|didn't|failed to|does not|do not|doesn't|don't)\s+"
     r"(?:provid\w*|includ\w*|stat\w*|suppl\w*|giv\w*)\b",
+    re.IGNORECASE,
+)
+# "confirm there is no budget" asserts absence. A null budget_range means unknown.
+_ASSERTS_ABSENT_BUDGET = re.compile(
+    r"\b(?:confirm\s+(?:that\s+)?)?there\s+is\s+no\s+budget\b"
+    r"|\bno\s+budget\s+(?:for\s+this\s+project|is\s+stated|was\s+provided)\b",
+    re.IGNORECASE,
+)
+_APPOINTMENT_VOLUME = re.compile(
+    r"\b(?:approximately|about|around)?\s*\d+\s+"
+    r"(?:(?:on-?site\s+)?visits?|appointments?|consultations?)\s+per\s+month\b",
+    re.IGNORECASE,
+)
+_PROPOSED_SERVICE_START = re.compile(
+    rf"\bproposed(?:\s+service)?\s+start(?: date)?(?:\s+in|\s*:)?\s+(?:{_MONTHS})\s+\d{{4}}\b",
     re.IGNORECASE,
 )
 
@@ -125,6 +149,63 @@ def _asks_stated_clinic_schedule(question: str, source: str) -> bool:
         return False
     lowered = question.lower()
     return "clinic" in lowered and "staff" in lowered and "how many" in lowered
+
+
+def _asks_stated_appointment_volume(question: str, source: str) -> bool:
+    """Do not ask for monthly appointment volume the document already states."""
+    if appointment_volume_clause(source) is None:
+        return False
+    lowered = question.lower()
+    if "appointment" not in lowered:
+        return False
+    return bool(
+        re.search(r"\b(volume|how many|per month|expected|anticipated)\b", lowered)
+    )
+
+
+def _asks_as_if_service_start_missing(question: str, source: str) -> bool:
+    """Drop questions that treat start as absent when a month/year start is stated.
+
+    An exact calendar day may still be unknown. That is not the same as no
+    proposed service start. Exact-day questions are left alone.
+    """
+    if proposed_service_start_clause(source) is None:
+        return False
+    lowered = question.lower()
+    if re.search(r"\b(exact|specific)\s+day\b|\bday of (the )?month\b|\bcalendar day\b", lowered):
+        return False
+    return bool(
+        re.search(
+            r"\b(what|when)\b.{0,40}\b(proposed\s+)?(service\s+)?start(\s+date)?\b",
+            lowered,
+        )
+    )
+
+
+def _sentence_asks_stated_appointment_volume(sentence: str, source: str) -> bool:
+    if appointment_volume_clause(source) is None:
+        return False
+    lowered = sentence.lower()
+    if "appointment" not in lowered:
+        return False
+    return bool(re.search(r"\b(volume|how many|per month|provide|expected|anticipated)\b", lowered))
+
+
+def _sentence_asks_as_if_service_start_missing(sentence: str, source: str) -> bool:
+    return _asks_as_if_service_start_missing(sentence, source)
+
+
+def _scrub_answered_demand_asks(summary: str, source: str) -> str:
+    """Remove summary asks for demand facts the source already stated."""
+    sentences = _summary_sentences(summary)
+    kept: list[str] = []
+    for sentence in sentences:
+        if _sentence_asks_stated_appointment_volume(sentence, source):
+            continue
+        if _sentence_asks_as_if_service_start_missing(sentence, source):
+            continue
+        kept.append(sentence)
+    return " ".join(kept)
 
 
 def _clinical_has_schedule(aspects: list[str], figure: str) -> bool:
@@ -229,10 +310,26 @@ def _ensure_phrase(text: str, phrase: str) -> str:
 
 
 def preserve_deadline_text(current: str | None, source: str) -> str | None:
-    """Keep every approximate deadline qualifier that appears in the document."""
+    """Keep every approximate deadline qualifier that appears in the document.
+
+    A proposal deadline is not a service start month. When the source has no
+    approximate deadline phrasing, drop model-invented relative-day deadlines
+    such as "about 25 days" and keep only wording that still appears in the
+    source. Unknown stays null.
+    """
     relative, calendar = _source_deadline_phrases(source)
     if relative is None and calendar is None:
-        return current
+        if not isinstance(current, str) or not current.strip():
+            return None
+        text = _collapsed(current)
+        # Remove relative-day inventions the document never stated.
+        text = _RELATIVE_DEADLINE.sub("", text)
+        text = _collapsed(text).strip(" ,;")
+        if not text:
+            return None
+        if _normalized(text) in _normalized(source):
+            return text
+        return None
     text = _strip_invented_year(_collapsed(current or ""), calendar)
     text = _strip_reasonable_deadline(text)
     if relative is not None:
@@ -304,9 +401,34 @@ def _ensure_contract_term(source: str, sections: list[dict[str, Any]]) -> None:
         return
 
 
+_NULL_LIKE_METADATA = frozenset(
+    {
+        "null",
+        "none",
+        "n/a",
+        "na",
+        "nil",
+        "undefined",
+        "unknown",
+        "not stated",
+        "not provided",
+        "not specified",
+    }
+)
+
+
+def normalize_optional_metadata_text(value: object) -> str | None:
+    """Treat empty and null-like model strings as missing metadata."""
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    if not stripped or stripped.casefold() in _NULL_LIKE_METADATA:
+        return None
+    return stripped
+
+
 def _budget_was_not_stated(metadata: dict[str, Any]) -> bool:
-    budget = metadata.get("budget_range")
-    return not (isinstance(budget, str) and budget.strip())
+    return normalize_optional_metadata_text(metadata.get("budget_range")) is None
 
 
 def _sentence_blames_revenue_for_missing_budget(sentence: str, contacts: list[str]) -> bool:
@@ -319,6 +441,11 @@ def _sentence_blames_revenue_for_missing_budget(sentence: str, contacts: list[st
     if "revenue cycle contact" in lowered or re.search(r"\brevenue contact\b", lowered):
         return True
     return any(contact.lower() in lowered for contact in contacts)
+
+
+def _sentence_asserts_absent_budget(sentence: str) -> bool:
+    """True when the summary treats a missing budget as confirmed zero budget."""
+    return _ASSERTS_ABSENT_BUDGET.search(sentence) is not None
 
 
 def _reattribute_missing_budget(
@@ -334,8 +461,6 @@ def _reattribute_missing_budget(
         for section in sections
         if section.get("department_id") == "revenue" and str(section.get("contact_name") or "").strip()
     ]
-    if not contacts:
-        return summary
     sentences = re.split(r"(?<=[.!?])\s+|\n+", summary.strip())
     kept: list[str] = []
     replaced = False
@@ -343,14 +468,89 @@ def _reattribute_missing_budget(
         stripped = sentence.strip()
         if not stripped:
             continue
-        blames_contact = _sentence_blames_revenue_for_missing_budget(stripped, contacts)
-        if blames_contact:
+        blames_contact = bool(contacts) and _sentence_blames_revenue_for_missing_budget(
+            stripped, contacts
+        )
+        asserts_absent = _sentence_asserts_absent_budget(stripped)
+        if blames_contact or asserts_absent:
             if not replaced:
                 kept.append("The source request did not state a budget or payment terms.")
                 replaced = True
             continue
         kept.append(stripped)
     return " ".join(kept)
+
+
+def appointment_volume_clause(source: str) -> str | None:
+    """Return a stated monthly appointment volume from the document, or None."""
+    match = _APPOINTMENT_VOLUME.search(_collapsed(source))
+    if match is None:
+        return None
+    clause = match.group(0).strip(" -")
+    if clause and clause[-1] not in ".!?":
+        clause = f"{clause}."
+    return clause[0].upper() + clause[1:]
+
+
+def proposed_service_start_clause(source: str) -> str | None:
+    """Return a stated proposed service start month/year, not a proposal deadline."""
+    match = _PROPOSED_SERVICE_START.search(_collapsed(source))
+    if match is None:
+        return None
+    clause = match.group(0).strip(" -")
+    if clause and clause[-1] not in ".!?":
+        clause = f"{clause}."
+    return clause[0].upper() + clause[1:]
+
+
+def _aspect_covers_clause(aspects: list[str], clause: str) -> bool:
+    """True when an aspect already carries the same figures or normalized wording."""
+    target = _normalized(clause)
+    target_figures = set(re.findall(r"\b\d[\d,]*(?:\.\d+)?\b", clause))
+    for aspect in aspects:
+        if target in _normalized(aspect):
+            return True
+        if target_figures and target_figures <= set(re.findall(r"\b\d[\d,]*(?:\.\d+)?\b", aspect)):
+            lowered_aspect = aspect.lower()
+            if "month" in lowered_aspect and any(
+                token in lowered_aspect for token in ("appointment", "visit", "consultation")
+            ):
+                return True
+            if "proposed start" in aspect.lower() or re.search(
+                rf"\b(?:{_MONTHS})\s+\d{{4}}\b", aspect, re.IGNORECASE
+            ):
+                return True
+    return False
+
+
+def _ensure_clinical_demand_facts(source: str, sections: list[dict[str, Any]]) -> None:
+    """Keep stated appointment volume and proposed service start on clinical.
+
+    These are demand facts from the request. They are not proposal deadlines and
+    are not invented when the source omits them.
+    """
+    volume = appointment_volume_clause(source)
+    start = proposed_service_start_clause(source)
+    if volume is None and start is None:
+        return
+    for section in sections:
+        if section.get("department_id") != "clinical":
+            continue
+        aspects = [str(aspect) for aspect in section.get("aspects") or []]
+        # Drop placeholder labels once the concrete source clause is known.
+        if volume is not None:
+            aspects = [
+                aspect
+                for aspect in aspects
+                if not re.fullmatch(r"expected appointment volume\.?", aspect.strip(), re.IGNORECASE)
+            ]
+        additions: list[str] = []
+        if volume is not None and not _aspect_covers_clause(aspects, volume):
+            additions.append(volume)
+        if start is not None and not _aspect_covers_clause(aspects, start):
+            additions.append(start)
+        section["aspects"] = [*aspects, *additions] if additions else aspects
+        return
 
 
 def _coverage_sentence(section: dict[str, Any]) -> str | None:
@@ -365,9 +565,17 @@ def _coverage_sentence(section: dict[str, Any]) -> str | None:
         for question in section.get("open_questions") or []
         if str(question).strip()
     ]
-    # Prefer the contract term when this section carries it, then other stated aspects.
+    # Prefer concrete stated facts over vague placeholders such as "expected appointment volume".
     contract_aspects = [aspect for aspect in aspects if re.search(r"\bcontract term\b", aspect, re.IGNORECASE)]
-    points = (contract_aspects or aspects)[:2] or questions[:1]
+    demand_aspects = [
+        aspect
+        for aspect in aspects
+        if re.search(r"\bappointments?\s+per\s+month\b", aspect, re.IGNORECASE)
+        or re.search(r"\bproposed start\b", aspect, re.IGNORECASE)
+    ]
+    concrete = contract_aspects or demand_aspects
+    remaining = [aspect for aspect in aspects if aspect not in concrete]
+    points = (concrete + remaining)[:2] or questions[:1]
     detail = "; ".join(points) if points else "the points recorded for this department"
     label = f"{contact} ({department})" if department else contact
     return f"Ask {label} about {detail}."
@@ -447,8 +655,7 @@ def _ensure_department_coverage(summary: str, sections: list[dict[str, Any]]) ->
 
 def _ensure_missing_budget_question(metadata: dict[str, Any], sections: list[dict[str, Any]]) -> None:
     """A missing budget stays an open question even when the revenue worker omits it."""
-    budget = metadata.get("budget_range")
-    if isinstance(budget, str) and budget.strip():
+    if normalize_optional_metadata_text(metadata.get("budget_range")) is not None:
         return
     for section in sections:
         if section.get("department_id") != "revenue":
@@ -459,6 +666,17 @@ def _ensure_missing_budget_question(metadata: dict[str, Any], sections: list[dic
             return
         section["open_questions"] = [*questions, "Budget or payment terms were not stated."]
         return
+
+
+def _ensure_missing_budget_summary(summary: str, metadata: dict[str, Any]) -> str:
+    """State that an omitted budget belongs to the source when the summary never says so."""
+    if not _budget_was_not_stated(metadata):
+        return summary
+    if re.search(r"\bsource request did not state a budget\b", summary, re.IGNORECASE):
+        return summary
+    line = "The source request did not state a budget or payment terms."
+    base = summary.strip()
+    return f"{base}\n{line}".strip() if base else line
 
 
 def apply_source_grounding(
@@ -474,8 +692,11 @@ def apply_source_grounding(
     when a worker attached it to revenue.
     """
     grounded_metadata = dict(metadata)
+    grounded_metadata["budget_range"] = normalize_optional_metadata_text(
+        metadata.get("budget_range")
+    )
     grounded_metadata["deadline"] = preserve_deadline_text(
-        metadata.get("deadline") if isinstance(metadata.get("deadline"), str) else None,
+        normalize_optional_metadata_text(metadata.get("deadline")),
         source,
     )
     schedule = clinic_schedule_clause(source)
@@ -495,9 +716,23 @@ def apply_source_grounding(
             questions = [
                 question
                 for question in questions
-                if not _assigns_revenue_staffing(question) and not _asks_stated_clinic_schedule(question, source)
+                if not _assigns_revenue_staffing(question)
+                and not _asks_stated_clinic_schedule(question, source)
+                and not _asks_stated_appointment_volume(question, source)
+                and not _asks_as_if_service_start_missing(question, source)
+            ]
+        else:
+            questions = [
+                question
+                for question in questions
+                if not _asks_stated_appointment_volume(question, source)
+                and not _asks_as_if_service_start_missing(question, source)
             ]
         aspects = [aspect for aspect in aspects if not _assumed_staffing(aspect)]
+        if section.get("department_id") != "revenue":
+            aspects = [
+                aspect for aspect in aspects if not is_proposal_deadline_absence_aspect(aspect)
+            ]
         if section.get("department_id") != "clinical":
             aspects = [aspect for aspect in aspects if not _is_clinic_schedule(aspect)]
         aspects = [_align_deadline_statement(aspect, source) for aspect in aspects]
@@ -516,9 +751,12 @@ def apply_source_grounding(
 
     _ensure_missing_budget_question(grounded_metadata, grounded_sections)
     _ensure_contract_term(source, grounded_sections)
+    _ensure_clinical_demand_facts(source, grounded_sections)
 
     grounded_summary = _without_revenue_staffing(summary, source)
     grounded_summary = _align_deadline_statement(grounded_summary, source)
     grounded_summary = _reattribute_missing_budget(grounded_summary, grounded_metadata, grounded_sections)
+    grounded_summary = _scrub_answered_demand_asks(grounded_summary, source)
     grounded_summary = _ensure_department_coverage(grounded_summary, grounded_sections)
+    grounded_summary = _ensure_missing_budget_summary(grounded_summary, grounded_metadata)
     return grounded_metadata, grounded_sections, grounded_summary

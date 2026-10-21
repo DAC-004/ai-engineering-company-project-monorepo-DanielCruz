@@ -17,9 +17,21 @@ from data.pipelines.rfp_intake.generators import (
 def test_revenue_generator_uses_its_aspects_and_does_not_invent_population() -> None:
     calls: list[list[dict[str, str]]] = []
 
+    long_draft = (
+        "Pricing is quoted in USD for this occupational health program. "
+        "Covered population was not stated, so no headcount is assumed in this section. "
+        "The contract term aspect from the handoff is twelve months. "
+        "Budget was not stated, so this draft does not invent a price, discount, or payment schedule. "
+        "Assumptions are limited to the stated currency and term. "
+        "Exclusions include any figure that was not supplied in the request. "
+        "Information still required before a final quotation includes budget range, "
+        "billing contact, invoice cadence, and any site-specific commercial constraints. "
+        "This section stays within the revenue scope and does not address clinical staffing."
+    )
+
     def complete(messages: list[dict[str, str]]) -> str:
         calls.append(messages)
-        return "Pricing is quoted in USD. Covered population was not stated."
+        return long_draft
 
     section = generate_revenue_section(
         {
@@ -43,7 +55,7 @@ def test_revenue_generator_uses_its_aspects_and_does_not_invent_population() -> 
     assert "Do not invent a headcount" in payload["metadata"]["missing_population_instruction"]
     assert "CLINICAL-ONLY-SENTINEL" not in calls[0][1]["content"]
     assert "synthesizer_summary" not in calls[0][1]["content"]
-    assert section == "Pricing is quoted in USD. Covered population was not stated."
+    assert section == long_draft
 
 
 def test_each_department_generator_receives_only_its_own_aspects() -> None:
@@ -55,14 +67,25 @@ def test_each_department_generator_receives_only_its_own_aspects() -> None:
     seen: dict[str, str] = {}
 
     def complete(messages: list[dict[str, str]]) -> str:
-        payload = json.loads(messages[1]["content"])
+        # Continuation passes an assistant turn; only the first user payload is JSON.
+        user_payload = messages[1]["content"]
+        payload = json.loads(user_payload)
         department_id = payload["department_id"]
-        seen[department_id] = messages[0]["content"]
+        if department_id not in seen:
+            seen[department_id] = messages[0]["content"]
         assert payload["key_aspects"]["aspects"] == [expected[department_id]]
         for other_id, other_aspect in expected.items():
             if other_id != department_id:
-                assert other_aspect not in messages[1]["content"]
-        return department_id
+                assert other_aspect not in user_payload
+        # Return enough words so continuation, rewrite, and simplify passes do not run.
+        return (
+            f"{department_id} draft for Meridian Manufacturing covers the stated aspect. "
+            "This paragraph stays inside the department scope and uses plain business sentences. "
+            "It records open questions when a figure is missing and does not invent prices, "
+            "staffing headcounts, signed agreements, or confirmed availability for the program. "
+            "Additional sentences keep the section long enough for the readability floor while "
+            "remaining faithful to the shared metadata already supplied in the handoff payload."
+        )
 
     metadata = {"client_name": "Meridian Manufacturing", "client_country": "US", "covered_population": "800 employees"}
     generate_revenue_section(metadata, {"aspects": [expected["revenue"]], "open_questions": []}, complete)
