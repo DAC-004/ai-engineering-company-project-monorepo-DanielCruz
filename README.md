@@ -1,3 +1,39 @@
+# HealthCore
+## Connected operations and AI-assisted workflows
+
+HealthCore is a full-stack application built around a simulated healthcare organization. It brings operational information, knowledge retrieval and agent-assisted workflows into connected staff-facing tools, with human review where a workflow requires approval.
+
+**Context:** Individual 4Geeks Academy AI Engineering capstone. This is educational work, not a paid healthcare engagement or a certified clinical system.
+
+## Who it is for and what it solves
+
+The simulated users are staff coordinating inventory, incidents, suppliers and information requests. The project explores how a shared application can connect those activities instead of leaving each task in a separate interface or document.
+
+## How it works
+
+1. Staff use role-specific application interfaces to access operational workflows.
+2. Backend services handle requests and connect application data with retrieval and agent tools.
+3. Workflows support incident analysis, knowledge lookup and review of generated or proposed actions.
+4. Approval-sensitive processes, including RFP workflows, retain a human decision step.
+
+## My contribution
+
+I developed the project individually, connecting frontend interfaces, backend services, retrieval and agent workflows. I also created supporting technical documentation and tests so the implementation can be examined beyond the presentation layer.
+
+## Implementation and evidence
+
+Core technologies include Python, FastAPI, TypeScript, Next.js and Qdrant. The repository contains runtime documentation, application services and test artifacts, including authorization and safety-related tests. These artifacts make the workflow design and evaluation approach inspectable.
+
+[Source repository](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz)
+
+[Integrated runtime architecture](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/blob/main/docs/campaign/CAMPAIGN_RUNTIME.md)
+
+## Access and boundaries
+
+[View the Talent Pipeline component](https://talent-pipeline-tracker.vercel.app/). This is one deployed interface, not a public deployment of the complete HealthCore system.
+
+---
+
 # AI Engineering Company Project — Student Template
 
 [![4Geeks Academy](https://img.shields.io/badge/4Geeks-Academy-blue)](https://4geeksacademy.com)
