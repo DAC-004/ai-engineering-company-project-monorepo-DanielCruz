@@ -7,12 +7,13 @@ has a redacted draft and an evaluation.
 
 from __future__ import annotations
 
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
 
 from data.pipelines.rfp_intake.departments import DEPARTMENT_IDS, DEPARTMENTS
 from data.pipelines.rfp_intake.evaluators import evaluate_in_parallel
-from data.pipelines.rfp_intake.generation import ChatComplete
+from data.pipelines.rfp_intake.generation import ChatComplete, ModelAssetMissing, PipelineFailure
 from data.pipelines.rfp_intake.generators import (
     generate_clinical_section,
     generate_compliance_section,
@@ -22,6 +23,7 @@ from data.pipelines.rfp_intake.phi import screen_generated
 
 MAX_ATTEMPTS = 3
 ProgressCallback = Callable[[dict[str, Any]], None]
+logger = logging.getLogger("healthcore.rfp_intake")
 
 _GENERATORS = {
     "revenue": generate_revenue_section,
@@ -69,50 +71,76 @@ def run_department(
     agent = DEPARTMENTS[department_id]["contact_name"]
     last_evaluation: dict[str, Any] = {}
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        if on_progress is not None:
-            on_progress({"department_id": department_id, "phase": "drafting", "attempt": attempt})
-        raw_draft = generator(metadata, key_aspects, complete_fn, feedback=revision_feedback)
-        if on_node is not None:
-            on_node(
-                {
-                    "node": "generate",
-                    "agent": agent,
-                    "input": {"department_id": department_id, "attempt": attempt},
-                    "output": {"draft_content": raw_draft},
-                }
+        phase = "generate"
+        try:
+            if on_progress is not None:
+                on_progress({"department_id": department_id, "phase": "drafting", "attempt": attempt})
+            client_draft = generator(metadata, key_aspects, complete_fn, feedback=revision_feedback)
+            if on_node is not None:
+                on_node(
+                    {
+                        "node": "generate",
+                        "agent": agent,
+                        "input": {"department_id": department_id, "attempt": attempt},
+                        "output": {"draft_content": client_draft},
+                    }
+                )
+            screened = screen_generated(client_draft, allowed_names=allowed_names)
+            phase = "evaluate"
+            if on_progress is not None:
+                on_progress({"department_id": department_id, "phase": "under_evaluation", "attempt": attempt})
+            evaluation = evaluate_in_parallel(
+                screened.text,
+                aspects,
+                department_id,
+                metadata,
+                allowed_names=allowed_names,
             )
-        screened = screen_generated(raw_draft, allowed_names=allowed_names)
-        if on_progress is not None:
-            on_progress({"department_id": department_id, "phase": "under_evaluation", "attempt": attempt})
-        evaluation = evaluate_in_parallel(
-            raw_draft,
-            aspects,
-            department_id,
-            metadata,
-            allowed_names=allowed_names,
-        )
-        # Redaction can remove the only evidence. Keep the flag from the original screen.
-        if screened.detected:
-            evaluation["contains_phi"] = True
-            compliance = evaluation.get("compliance")
-            if isinstance(compliance, dict):
-                compliance["contains_phi"] = True
-                compliance["pass"] = False
-                rule_ids = compliance.get("rule_ids")
-                if isinstance(rule_ids, list) and "HC-NO-PHI" not in rule_ids:
-                    rule_ids.append("HC-NO-PHI")
-            evaluation["overall_pass"] = False
-        if on_node is not None:
-            on_node(
-                {
-                    "node": "evaluate",
-                    "agent": agent,
-                    "input": {"department_id": department_id, "attempt": attempt},
-                    "output": evaluation,
-                }
+            # Redaction can remove the only evidence. Keep the flag from the original screen.
+            if screened.detected:
+                evaluation["contains_phi"] = True
+                compliance = evaluation.get("compliance")
+                if isinstance(compliance, dict):
+                    compliance["contains_phi"] = True
+                    compliance["pass"] = False
+                    rule_ids = compliance.get("rule_ids")
+                    if isinstance(rule_ids, list) and "HC-NO-PHI" not in rule_ids:
+                        rule_ids.append("HC-NO-PHI")
+                evaluation["overall_pass"] = False
+            if on_node is not None:
+                on_node(
+                    {
+                        "node": "evaluate",
+                        "agent": agent,
+                        "input": {"department_id": department_id, "attempt": attempt},
+                        "output": evaluation,
+                    }
+                )
+            last_draft = screened.text
+            last_evaluation = evaluation
+        except ModelAssetMissing:
+            raise
+        except Exception as exc:
+            logger.error(
+                "rfp_department_attempt_failed department=%s attempt=%s phase=%s type=%s",
+                department_id,
+                attempt,
+                phase,
+                type(exc).__name__,
             )
-        last_draft = screened.text
-        last_evaluation = evaluation
+            if last_draft:
+                return {
+                    "department_id": department_id,
+                    "draft_content": last_draft,
+                    "evaluation_results": last_evaluation,
+                    "needs_human_review": True,
+                    "attempt_count": attempt,
+                }
+            if attempt < MAX_ATTEMPTS:
+                continue
+            if isinstance(exc, PipelineFailure):
+                raise
+            raise PipelineFailure("department_loop_exception") from None
         if evaluation.get("overall_pass") and not screened.detected:
             return {
                 "department_id": department_id,
