@@ -98,10 +98,6 @@ export const LoginForm = () => {
       <p className="auth-switch">
         <Link href="/forgot-password">Forgot your password?</Link>
       </p>
-
-      <p className="auth-switch">
-        Need an account? <Link href="/register">Register</Link>
-      </p>
     </form>
   );
 };

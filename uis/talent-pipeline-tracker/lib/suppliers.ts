@@ -64,11 +64,13 @@ const buildQuery = (filters?: SupplierListFilters): string => {
   return query ? `?${query}` : "";
 };
 
-/** Public list endpoint; no bearer required. */
+/** Authenticated list; GET /suppliers requires a bearer token. */
 export const listSuppliers = async (
   filters?: SupplierListFilters,
 ): Promise<SupplierRecord[]> => {
-  return apiFetch<SupplierRecord[]>(`/suppliers${buildQuery(filters)}`);
+  return apiFetch<SupplierRecord[]>(`/suppliers${buildQuery(filters)}`, {
+    auth: true,
+  });
 };
 
 export const createSupplier = async (

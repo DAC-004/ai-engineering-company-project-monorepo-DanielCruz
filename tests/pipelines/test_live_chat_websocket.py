@@ -162,7 +162,7 @@ def test_live_socket_streams_and_interrupt_stops_the_model(live_chat: int) -> No
 
     user = user_service.create_user(
         UserCreate(email="live.staff@example.com", password="test-password-1"),
-        role=UserRole.manager,
+        role=UserRole.supervisor,
     )
     token = create_access_token(subject=user.id)
     url = _chat_url(live_chat, _SESSION_ID)
@@ -377,7 +377,7 @@ def test_live_no_retry_streams_before_the_iterator_finishes(
 
     user = user_service.create_user(
         UserCreate(email="noretry.staff@example.com", password="test-password-1"),
-        role=UserRole.manager,
+        role=UserRole.supervisor,
     )
     token = create_access_token(subject=user.id)
 
@@ -501,7 +501,7 @@ def test_live_retry_is_not_concatenated_onto_the_streamed_attempt(live_chat: int
         pytest.fail(f"Local GGUF is missing: {model_file}")
     user = user_service.create_user(
         UserCreate(email="retry.staff@example.com", password="test-password-1"),
-        role=UserRole.manager,
+        role=UserRole.supervisor,
     )
     token = create_access_token(subject=user.id)
     url = _chat_url(live_chat, "chat_live_retry")

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { useCurrentUser } from "@/lib/auth/CurrentUserContext";
+import { canUpdateDepartmentRecord } from "@/lib/auth/capabilities";
 import { fetchCurrentUser } from "@/lib/auth/session";
 import { ApiError } from "@/lib/auth/types";
 import {
@@ -61,6 +63,8 @@ type RfpTicketPanelProps = {
 };
 
 export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
+  const currentUser = useCurrentUser();
+  const canApprove = canUpdateDepartmentRecord(currentUser?.role);
   const [ticket, setTicket] = useState<RfpTicket | null>(null);
   const [finalDocument, setFinalDocument] = useState<RfpFinalDocument | null>(null);
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
@@ -246,7 +250,7 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
         </p>
       ) : null}
       {generationError ? <p className="form-error">{generationError}</p> : null}
-      {readyToStartApproval(ticket) ? (
+      {readyToStartApproval(ticket) && canApprove ? (
         <p className="action-row">
           <button
             type="button"
@@ -371,7 +375,7 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
                 <li>None recorded.</li>
               )}
             </ul>
-            {waiting ? (
+            {waiting && canApprove ? (
               <div className="decision-controls">
                 <label htmlFor={`note-${section.department_id}`} className="field">
                   Note, required for reject or request changes

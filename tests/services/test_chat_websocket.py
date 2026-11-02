@@ -82,7 +82,7 @@ def isolated_stores(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 def _staff_token(email: str) -> str:
     user = user_service.create_user(
         UserCreate(email=email, password="test-password-1"),
-        role=UserRole.manager,
+        role=UserRole.supervisor,
     )
     return create_access_token(subject=user.id)
 

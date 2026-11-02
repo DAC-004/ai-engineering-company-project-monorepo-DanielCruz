@@ -10,7 +10,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import ValidationError
 from sqlmodel import Session
 
-from app.core.deps import get_current_user
+from app.access.permissions import (
+    assert_department_allowed,
+    filter_department_rows,
+    require_authenticated,
+    require_create_record,
+)
 from app.core.safe_errors import public_validation_errors
 from app.db.database import get_db
 from app.inventory_constants import CLINIC_ID_MAX, CLINIC_ID_MIN
@@ -41,17 +46,21 @@ STOCK_FIELD_FORBIDDEN_DETAIL = (
 @router.get("/products", response_model=list[MedicalSupplyPublic])
 def list_products(
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> list[MedicalSupplyPublic]:
-    """List medical supplies with computed current_stock."""
-    return inventory_service.list_medical_supplies(session)
+    """List medical supplies with computed current_stock. Own department; Admin all."""
+    return filter_department_rows(
+        current_user,
+        inventory_service.list_medical_supplies(session),
+        lambda row: row.department_id,
+    )
 
 
 @router.post("/products", response_model=MedicalSupplyPublic, status_code=status.HTTP_201_CREATED)
 async def create_product(
     request: Request,
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_create_record),
 ) -> MedicalSupplyPublic:
     """Create a MedicalSupply catalog row. Authentication required. Stock writes are rejected."""
     try:
@@ -78,7 +87,15 @@ async def create_product(
             status_code=422,
             detail=public_validation_errors(exc.errors()),
         ) from exc
-    return inventory_service.create_medical_supply(session, payload)
+    # Own-department create: a missing caller department is not a match.
+    # Do not substitute Clinical Operations here; that default is only for
+    # missing legacy catalog rows.
+    assert_department_allowed(current_user, current_user.department_id)
+    return inventory_service.create_medical_supply(
+        session,
+        payload,
+        department_id=current_user.department_id,
+    )
 
 
 @router.get("/products/{id}", response_model=MedicalSupplyPublic)
@@ -86,10 +103,12 @@ def get_product(
     id: int,
     clinic_id: int | None = Query(default=None, ge=CLINIC_ID_MIN, le=CLINIC_ID_MAX),
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> MedicalSupplyPublic:
     """Return one MedicalSupply with computed current_stock and optional clinic stock."""
-    return inventory_service.get_medical_supply(session, id, clinic_id=clinic_id)
+    product = inventory_service.get_medical_supply(session, id, clinic_id=clinic_id)
+    assert_department_allowed(current_user, product.department_id)
+    return product
 
 
 @router.api_route(
@@ -100,7 +119,7 @@ def get_product(
 def reject_direct_stock_edit(
     id: int,
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> None:
     """
     Explicitly reject catalog mutations, including any attempt to write stock.
@@ -122,9 +141,11 @@ def reject_direct_stock_edit(
 def create_inbound_order(
     payload: SupplyDeliveryCreate,
     session: Session = Depends(get_db),
-    current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_create_record),
 ) -> SupplyDeliveryPublic:
     """Register a SupplyDelivery attributed to the authenticated TinyDB user."""
+    supply = inventory_service.get_supply_or_404(session, payload.supply_id)
+    assert_department_allowed(current_user, supply.department_id)
     return inventory_service.create_supply_delivery(session, payload, current_user)
 
 
@@ -136,9 +157,11 @@ def create_inbound_order(
 def create_outbound_order(
     payload: SupplyConsumptionCreate,
     session: Session = Depends(get_db),
-    current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_create_record),
 ) -> SupplyConsumptionPublic:
     """Register a SupplyConsumption, or 400 if stock would go negative."""
+    supply = inventory_service.get_supply_or_404(session, payload.supply_id)
+    assert_department_allowed(current_user, supply.department_id)
     try:
         return inventory_service.create_supply_consumption(session, payload, current_user)
     except InsufficientSupplyStockError as exc:
@@ -148,7 +171,15 @@ def create_outbound_order(
 @router.get("/orders", response_model=list[InventoryOrderPublic])
 def list_orders(
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> list[InventoryOrderPublic]:
-    """List deliveries and consumptions with supply data, supply_id, and user_uuid."""
-    return inventory_service.list_inventory_orders(session)
+    """List deliveries and consumptions scoped to the supply's platform department."""
+    supplies = {
+        row.id: row.department_id
+        for row in inventory_service.list_medical_supplies(session)
+    }
+    return filter_department_rows(
+        current_user,
+        inventory_service.list_inventory_orders(session),
+        lambda row: supplies.get(row.supply_id),
+    )

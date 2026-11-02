@@ -33,15 +33,19 @@ from app.celery_app import ensure_broker_connection  # noqa: E402
 from app.db.database import get_engine, init_databases  # noqa: E402
 from app.storage import ensure_runtime_dirs  # noqa: E402
 from app.routers import (  # noqa: E402
+    access,
     agent,
     auth,
+    departments,
     incident_manager,
     incidents,
+    internal_reports,
     inventory,
     chat,
     knowledge,
     profiles,
     rfp_intake,
+    roles,
     suppliers,
     tasks,
     telemetry,
@@ -51,7 +55,11 @@ from app.services.incident_service import (  # noqa: E402
     IncidentFieldError,
     IncidentNotFoundError,
 )
-from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
+from app.services.inventory_seed import (  # noqa: E402
+    ensure_inventory_department_id,
+    seed_inventory_if_empty,
+)
+from app.services.platform_access_seed import ensure_platform_access_seed  # noqa: E402
 from app.services.rfp_demonstration_accounts import ensure_demonstration_accounts  # noqa: E402
 from data.pipelines.reporting_store import ensure_reporting_tables  # noqa: E402
 from services.reporting.router import router as reporting_router  # noqa: E402
@@ -76,8 +84,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     ensure_broker_connection()
     ensure_reporting_tables(get_engine())
     with Session(get_engine()) as session:
+        ensure_inventory_department_id(session)
         seed_inventory_if_empty(session)
         ensure_demonstration_accounts(session)
+    ensure_platform_access_seed()
     yield
     from data.pipelines.rag import release_local_llm
     from shared.healthcore_rag.qdrant import close_qdrant_client
@@ -108,6 +118,10 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(profiles.router)
+app.include_router(access.router)
+app.include_router(roles.router)
+app.include_router(departments.router)
+app.include_router(internal_reports.router)
 # Analyzer static paths (/analyze, /results) must be registered before /{incident_id}.
 app.include_router(incidents.router)
 app.include_router(incident_manager.router)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.deps import get_current_user
+from app.access.permissions import require_authenticated
 from app.schemas.profile import ProfilePublic, ProfileUpdate
 from app.schemas.user import UserInDB
 from app.services import profile_service
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 
 @router.get("/me", response_model=ProfilePublic)
-def read_my_profile(current_user: UserInDB = Depends(get_current_user)) -> ProfilePublic:
+def read_my_profile(current_user: UserInDB = Depends(require_authenticated)) -> ProfilePublic:
     """Return the Profile associated with the authenticated caller."""
     profile = profile_service.get_profile_by_user_id(current_user.id)
     if profile is None:
@@ -24,7 +24,7 @@ def read_my_profile(current_user: UserInDB = Depends(get_current_user)) -> Profi
 @router.put("/me", response_model=ProfilePublic)
 def update_my_profile(
     payload: ProfileUpdate,
-    current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> ProfilePublic:
     """
     Update name/phone/address for the authenticated user's own Profile.

@@ -35,6 +35,8 @@ class MedicalSupply(SQLModel, table=True):
     minimum_stock: int = Field(default=10, ge=0)
     # Supply expiry on the catalog row so supply_expiry_flagged is computable.
     expiry_date: date | None = Field(default=None)
+    # Platform department tag. Missing (NULL) values are filled at startup; explicit values stay.
+    department_id: str | None = Field(default=None, max_length=64, index=True)
 
 
 class SupplyDelivery(SQLModel, table=True):

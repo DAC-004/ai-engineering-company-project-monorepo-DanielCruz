@@ -27,6 +27,8 @@ os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
 os.environ["DATABASE_URL"] = f"sqlite:///{_sqlite_path}"
 os.environ["NLTK_DATA"] = str(REPO_ROOT / "data" / "process" / "nltk_data")
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
+os.environ.pop("PLATFORM_SEED_PASSWORD", None)
 
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlmodel import Session, select  # noqa: E402
@@ -36,7 +38,8 @@ from app.db.database import get_engine, reset_engine_for_tests  # noqa: E402
 from app.db.tinydb import reset_db_for_tests  # noqa: E402
 from app.main import app  # noqa: E402
 from app.rfp_models import DepartmentSection, RfpMetadata, RfpTicket  # noqa: E402
-from app.services import rfp_service  # noqa: E402
+from app.schemas.user import UserCreate, UserRole  # noqa: E402
+from app.services import rfp_service, user_service  # noqa: E402
 from data.pipelines.rfp_intake.runner import IntakeRun, process_pdf  # noqa: E402
 
 get_settings.cache_clear()
@@ -152,17 +155,30 @@ def _complete(messages: list[dict[str, str]]) -> str:
     raise AssertionError("unexpected agent role")
 
 
+def _login_header(client: TestClient, email: str, password: str = "validpass1") -> dict[str, str]:
+    login = client.post("/auth/login", data={"username": email, "password": password})
+    assert login.status_code == 200, login.text
+    return {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+
 def _auth_header(client: TestClient) -> dict[str, str]:
-    client.post(
-        "/users",
-        json={"email": "rfp-intake@example.com", "password": "validpass1", "name": "RFP Tester"},
-    )
-    login = client.post(
-        "/auth/login",
-        data={"username": "rfp-intake@example.com", "password": "validpass1"},
-    )
-    token = login.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    if user_service.get_user_by_email("rfp-intake@example.com") is None:
+        user_service.create_user(
+            UserCreate(email="rfp-intake@example.com", password="validpass1", name="RFP Tester"),
+            role=UserRole.employee,
+            department_id="clinical_operations",
+        )
+    return _login_header(client, "rfp-intake@example.com")
+
+
+def _admin_header(client: TestClient) -> dict[str, str]:
+    if user_service.get_user_by_email("rfp-intake-admin@example.com") is None:
+        user_service.create_user(
+            UserCreate(email="rfp-intake-admin@example.com", password="validpass1", name="RFP Admin"),
+            role=UserRole.admin,
+            department_id="technology",
+        )
+    return _login_header(client, "rfp-intake-admin@example.com")
 
 
 def test_upload_returns_analyzing_then_reaches_intake_complete(caplog) -> None:
@@ -181,12 +197,18 @@ def test_upload_returns_analyzing_then_reaches_intake_complete(caplog) -> None:
             body = created.json()
             assert body["status"] == "analyzing"
             ticket_id = body["ticket_id"]
-            loaded = client.get(f"/rfp/tickets/{ticket_id}", headers=headers)
+            loaded = client.get(
+                f"/rfp/tickets/{ticket_id}",
+                headers=_admin_header(client),
+            )
+            scoped = client.get(f"/rfp/tickets/{ticket_id}", headers=headers)
     finally:
         rfp_service.complete_override_fn = None
         rfp_service.storage_override = None
 
     assert loaded.status_code == 200
+    assert scoped.status_code == 200
+    assert {section["department_id"] for section in scoped.json()["sections"]} == {"clinical"}
     payload = loaded.json()
     assert payload["status"] == "intake_complete"
     assert payload["processing_failed"] is False
@@ -517,7 +539,7 @@ def test_response_entry_drafts_from_the_handoff_without_parsing_the_pdf(monkeypa
                 session.add(ticket)
                 session.commit()
             started = client.post("/rfp/tickets/ready-ticket-1/response", headers=headers)
-            loaded = client.get("/rfp/tickets/ready-ticket-1", headers=headers)
+            loaded = client.get("/rfp/tickets/ready-ticket-1", headers=_admin_header(client))
     finally:
         rfp_service.complete_override_fn = None
 
@@ -576,7 +598,10 @@ def test_exhausted_revenue_section_sets_ticket_needs_human_review(monkeypatch: p
                 )
                 session.commit()
             started = client.post("/rfp/tickets/exhausted-ticket-1/response", headers=headers)
-            loaded = client.get("/rfp/tickets/exhausted-ticket-1", headers=headers)
+            loaded = client.get(
+                "/rfp/tickets/exhausted-ticket-1",
+                headers=_admin_header(client),
+            )
     finally:
         rfp_service.complete_override_fn = None
 

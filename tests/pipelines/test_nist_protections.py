@@ -172,7 +172,20 @@ def _directory_user() -> UserInDB:
         id="directory-user",
         email="directory@example.com",
         is_active=True,
-        role=UserRole.user,
+        role=UserRole.employee,
+        created_at=datetime.now(UTC),
+        hashed_password="not-used",
+    )
+
+
+def _directory_admin() -> UserInDB:
+    return UserInDB(
+        id="directory-admin",
+        email="directory.admin@example.com",
+        is_active=True,
+        role=UserRole.admin,
+        role_id=UserRole.admin,
+        department_id="technology",
         created_at=datetime.now(UTC),
         hashed_password="not-used",
     )
@@ -181,14 +194,20 @@ def _directory_user() -> UserInDB:
 def test_supplier_delete_route_rejects_a_request_without_the_header(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Anonymous delete is unauthorized. An authenticated delete still needs the header."""
+    """Anonymous delete is unauthorized. Admin delete still needs the header."""
     anonymous = FastAPI()
     anonymous.include_router(suppliers_router)
     assert TestClient(anonymous).delete("/suppliers/41").status_code == 401
 
+    employee_app = FastAPI()
+    employee_app.include_router(suppliers_router)
+    employee_app.dependency_overrides[get_current_user] = _directory_user
+    employee_denied = TestClient(employee_app).delete("/suppliers/41")
+    assert employee_denied.status_code == 403
+
     application = FastAPI()
     application.include_router(suppliers_router)
-    application.dependency_overrides[get_current_user] = _directory_user
+    application.dependency_overrides[get_current_user] = _directory_admin
     client = TestClient(application)
     caplog.clear()
     with caplog.at_level(logging.INFO):

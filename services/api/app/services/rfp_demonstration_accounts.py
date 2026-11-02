@@ -14,6 +14,7 @@ from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
 
+from app.access.catalog import RFP_DEPARTMENT_TO_PLATFORM
 from app.rfp_models import RfpDepartmentAccount
 from app.schemas.user import UserCreate, UserRole
 from app.services import user_service
@@ -52,7 +53,11 @@ DEMONSTRATION_ACCOUNTS: tuple[dict[str, str], ...] = (
 
 
 def ensure_demonstration_accounts(session: Session) -> None:
-    """Create each account once and bind its id. An existing binding is left in place.
+    """Create each missing account once and bind its id when no binding exists.
+
+    An existing user keeps its id, credentials, role, and department. An existing
+    RFP department-owner binding is left in place. Specialized seed identities use
+    different emails and are not selected here.
 
     When the password is not configured, no account is created and no password
     is invented. Callers that need the accounts set ``RFP_DEMONSTRATION_PASSWORD``.
@@ -64,9 +69,11 @@ def ensure_demonstration_accounts(session: Session) -> None:
     for spec in DEMONSTRATION_ACCOUNTS:
         existing_user = user_service.get_user_by_email(spec["email"])
         if existing_user is None:
+            platform_department = RFP_DEPARTMENT_TO_PLATFORM[spec["department_id"]]
             existing_user = user_service.create_user(
                 UserCreate(email=spec["email"], password=demonstration_password()),
-                role=UserRole.user,
+                role=UserRole.supervisor,
+                department_id=platform_department,
             )
         binding = session.get(RfpDepartmentAccount, spec["department_id"])
         if binding is None:

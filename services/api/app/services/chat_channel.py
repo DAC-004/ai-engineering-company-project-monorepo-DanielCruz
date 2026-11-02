@@ -318,13 +318,22 @@ def _finalize_successful_generation(
     outcome_answer: str,
     fail_generation: Callable[[], None],
 ) -> bool:
-    """Publish a completed turn or invoke ``fail_generation``. Return False on failure."""
-    if not assistant.text.strip():
+    """Publish a completed turn or invoke ``fail_generation``. Return False on failure.
+
+    Empty ``assistant.text`` means nothing was streamed. Reconciling the raw
+    outcome onto that field first would skip the gate and the fail path.
+    Non-streamed text therefore publishes through the same release gate, or
+    fails when withholding/prohibited observations block fallback.
+    """
+    streamed = assistant.text
+    if not streamed.strip():
         if outcome_answer.strip():
             if _may_publish_non_streamed_outcome(watch):
                 if not _publish_through_release_gate(watch, outcome_answer):
                     fail_generation()
                     return False
+                if not assistant.text.strip():
+                    assistant.text = watch.published_text
             else:
                 fail_generation()
                 return False

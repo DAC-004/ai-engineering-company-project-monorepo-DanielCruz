@@ -6,7 +6,15 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Re
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
-from app.core.deps import get_current_user
+from app.access.catalog import Capability, RFP_DEPARTMENT_TO_PLATFORM, is_admin
+from app.access.permissions import (
+    INSUFFICIENT_DEPARTMENT_DETAIL,
+    assert_capability,
+    require_authenticated,
+    require_rfp_departments,
+    scoped_final_document,
+    scoped_rfp_ticket,
+)
 from app.db.database import get_db, get_engine
 from app.schemas.rfp import DepartmentDecision, FinalDocumentPublic, RfpTicketCreated, RfpTicketPublic
 from app.schemas.user import UserInDB
@@ -26,7 +34,7 @@ async def create_rfp_ticket(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> RfpTicketCreated:
     """Accept a PDF, store an analyzing ticket, and return before the pipeline finishes."""
     filename = (file.filename or "").lower()
@@ -55,7 +63,7 @@ def start_rfp_response(
     ticket_id: str,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> RfpTicketCreated:
     """Start Part 2 from the stored handoff. This route does not read the PDF."""
     try:
@@ -76,7 +84,7 @@ def start_rfp_response(
 def start_rfp_approval(
     ticket_id: str,
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> RfpTicketCreated:
     """Open the per-department interrupts. A repeat call does not reset them."""
     try:
@@ -92,9 +100,21 @@ def submit_rfp_approval(
     department_id: str,
     body: DepartmentDecision,
     session: Session = Depends(get_db),
-    current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> RfpTicketPublic:
     """Resume one department branch, or store the revenue capacity choice."""
+    assert_capability(current_user, Capability.approve_department_record)
+    expected_department = RFP_DEPARTMENT_TO_PLATFORM.get(department_id)
+    if expected_department is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=INSUFFICIENT_DEPARTMENT_DETAIL,
+        )
+    if not is_admin(current_user.role) and current_user.department_id != expected_department:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=INSUFFICIENT_DEPARTMENT_DETAIL,
+        )
     try:
         rfp_service.submit_approval_decision(
             session,
@@ -110,14 +130,14 @@ def submit_rfp_approval(
     ticket = rfp_service.get_ticket(session, ticket_id)
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
-    return ticket
+    return scoped_rfp_ticket(ticket, current_user)
 
 
 @router.get("/tickets/{ticket_id}/final-document", response_model=FinalDocumentPublic)
 def read_final_document(
     ticket_id: str,
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_rfp_departments),
 ) -> FinalDocumentPublic:
     """Return the CONTEXT document fields only after the row exists."""
     if rfp_service.get_ticket(session, ticket_id) is None:
@@ -125,13 +145,13 @@ def read_final_document(
     document = rfp_service.get_final_document(session, ticket_id)
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Final document not stored.")
-    return document
+    return scoped_final_document(document, current_user)
 
 
 @router.get("/tickets/stream")
 def stream_rfp_tickets(
     request: Request,
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> StreamingResponse:
     """Push rfp_ticket_created frames. Registered before the ticket-id route."""
     last_event_id = request.headers.get("last-event-id")
@@ -149,10 +169,10 @@ def stream_rfp_tickets(
 def read_rfp_ticket(
     ticket_id: str,
     session: Session = Depends(get_db),
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_rfp_departments),
 ) -> RfpTicketPublic:
     """Return the current ticket. A stalled flag does not change the stored status."""
     ticket = rfp_service.get_ticket(session, ticket_id)
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
-    return ticket
+    return scoped_rfp_ticket(ticket, current_user)

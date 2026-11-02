@@ -16,6 +16,9 @@ class Token(BaseModel):
 class AuthMeResponse(BaseModel):
     email: EmailStr
     role: UserRole
+    department_id: str | None = None
+    department_name: str | None = None
+    capabilities: list[str] = Field(default_factory=list)
     profile: ProfilePublic | None = None
 
 

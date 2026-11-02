@@ -13,15 +13,17 @@ sys.path.insert(0, str(API_DIR))
 from sqlmodel import Session  # noqa: E402
 
 from app.db.database import get_engine, init_databases  # noqa: E402
-from app.services.inventory_seed import seed_inventory_if_empty  # noqa: E402
+from app.services.inventory_seed import (  # noqa: E402
+    apply_seed_command_result,
+    seed_inventory_if_empty,
+)
 
 
 def main() -> int:
     init_databases()
     with Session(get_engine()) as session:
-        seed_inventory_if_empty(session)
-    print("Inventory seed complete (no-op if catalog rows already exist).")
-    return 0
+        result = seed_inventory_if_empty(session)
+    return apply_seed_command_result(result)
 
 
 if __name__ == "__main__":

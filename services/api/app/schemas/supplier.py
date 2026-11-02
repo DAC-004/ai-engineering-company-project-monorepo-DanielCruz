@@ -115,6 +115,7 @@ class SupplierResponse(BaseModel):
     contract_renewal_date: str | None = None
     contact_email: str | None = None
     notes: str | None = None
+    department_id: str | None = None
 
 
 class RateUpdate(BaseModel):

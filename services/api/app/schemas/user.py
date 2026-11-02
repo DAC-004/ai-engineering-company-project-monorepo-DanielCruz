@@ -5,13 +5,13 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 class UserRole(str, Enum):
+    employee = "employee"
+    supervisor = "supervisor"
     admin = "admin"
-    manager = "manager"
-    user = "user"
 
 
 class UserCreate(BaseModel):
@@ -28,6 +28,7 @@ class UserUpdate(BaseModel):
     password: str | None = Field(default=None, min_length=8)
     is_active: bool | None = None
     role: UserRole | None = None
+    department_id: str | None = None
 
 
 class UserPublic(BaseModel):
@@ -37,7 +38,15 @@ class UserPublic(BaseModel):
     email: EmailStr
     is_active: bool
     role: UserRole
+    role_id: UserRole | None = None
+    department_id: str | None = None
     created_at: datetime
+
+    @model_validator(mode="after")
+    def sync_role_id(self) -> UserPublic:
+        if self.role_id is None:
+            self.role_id = self.role
+        return self
 
 
 class UserInDB(UserPublic):

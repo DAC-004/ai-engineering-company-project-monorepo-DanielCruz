@@ -17,6 +17,9 @@ from threading import Lock
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+
+from app.access.permissions import require_technology
+from app.schemas.user import UserInDB
 from sqlmodel import Session
 
 from app.core.config import get_settings
@@ -209,6 +212,7 @@ def get_telemetry_report(
         default=None,
         description="Exclusive ISO 8601 UTC end",
     ),
+    _current_user: UserInDB = Depends(require_technology),
 ) -> dict[str, Any]:
     """Serve cached operational metrics for one resolved UTC window."""
 
