@@ -97,3 +97,65 @@ def test_each_department_generator_receives_only_its_own_aspects() -> None:
         "clinical": CLINICAL_ROLE,
         "compliance": COMPLIANCE_ROLE,
     }
+
+
+def test_revenue_payload_keeps_stated_population_category() -> None:
+    captured: dict[str, object] = {}
+
+    def complete(messages: list[dict[str, str]]) -> str:
+        captured["payload"] = json.loads(messages[1]["content"])
+        return (
+            "Pricing is quoted in USD for this occupational health program. "
+            "Covered population is employees in the United States. Numeric headcount was not stated. "
+            "Budget was not stated, so this draft does not assume a price. "
+            "The contract term aspect from the handoff is twelve months. "
+            "Assumptions are limited to the stated currency and population category. "
+            "Exclusions include any figure that was not supplied in the request. "
+            "Information still required before a final quotation includes budget range. "
+            "This section stays within the revenue scope and does not address clinical staffing."
+        )
+
+    generate_revenue_section(
+        {
+            "client_name": "Northbridge Community Services",
+            "client_country": "US",
+            "covered_population": "Employees in the United States",
+            "budget_range": None,
+        },
+        {"aspects": ["No prices or discounts have been agreed."], "open_questions": []},
+        complete,
+    )
+    payload = captured["payload"]
+    assert isinstance(payload, dict)
+    metadata = payload["metadata"]
+    assert metadata["covered_population"] == "Employees in the United States"
+    assert "missing_population_instruction" not in metadata
+    assert "Employees in the United States" in metadata["population_instruction"]
+    assert "Do not write that covered population was not stated" in metadata["population_instruction"]
+
+
+def test_compliance_payload_does_not_ask_to_quote_baa_in_usd() -> None:
+    captured: dict[str, object] = {}
+
+    def complete(messages: list[dict[str, str]]) -> str:
+        captured["payload"] = json.loads(messages[1]["content"])
+        return (
+            "A Business Associate Agreement is required before PHI exchange for this US client. "
+            "Consent requirements remain to be confirmed with the client. "
+            "Workforce training remains an item to confirm rather than a completed measure. "
+            "This section does not quote the BAA in USD and does not mention UK GDPR. "
+            "Additional sentences keep the compliance draft inside the stated country rule "
+            "and long enough for the readability floor while remaining faithful to the handoff."
+        )
+
+    generate_compliance_section(
+        {"client_name": "Northbridge Community Services", "client_country": "US"},
+        {"aspects": ["Explain contractual requirements (e.g., Business Associate Agreement)"], "open_questions": []},
+        complete,
+    )
+    payload = captured["payload"]
+    assert isinstance(payload, dict)
+    requirement = payload["metadata"]["country_requirement"]
+    assert "Business Associate Agreement" in requirement
+    assert "quoted" not in requirement.casefold() or "do not describe" in requirement.casefold()
+    assert "quote in USD and include a Business Associate Agreement" not in requirement

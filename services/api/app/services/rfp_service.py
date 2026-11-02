@@ -230,7 +230,8 @@ def run_response(session: Session, ticket_id: str) -> None:
         _mark_response_failed(ticket_id, "model_asset_missing")
     except PipelineFailure as exc:
         _mark_response_failed(ticket_id, exc.code)
-    except Exception:
+    except Exception as exc:
+        logger.error("rfp_response_failed code=pipeline_exception type=%s", type(exc).__name__)
         _mark_response_failed(ticket_id, "pipeline_exception")
     finally:
         RUNNING_TICKETS.discard(ticket_id)

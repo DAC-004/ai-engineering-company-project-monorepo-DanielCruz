@@ -39,7 +39,8 @@ export const RfpArrivalNotifications = () => {
       <p className="eyebrow">Revenue Cycle</p>
       <h2>New RFP tickets</h2>
       <p className="rfp-arrival-panel__note">
-        Arrivals from the live stream. This list is separate from medical supplies and from a
+        Arrivals from the live stream show the status recorded at creation. Open the ticket for
+        the current workflow state. This list is separate from medical supplies and from a
         ticket page that is already open.
       </p>
       {replayGap ? (
@@ -56,7 +57,7 @@ export const RfpArrivalNotifications = () => {
               <Link href={`/backoffice/rfp/${arrival.ticketId}`}>
                 <span>Ticket {arrival.ticketId}</span>
                 <span>RFP {arrival.rfpId}</span>
-                <span>{arrival.status}</span>
+                <span>Created as {arrival.status}</span>
                 <span>{arrival.createdAt}</span>
               </Link>
             </li>

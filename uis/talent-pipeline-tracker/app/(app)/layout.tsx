@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 
 /**
  * Layout for authenticated application views.
- * Public routes (/login, /register) live outside this group and are not guarded.
+ * Public routes (/login, /forgot-password) live outside this group and are not guarded.
+ * /register remains a public URL but does not offer account creation.
  */
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (

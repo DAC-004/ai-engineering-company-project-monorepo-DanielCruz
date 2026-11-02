@@ -10,7 +10,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core.deps import get_current_user
+from app.access.permissions import require_clinical_operations, require_technology, require_update_record
 from app.schemas.user import UserInDB
 from data.pipelines.pipeline import (
     get_latest_pipeline_run,
@@ -56,7 +56,7 @@ def _parse_month_start_query(raw: str | None) -> date | None:
 )
 def read_monthly_clinic_supply_performance(
     month_start: str | None = Query(default=None),
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_clinical_operations),
 ) -> dict:
     resolved = _parse_month_start_query(month_start)
     payload = get_monthly_clinic_supply_performance(resolved)
@@ -70,7 +70,7 @@ def read_monthly_clinic_supply_performance(
 
 @router.get("/pipeline-runs/latest", response_model=PipelineRunLatestResponse)
 def read_latest_pipeline_run(
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_technology),
 ) -> dict:
     payload = get_latest_pipeline_run()
     if payload is None:
@@ -88,7 +88,8 @@ def read_latest_pipeline_run(
 )
 def create_pipeline_run(
     body: PipelineRunTriggerRequest | None = None,
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_update_record),
+    __department_user: UserInDB = Depends(require_technology),
 ) -> dict:
     requested_month = body.month_start if body is not None else None
     if requested_month is not None and requested_month.day != 1:

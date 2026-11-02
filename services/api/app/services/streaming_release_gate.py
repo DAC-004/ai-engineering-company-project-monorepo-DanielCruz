@@ -85,6 +85,39 @@ _PATTERN_SOURCES: tuple[re.Pattern[str], ...] = (
     _CONFIDENTIAL_CONTRACT,
 )
 _CONJUNCTION_WORDS: tuple[str, ...] = ("appointment", "cancel", "patient")
+_ORDINARY_AFTER_PATIENT: tuple[str, ...] = (
+    "hasn't",
+    "hasnt",
+    "haven't",
+    "havent",
+    "hadn't",
+    "hadnt",
+    "has",
+    "have",
+    "had",
+    "needs",
+    "need",
+    "is",
+    "are",
+    "was",
+    "were",
+    "should",
+    "must",
+    "cannot",
+    "can't",
+    "cant",
+    "will",
+    "won't",
+    "wont",
+    "who",
+    "with",
+    "without",
+    "not",
+    "no",
+    "received",
+    "been",
+    "being",
+)
 _REPEAT_WORDS: tuple[str, ...] = ("all", "your", "previous")
 _INSTRUCTIONS_WORD = "instructions"
 _WORD_CHAR = re.compile(r"\w")
@@ -141,6 +174,30 @@ def _fixed_phrase_suffix_is_open(suffix: str) -> bool:
     return False
 
 
+def _ordinary_word_prefix_after_patient(suffix: str) -> bool:
+    """True while held text may still complete ordinary policy wording after patient."""
+    folded = suffix.casefold()
+    for stem in ("patients ", "patient "):
+        if not folded.startswith(stem):
+            continue
+        remainder = folded[len(stem) :]
+        if not remainder or remainder[0].isspace():
+            return True
+        word = []
+        for character in remainder:
+            if character.isspace():
+                break
+            word.append(character)
+        fragment = "".join(word)
+        if not fragment:
+            return True
+        for ordinary in _ORDINARY_AFTER_PATIENT:
+            if ordinary.startswith(fragment):
+                return True
+        return False
+    return False
+
+
 def _patient_name_suffix_is_open(suffix: str) -> bool:
     """Proper prefix of ``patients?`` plus whitespace and at most one name character.
 
@@ -161,6 +218,8 @@ def _patient_name_suffix_is_open(suffix: str) -> bool:
             return False
         index = _consume_whitespace(rest, 0)
         if index == len(rest):
+            return True
+        if _ordinary_word_prefix_after_patient(suffix):
             return True
         return index == len(rest) - 1 and _is_ascii_letter(rest[index])
     return False
@@ -332,6 +391,31 @@ def _text_is_prohibited(text: str) -> bool:
     return appears_to_contain_phi(text) or disclosure_is_prohibited(text)
 
 
+def _held_ordinary_patient_policy_tail(held: str) -> bool:
+    """True when held text is policy prose continuing after ``If a`` / ``If the``."""
+    stripped = held.lstrip()
+    if not _ordinary_word_prefix_after_patient(stripped):
+        return False
+    folded = stripped.casefold()
+    for stem in ("patient ", "patients "):
+        if not folded.startswith(stem):
+            continue
+        remainder = folded[len(stem) :]
+        word = remainder.split()[0] if remainder.split() else ""
+        return len(word) >= 3
+    return False
+
+
+def _patient_name_phi_may_still_grow(text: str) -> bool:
+    """True when a patient-name PHI hit may still resolve to ordinary policy wording."""
+    if not appears_to_contain_phi(text):
+        return False
+    match = _PATIENT_NAME.search(text)
+    if match is None:
+        return False
+    return _ordinary_word_prefix_after_patient(match.group(0))
+
+
 def _trailing_patient_may_be_plural(text: str) -> bool:
     """Hold a final "patient" only when the next letter can remove the match.
 
@@ -442,7 +526,11 @@ class StreamingReleaseGate:
             if self.stopped:
                 break
             candidate = self.committed + self.held + character
-            if _text_is_prohibited(candidate) and not _trailing_patient_may_be_plural(candidate):
+            if (
+                _text_is_prohibited(candidate)
+                and not _trailing_patient_may_be_plural(candidate)
+                and not _patient_name_phi_may_still_grow(candidate)
+            ):
                 # The open prefix is the start of the match. Drop it with the
                 # completing character. Do not unsend text already committed.
                 self.held = ""
@@ -469,6 +557,12 @@ class StreamingReleaseGate:
         combined = self.committed + self.held
         if _text_is_prohibited(combined):
             return self._terminate()
+        if _open_cancellation_tie_length(combined) == 0 and _held_ordinary_patient_policy_tail(self.held):
+            released = self.held
+            self.held = ""
+            self.committed += released
+            self.stopped = True
+            return released
         if _open_cancellation_tie_length(combined) != len(self.held):
             return self._terminate()
         protected = _protected_open_suffix_length(combined)

@@ -225,6 +225,28 @@ def test_uk_mismatch_targets_compliance(tmp_path: Path) -> None:
     assert run.arbitration["capacity"] is None
 
 
+def test_start_clears_baa_mismatch_after_forced_revision_restores_clause(tmp_path: Path) -> None:
+    def complete(messages: list[dict[str, str]]) -> str:
+        system = messages[0]["content"]
+        if "Revenue Cycle" in system:
+            return REVENUE
+        if "Clinical Operations" in system:
+            return "The on-site clinic is staffed 3 days/week."
+        return COMPLIANCE
+
+    run = _run(
+        tmp_path,
+        population="800 employees",
+        clinical="The on-site clinic is staffed 3 days/week.",
+        compliance="The US client needs a regulatory agreement before data exchange.",
+        complete_fn=complete,
+    )
+    run.start()
+    assert "business associate agreement" in run.section("compliance")["draft_content"].casefold()
+    assert run.arbitration["baa_dpa_mismatch"] is False
+    assert run.arbitration["baa_targets"] == []
+
+
 def test_stale_baa_target_does_not_block_a_clean_approval(tmp_path: Path) -> None:
     run = _run(
         tmp_path,

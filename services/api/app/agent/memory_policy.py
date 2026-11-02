@@ -33,7 +33,14 @@ _CLINICS = (
     "london",
     "manchester",
 )
-_PATIENT_NAME = re.compile(r"\bpatients?\s+[A-Za-z][A-Za-z'-]+\b", re.IGNORECASE)
+# Exclude ordinary policy wording ("patient hasn't", "patients are") from name detection.
+_PATIENT_NAME = re.compile(
+    r"\bpatients?\s+(?!has(?:n't| not)?\b|have(?:n't| not)?\b|had\b|needs?\b|need\b|"
+    r"is\b|are\b|was\b|were\b|should\b|must\b|can(?:not|'t)?\b|will\b|won(?:'t| not)?\b|"
+    r"who\b|with\b|without\b|not\b|no\b|received\b|been\b|being\b)"
+    r"[A-Za-z][A-Za-z'-]+\b",
+    re.IGNORECASE,
+)
 # "John Smith is a patient" names the person before the word patient.
 # "patient Johnson" is covered above. A staff name with no patient role is not.
 _NAMED_AS_PATIENT = re.compile(

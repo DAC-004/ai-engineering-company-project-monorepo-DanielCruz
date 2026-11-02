@@ -12,16 +12,16 @@ REPO_ROOT = API_DIR.parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(API_DIR))
 
-_owns_database = not os.environ.get("DATABASE_URL", "").startswith("sqlite")
-if _owns_database:
-    _tmpdir = tempfile.mkdtemp(prefix="rfp-approval-")
-    _sqlite_path = (Path(_tmpdir) / "rfp.db").resolve().as_posix()
-    os.environ["DATABASE_URL"] = f"sqlite:///{_sqlite_path}"
-    os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
-os.environ.setdefault("SECRET_KEY", "rfp-approval-test-secret-key-32")
-os.environ.setdefault("RFP_DEMONSTRATION_PASSWORD", "rfp-approval-test-password")
-os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
-os.environ.setdefault("JWT_ALGORITHM", "HS256")
+_tmpdir = tempfile.mkdtemp(prefix="rfp-approval-")
+_sqlite_path = (Path(_tmpdir) / "rfp.db").resolve().as_posix()
+os.environ["DATABASE_URL"] = f"sqlite:///{_sqlite_path}"
+os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
+os.environ["SECRET_KEY"] = "rfp-approval-test-secret-key-32"
+os.environ["RFP_DEMONSTRATION_PASSWORD"] = "rfp-approval-test-password"
+os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
+os.environ["JWT_ALGORITHM"] = "HS256"
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
+os.environ.pop("PLATFORM_SEED_PASSWORD", None)
 
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlmodel import Session  # noqa: E402
@@ -31,13 +31,13 @@ from app.db.database import get_engine, reset_engine_for_tests  # noqa: E402
 from app.db.tinydb import reset_db_for_tests  # noqa: E402
 from app.main import app  # noqa: E402
 from app.rfp_models import DepartmentSection, RfpFinalDocument, RfpMetadata, RfpTicket, utc_now  # noqa: E402
-from app.services import rfp_service  # noqa: E402
+from app.schemas.user import UserCreate, UserRole  # noqa: E402
+from app.services import rfp_service, user_service  # noqa: E402
 from app.services.rfp_demonstration_accounts import demonstration_password  # noqa: E402
 
 get_settings.cache_clear()
-if _owns_database:
-    reset_db_for_tests()
-    reset_engine_for_tests()
+reset_db_for_tests()
+reset_engine_for_tests()
 
 REVENUE = "Pricing is quoted in USD for the occupational health program and the twelve month term."
 CLINICAL = "Clinical Operations can staff the occupational health program at the stated clinics."
@@ -102,6 +102,7 @@ def _seed_ticket() -> str:
 
 
 def test_approval_route_binds_the_owner_and_stores_the_document(tmp_path: Path) -> None:
+    os.environ["RFP_DEMONSTRATION_PASSWORD"] = "rfp-approval-test-password"
     rfp_service.complete_override_fn = _complete
     rfp_service.checkpoint_override = tmp_path / "approvals.sqlite"
     try:
@@ -114,16 +115,25 @@ def test_approval_route_binds_the_owner_and_stores_the_document(tmp_path: Path) 
             missing = client.get(f"/rfp/tickets/{ticket_id}/final-document", headers=revenue)
             assert missing.status_code == 404
 
+            not_started = client.post(
+                f"/rfp/tickets/{ticket_id}/approval/revenue",
+                headers=revenue,
+                json={"decision": "approve"},
+            )
+            assert not_started.status_code == 409
+            assert not_started.json()["detail"] == "not_interrupted"
+
             started = client.post(f"/rfp/tickets/{ticket_id}/approval", headers=revenue)
             assert started.status_code == 202
             assert started.json()["status"] == "waiting_for_approval"
             again = client.post(f"/rfp/tickets/{ticket_id}/approval", headers=revenue)
             assert again.status_code == 202
 
-            client.post(
-                "/users",
-                json={"email": "rfp-other@example.com", "password": "validpass1", "name": "Other Account"},
-            )
+            if user_service.get_user_by_email("rfp-other@example.com") is None:
+                user_service.create_user(
+                    UserCreate(email="rfp-other@example.com", password="validpass1", name="Other Account"),
+                    role=UserRole.employee,
+                )
             other = _login(client, "rfp-other@example.com", "validpass1")
             forbidden = client.post(
                 f"/rfp/tickets/{ticket_id}/approval/revenue",
@@ -157,24 +167,44 @@ def test_approval_route_binds_the_owner_and_stores_the_document(tmp_path: Path) 
                 )
                 assert decided.status_code == 200
 
-            loaded = client.get(f"/rfp/tickets/{ticket_id}", headers=revenue)
-            assert loaded.status_code == 200
-            body = loaded.json()
-            assert body["status"] == "done"
-            by_department = {section["department_id"]: section for section in body["sections"]}
-            assert by_department["revenue"]["approver"] == "Tom Callahan"
-            assert by_department["clinical"]["approver"] == "Dr. Marcus Reid"
-            assert by_department["compliance"]["approver"] == "Claire Whitfield"
-            assert by_department["revenue"]["submitted_by_user_id"]
+            expected_owners = (
+                (revenue, "revenue", "Tom Callahan", REVENUE),
+                (clinical, "clinical", "Dr. Marcus Reid", CLINICAL),
+                (compliance, "compliance", "Claire Whitfield", COMPLIANCE),
+            )
+            for headers, department_id, approver, approved_text in expected_owners:
+                loaded = client.get(f"/rfp/tickets/{ticket_id}", headers=headers)
+                assert loaded.status_code == 200
+                body = loaded.json()
+                assert body["status"] == "done"
+                by_department = {
+                    section["department_id"]: section for section in body["sections"]
+                }
+                assert set(by_department) == {department_id}
+                assert by_department[department_id]["approver"] == approver
+                assert by_department[department_id]["submitted_by_user_id"]
+                assert by_department[department_id]["draft_content"] == approved_text
             document = client.get(f"/rfp/tickets/{ticket_id}/final-document", headers=revenue)
             assert document.status_code == 200
             stored = document.json()
             assert set(stored) == {"ticket_id", "sections", "currency", "generated_at"}
             assert stored["currency"] == "USD"
             assert stored["ticket_id"] == ticket_id
+            assert stored["sections"] == [
+                {"department_id": "revenue", "draft_content": REVENUE}
+            ]
             with Session(get_engine()) as session:
                 row = session.get(RfpFinalDocument, ticket_id)
                 assert row is not None
+                stored_by_department = {
+                    section["department_id"]: section["draft_content"]
+                    for section in row.sections
+                }
+                assert stored_by_department == {
+                    "revenue": REVENUE,
+                    "clinical": CLINICAL,
+                    "compliance": COMPLIANCE,
+                }
                 ticket = session.get(RfpTicket, ticket_id)
                 assert ticket is not None
                 assert ticket.status == "done"

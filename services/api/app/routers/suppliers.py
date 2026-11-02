@@ -6,7 +6,14 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.core.deps import get_current_user
+from app.access.permissions import (
+    assert_department_allowed,
+    filter_department_rows,
+    require_authenticated,
+    require_create_record,
+    require_delete_sensitive,
+    require_update_record,
+)
 from app.core.irreversible import require_explicit_confirmation
 from app.core.prohibited_text import has_labeled_patient_field
 
@@ -49,14 +56,17 @@ def _reject_labeled_patient_text(*values: str | None) -> None:
 @router.post("", response_model=SupplierResponse, status_code=status.HTTP_201_CREATED)
 def create_supplier(
     payload: SupplierCreate,
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_create_record),
 ) -> SupplierResponse:
     """Register a new supplier after authentication and Pydantic validation."""
     _reject_labeled_patient_text(payload.name, payload.notes)
+    # Own-department create: a missing caller department is not a match.
+    assert_department_allowed(current_user, current_user.department_id)
     table = get_suppliers_table()
     record = payload.model_dump(mode="json")
     # Status enum serializes to its value via mode=json; stamp system updated_at.
     record["updated_at"] = _utc_now_iso()
+    record["department_id"] = current_user.department_id
     doc_id = table.insert(record)
     return _document_to_response(doc_id, table.get(doc_id=doc_id))
 
@@ -65,8 +75,9 @@ def create_supplier(
 def list_suppliers(
     country: str | None = Query(default=None),
     category: str | None = Query(default=None),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> list[SupplierResponse]:
-    """Return the full directory, optionally filtered by country and/or category."""
+    """Return the directory, optionally filtered by country and/or category."""
     table = get_suppliers_table()
     documents = table.all()
     results: list[SupplierResponse] = []
@@ -79,23 +90,33 @@ def list_suppliers(
             continue
         results.append(_document_to_response(document.doc_id, document))
 
-    return results
+    return filter_department_rows(
+        current_user,
+        results,
+        lambda row: row.department_id,
+    )
 
 
 @router.get("/{supplier_id}", response_model=SupplierResponse)
-def get_supplier(supplier_id: int) -> SupplierResponse:
+def get_supplier(
+    supplier_id: int,
+    current_user: UserInDB = Depends(require_authenticated),
+) -> SupplierResponse:
     doc_id, document = _get_supplier_or_404(supplier_id)
-    return _document_to_response(doc_id, document)
+    record = _document_to_response(doc_id, document)
+    assert_department_allowed(current_user, record.department_id)
+    return record
 
 
 @router.patch("/{supplier_id}/rate", response_model=SupplierResponse)
 def update_supplier_rate(
     supplier_id: int,
     payload: RateUpdate,
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_update_record),
 ) -> SupplierResponse:
     """Update monthly_rate and record the change timestamp for audit traceability."""
     doc_id, document = _get_supplier_or_404(supplier_id)
+    assert_department_allowed(current_user, document.get("department_id"))
     table = get_suppliers_table()
     document["monthly_rate"] = payload.monthly_rate
     document["updated_at"] = _utc_now_iso()
@@ -108,9 +129,10 @@ def update_supplier_rate(
 def update_supplier_status(
     supplier_id: int,
     payload: StatusUpdate,
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_update_record),
 ) -> SupplierResponse:
-    doc_id, _document = _get_supplier_or_404(supplier_id)
+    doc_id, document = _get_supplier_or_404(supplier_id)
+    assert_department_allowed(current_user, document.get("department_id"))
     table = get_suppliers_table()
     table.update({"status": payload.status.value}, doc_ids=[doc_id])
     refreshed = table.get(doc_id=doc_id)
@@ -121,11 +143,12 @@ def update_supplier_status(
 def delete_supplier(
     supplier_id: int,
     request: Request,
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_delete_sensitive),
 ) -> dict[str, str]:
     """Physically remove a supplier after authentication and explicit confirmation."""
     require_explicit_confirmation(request, "delete_supplier")
-    doc_id, _document = _get_supplier_or_404(supplier_id)
+    doc_id, document = _get_supplier_or_404(supplier_id)
+    assert_department_allowed(current_user, document.get("department_id"))
     table = get_suppliers_table()
     table.remove(doc_ids=[doc_id])
     return {"detail": f"Supplier {supplier_id} deleted"}

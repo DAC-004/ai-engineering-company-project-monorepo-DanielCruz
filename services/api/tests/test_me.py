@@ -32,7 +32,8 @@ def test_me_returns_email_role_and_profile_for_valid_token(client, seeded_user) 
     assert response.status_code == 200
     body = response.json()
     assert body["email"] == TEST_EMAIL
-    assert body["role"] == "user"
+    assert body["role"] == "employee"
+    assert body["department_id"] is None
     assert body["profile"] is not None
     assert body["profile"]["name"] == "Alice"
     assert body["profile"]["user_id"] == seeded_user.id

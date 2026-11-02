@@ -16,26 +16,38 @@ _default_db_path = runtime_data_path(
     Path("/var/lib/healthcore/suppliers/suppliers.json"),
     Path(__file__).resolve().parent.parent / "data" / "suppliers.json",
 )
+_db: TinyDB | None = None
+_open_path: Path | None = None
+
 _suppliers_override = os.environ.get("SUPPLIERS_DB_PATH")
 DB_PATH = Path(_suppliers_override) if _suppliers_override else _default_db_path
 DATA_DIR = DB_PATH.parent
 
-_db: TinyDB | None = None
+
+def _resolved_db_path() -> Path:
+    override = os.environ.get("SUPPLIERS_DB_PATH")
+    if override:
+        return Path(override)
+    return DB_PATH
 
 
 def ensure_data_dir() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    _resolved_db_path().parent.mkdir(parents=True, exist_ok=True)
 
 
 def get_db() -> TinyDB:
-    global _db
+    global _db, _open_path
+    path = _resolved_db_path()
+    if _db is not None and _open_path != path:
+        close_db()
     if _db is None:
-        ensure_data_dir()
-        _db = TinyDB(DB_PATH)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _db = TinyDB(path)
+        _open_path = path
         # TinyDB creates the file with the process umask. The directory is
         # the service account's. The file itself stays group-readable only.
-        if DB_PATH.exists():
-            DB_PATH.chmod(0o640)
+        if path.exists():
+            path.chmod(0o640)
     return _db
 
 
@@ -44,7 +56,8 @@ def get_suppliers_table() -> Table:
 
 
 def close_db() -> None:
-    global _db
+    global _db, _open_path
     if _db is not None:
         _db.close()
         _db = None
+        _open_path = None

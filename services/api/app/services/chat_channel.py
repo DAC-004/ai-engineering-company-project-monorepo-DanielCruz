@@ -309,6 +309,21 @@ def _publish_through_release_gate(watch: LocalGenerationWatch, text: str) -> boo
     return bool(watch.published_text.strip())
 
 
+def _reconcile_streamed_answer(streamed: str, outcome_answer: str) -> str:
+    """Prefer the full agent answer when streaming stopped before the model finished."""
+    streamed_text = streamed.strip()
+    full_text = outcome_answer.strip()
+    if not full_text:
+        return streamed
+    if not streamed_text:
+        return outcome_answer
+    if full_text.startswith(streamed_text) or streamed_text.startswith(full_text[: max(1, len(streamed_text) - 1)]):
+        return outcome_answer if len(full_text) >= len(streamed_text) else streamed
+    if len(full_text) > len(streamed_text) + 20:
+        return outcome_answer
+    return streamed
+
+
 def _finalize_successful_generation(
     session_id: str,
     hub: SessionHub,
@@ -318,19 +333,32 @@ def _finalize_successful_generation(
     outcome_answer: str,
     fail_generation: Callable[[], None],
 ) -> bool:
-    """Publish a completed turn or invoke ``fail_generation``. Return False on failure."""
-    if not assistant.text.strip():
+    """Publish a completed turn or invoke ``fail_generation``. Return False on failure.
+
+    Empty ``assistant.text`` means nothing was streamed. Reconciling the raw
+    outcome onto that field first would skip the gate and the fail path.
+    Non-streamed text therefore publishes through the same release gate, or
+    fails when withholding/prohibited observations block fallback.
+    """
+    streamed = assistant.text
+    if not streamed.strip():
         if outcome_answer.strip():
             if _may_publish_non_streamed_outcome(watch):
                 if not _publish_through_release_gate(watch, outcome_answer):
                     fail_generation()
                     return False
+                if not assistant.text.strip():
+                    assistant.text = watch.published_text
             else:
                 fail_generation()
                 return False
         else:
             fail_generation()
             return False
+    else:
+        reconciled = _reconcile_streamed_answer(streamed, outcome_answer)
+        if reconciled != assistant.text:
+            assistant.text = reconciled
     session.last_generation = _generation_report(watch)
     if outcome_answer != assistant.text:
         session.last_generation["unpublished_agent_answer"] = outcome_answer

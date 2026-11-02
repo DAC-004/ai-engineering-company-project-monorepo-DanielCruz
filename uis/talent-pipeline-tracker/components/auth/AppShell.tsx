@@ -5,6 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { logout } from "@/lib/auth/session";
+import { useCurrentUser } from "@/lib/auth/CurrentUserContext";
+import {
+  canCreateDepartmentRecord,
+  canManageAccess,
+} from "@/lib/auth/capabilities";
 import { RfpArrivalNotifications } from "@/components/rfp/RfpArrivalNotifications";
 import { track } from "@/src/services/telemetry";
 
@@ -15,6 +20,9 @@ type AppShellProps = {
 export const AppShell = ({ children }: AppShellProps) => {
   const pathname = usePathname();
   const router = useRouter();
+  const currentUser = useCurrentUser();
+  const canCreate = canCreateDepartmentRecord(currentUser?.role);
+  const isAccessAdmin = canManageAccess(currentUser?.role);
 
   const handleLogout = () => {
     track("user_logout_completed", { logout_method: "user_initiated" });
@@ -46,6 +54,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Talent pipeline
           </Link>
+          {canCreate ? (
           <Link
             href="/incidents/new"
             className={
@@ -56,6 +65,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Register incident
           </Link>
+          ) : null}
           <Link
             href="/incidents"
             className={
@@ -94,6 +104,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Medical supplies
           </Link>
+          {canCreate ? (
           <Link
             href="/backoffice/inventory/orders/inbound"
             className={
@@ -104,6 +115,8 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Supply delivery
           </Link>
+          ) : null}
+          {canCreate ? (
           <Link
             href="/backoffice/inventory/orders/outbound"
             className={
@@ -114,6 +127,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Supply consumption
           </Link>
+          ) : null}
           <Link
             href="/backoffice/inventory/orders"
             className={
@@ -164,6 +178,40 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Clinic supply report
           </Link>
+          <Link
+            href="/backoffice/internal-reports"
+            className={
+              pathname.startsWith("/backoffice/internal-reports")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Internal reports
+          </Link>
+          {isAccessAdmin ? (
+          <Link
+            href="/backoffice/access"
+            className={
+              pathname === "/backoffice/access"
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Roles and departments
+          </Link>
+          ) : null}
+          {isAccessAdmin ? (
+          <Link
+            href="/backoffice/access/create"
+            className={
+              pathname.startsWith("/backoffice/access/create")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Create account
+          </Link>
+          ) : null}
           <Link
             href="/account/profile"
             className={

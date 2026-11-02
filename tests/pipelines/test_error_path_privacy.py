@@ -188,7 +188,7 @@ def _authenticate_supplier_request(api_client: TestClient) -> None:
         id="privacy-user",
         email="privacy@example.com",
         is_active=True,
-        role=UserRole.user,
+        role=UserRole.employee,
         created_at=datetime.now(UTC),
         hashed_password="not-used",
     )
@@ -287,9 +287,10 @@ def test_telemetry_validation_omits_input_and_submitted_keys(
     assert "detail" not in body
 
 
-def test_inventory_create_validation_omits_input_and_submitted_keys(
+def test_unauthenticated_post_users_does_not_create_an_inventory_actor(
     api_client: TestClient,
 ) -> None:
+    """POST /users is Admin-only. This path must not become public registration."""
     register = api_client.post(
         "/users",
         json={
@@ -297,7 +298,25 @@ def test_inventory_create_validation_omits_input_and_submitted_keys(
             "password": "error-path-inventory-1",
         },
     )
-    assert register.status_code in (200, 201)
+    assert register.status_code in (401, 403)
+
+
+def test_inventory_create_validation_omits_input_and_submitted_keys(
+    api_client: TestClient,
+) -> None:
+    from app.schemas.user import UserCreate, UserRole
+    from app.services import user_service
+    from app.services.platform_access_seed import ensure_roles_and_departments
+
+    ensure_roles_and_departments()
+    user_service.create_user(
+        UserCreate(
+            email="synth.errorpath.inventory@example.com",
+            password="error-path-inventory-1",
+        ),
+        role=UserRole.employee,
+        department_id="clinical_operations",
+    )
     login = api_client.post(
         "/auth/login",
         data={

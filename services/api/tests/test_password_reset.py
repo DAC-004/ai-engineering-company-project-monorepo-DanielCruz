@@ -14,7 +14,7 @@ from tinydb import Query
 
 from app.core.config import get_settings
 from app.db.tinydb import password_reset_tokens_table, reset_db_for_tests
-from app.main import app
+from app.schemas.user import UserCreate, UserRole
 from app.services.password_reset_service import create_reset_token_for_user
 from app.services import user_service
 
@@ -32,17 +32,22 @@ def isolated_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClie
     monkeypatch.setenv("RESEND_FROM_EMAIL", "HealthCore <onboarding@resend.dev>")
     monkeypatch.setenv("FRONTEND_BASE_URL", "http://localhost:3000")
     monkeypatch.setenv("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "30")
+    monkeypatch.setenv("CELERY_TASK_ALWAYS_EAGER", "1")
+    monkeypatch.delenv("PLATFORM_SEED_PASSWORD", raising=False)
+    monkeypatch.delenv("RFP_DEMONSTRATION_PASSWORD", raising=False)
     get_settings.cache_clear()
     reset_db_for_tests()
     auth_path.write_text("{}", encoding="utf-8")
-    yield TestClient(app)
+    from app.main import app
+
+    with TestClient(app) as client:
+        yield client
     reset_db_for_tests()
     get_settings.cache_clear()
 
 
-def _register(client: TestClient, email: str, password: str) -> None:
-    response = client.post("/users", json={"email": email, "password": password})
-    assert response.status_code == 201, response.text
+def _register(_client: TestClient, email: str, password: str) -> None:
+    user_service.create_user(UserCreate(email=email, password=password), role=UserRole.employee)
 
 
 def test_reset_token_row_stores_hash_only(isolated_client: TestClient) -> None:
