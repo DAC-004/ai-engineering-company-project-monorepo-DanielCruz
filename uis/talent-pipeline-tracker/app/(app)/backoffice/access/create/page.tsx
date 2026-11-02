@@ -172,9 +172,9 @@ export default function CreateAccountPage() {
       <p role="status" className={kind === "error" ? "form-error" : "field-hint"}>
         {status}
       </p>
-      <form className="supplier-register-form" onSubmit={handleSubmit} autoComplete="off">
-        <label htmlFor="create-account-email">
-          Email
+      <form className="auth-form create-account-form" onSubmit={handleSubmit} autoComplete="off">
+        <div className="field">
+          <label htmlFor="create-account-email">Email</label>
           <input
             id="create-account-email"
             name="email"
@@ -182,12 +182,13 @@ export default function CreateAccountPage() {
             autoComplete="off"
             required
             value={email}
+            placeholder="name@healthcore.example"
             onChange={(event) => setEmail(event.target.value)}
             disabled={pending}
           />
-        </label>
-        <label htmlFor="create-account-password">
-          Password
+        </div>
+        <div className="field">
+          <label htmlFor="create-account-password">Password</label>
           <input
             id="create-account-password"
             ref={passwordRef}
@@ -197,12 +198,13 @@ export default function CreateAccountPage() {
             required
             minLength={8}
             value={password}
+            placeholder="At least 8 characters"
             onChange={(event) => setPassword(event.target.value)}
             disabled={pending}
           />
-        </label>
-        <label htmlFor="create-account-role">
-          Role
+        </div>
+        <div className="field">
+          <label htmlFor="create-account-role">Role</label>
           <select
             id="create-account-role"
             name="role_id"
@@ -218,9 +220,9 @@ export default function CreateAccountPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label htmlFor="create-account-department">
-          Department
+        </div>
+        <div className="field">
+          <label htmlFor="create-account-department">Department</label>
           <select
             id="create-account-department"
             name="department_id"
@@ -235,8 +237,8 @@ export default function CreateAccountPage() {
               </option>
             ))}
           </select>
-        </label>
-        <div className="supplier-register-actions">
+        </div>
+        <div className="action-row">
           <button type="submit" className="btn-primary" disabled={pending}>
             {pending ? "Creating…" : "Create account"}
           </button>
