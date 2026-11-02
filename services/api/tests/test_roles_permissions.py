@@ -550,6 +550,271 @@ def test_supplier_department_scope_and_admin_cross_department(
     assert me.json()["department_id"] == "technology"
 
 
+def _isolated_suppliers_path() -> Path:
+    isolated = Path(os.environ["SUPPLIERS_DB_PATH"])
+    posix = isolated.resolve().as_posix()
+    assert posix.endswith("suppliers.json")
+    assert "/services/api/data/suppliers.json" not in posix
+    return isolated
+
+
+def _synthetic_supplier_fields(name: str) -> dict[str, object]:
+    return {
+        "name": name,
+        "country": "USA",
+        "categories": ["medical_supplies"],
+        "monthly_rate": 100.0,
+        "currency": "USD",
+        "status": "active",
+        "updated_at": "2026-10-12T18:00:37+00:00",
+    }
+
+
+def _install_synthetic_legacy_supplier_group(
+    targets: tuple[tuple[int, str], ...] | None = None,
+) -> None:
+    """Install frozen I03b identities into the isolated TinyDB only.
+
+    Recreates the file after close_db so doc_ids start at 1 and the TestClient
+    cache cannot keep an empty table from lifespan. Does not read live
+    services/api/data/suppliers.json.
+    """
+    from app.database import close_db, get_suppliers_table
+    from app.services.supplier_department import LEGACY_I03B_SUPPLIER_TARGETS
+
+    isolated = _isolated_suppliers_path()
+    close_db()
+    isolated.unlink(missing_ok=True)
+    table = get_suppliers_table()
+    selected = LEGACY_I03B_SUPPLIER_TARGETS if targets is None else targets
+    inserted_ids: list[int] = []
+    for expected_id, name in selected:
+        doc_id = table.insert(_synthetic_supplier_fields(name))
+        assert doc_id == expected_id
+        inserted_ids.append(doc_id)
+    assert inserted_ids == [doc_id for doc_id, _name in selected]
+
+
+def _target_row_map() -> dict[int, dict[str, object]]:
+    from app.services.supplier_department import (
+        LEGACY_I03B_SUPPLIER_TARGETS,
+        inspect_supplier_group,
+    )
+
+    by_id = {row["id"]: row for row in inspect_supplier_group()["rows"]}
+    return {doc_id: by_id[doc_id] for doc_id, _name in LEGACY_I03B_SUPPLIER_TARGETS if doc_id in by_id}
+
+
+def test_legacy_i03b_supplier_apply_maps_six_and_is_noop_on_repeat(
+    client: TestClient,
+) -> None:
+    from app.database import close_db, get_suppliers_table
+    from app.services.supplier_department import (
+        APPLY,
+        LEGACY_I03B_SUPPLIER_TARGETS,
+        LEGACY_SUPPLIER_DEPARTMENT_ID,
+        NOOP,
+        assess_legacy_supplier_group,
+        ensure_legacy_supplier_department_id,
+        inspect_supplier_group,
+    )
+
+    _install_synthetic_legacy_supplier_group()
+    table = get_suppliers_table()
+    extra_untagged_id = table.insert(_synthetic_supplier_fields("Untargeted extra supplier"))
+    explicit_id = table.insert(
+        {
+            **_synthetic_supplier_fields("Explicit clinical supplier"),
+            "department_id": "clinical_operations",
+        }
+    )
+    before = inspect_supplier_group()
+    before_by_id = {row["id"]: row for row in before["rows"]}
+    before_target = _target_row_map()
+    assert assess_legacy_supplier_group()["action"] == APPLY
+    assert before["count"] == 8
+
+    updated = ensure_legacy_supplier_department_id()
+    assert updated == 6
+    after_target = _target_row_map()
+    after = inspect_supplier_group()
+    after_by_id = {row["id"]: row for row in after["rows"]}
+    assert after["count"] == 8
+    for doc_id, expected_name in LEGACY_I03B_SUPPLIER_TARGETS:
+        assert after_target[doc_id]["name"] == expected_name
+        assert after_target[doc_id]["department_id"] == LEGACY_SUPPLIER_DEPARTMENT_ID
+        assert after_target[doc_id]["non_department_sha256"] == before_target[doc_id]["non_department_sha256"]
+    assert after_by_id[extra_untagged_id]["untagged"] is True
+    assert after_by_id[extra_untagged_id]["row_sha256"] == before_by_id[extra_untagged_id]["row_sha256"]
+    assert after_by_id[explicit_id]["department_id"] == "clinical_operations"
+    assert after_by_id[explicit_id]["row_sha256"] == before_by_id[explicit_id]["row_sha256"]
+
+    assert assess_legacy_supplier_group()["action"] == NOOP
+    repeat = ensure_legacy_supplier_department_id()
+    assert repeat == 0
+    repeat_rows = {row["id"]: row for row in inspect_supplier_group()["rows"]}
+    for doc_id, _name in LEGACY_I03B_SUPPLIER_TARGETS:
+        assert repeat_rows[doc_id]["department_id"] == LEGACY_SUPPLIER_DEPARTMENT_ID
+        assert repeat_rows[doc_id]["row_sha256"] == after_by_id[doc_id]["row_sha256"]
+    assert repeat_rows[extra_untagged_id]["row_sha256"] == before_by_id[extra_untagged_id]["row_sha256"]
+    assert repeat_rows[explicit_id]["row_sha256"] == before_by_id[explicit_id]["row_sha256"]
+    close_db()
+
+
+def test_people_workforce_access_mapped_legacy_suppliers(
+    client: TestClient,
+) -> None:
+    from app.database import close_db
+    from app.services.supplier_department import (
+        LEGACY_I03B_SUPPLIER_TARGETS,
+        LEGACY_SUPPLIER_DEPARTMENT_ID,
+        ensure_legacy_supplier_department_id,
+    )
+
+    _seed_evaluation_users()
+    user_service.create_user(
+        UserCreate(
+            email="diane.workforce@healthcore.example",
+            password=SEED_PASSWORD,
+        ),
+        role=UserRole.employee,
+        department_id="people_workforce",
+    )
+    _install_synthetic_legacy_supplier_group()
+    assert ensure_legacy_supplier_department_id() == 6
+
+    diane = _login(client, "diane.workforce@healthcore.example")
+    marcus = _login(client, "marcus.clinical@healthcore.example")
+    james = _login(client, "james.admin@healthcore.example")
+    target_ids = [doc_id for doc_id, _name in LEGACY_I03B_SUPPLIER_TARGETS]
+
+    diane_list = client.get("/suppliers", headers=diane)
+    assert diane_list.status_code == 200
+    diane_ids = {row["id"] for row in diane_list.json()}
+    assert diane_ids == set(target_ids)
+    assert all(row["department_id"] == LEGACY_SUPPLIER_DEPARTMENT_ID for row in diane_list.json())
+
+    for supplier_id in target_ids:
+        own = client.get(f"/suppliers/{supplier_id}", headers=diane)
+        assert own.status_code == 200
+        assert own.json()["id"] == supplier_id
+        assert own.json()["department_id"] == LEGACY_SUPPLIER_DEPARTMENT_ID
+
+        denied = client.get(f"/suppliers/{supplier_id}", headers=marcus)
+        assert denied.status_code == 403
+        assert denied.json()["detail"] == INSUFFICIENT_DEPARTMENT_DETAIL
+
+        rate_denied = client.patch(
+            f"/suppliers/{supplier_id}/rate",
+            json={"monthly_rate": 1300.0},
+            headers=marcus,
+        )
+        assert rate_denied.status_code == 403
+        assert rate_denied.json()["detail"] == INSUFFICIENT_DEPARTMENT_DETAIL
+
+        admin_get = client.get(f"/suppliers/{supplier_id}", headers=james)
+        assert admin_get.status_code == 200
+        assert admin_get.json()["department_id"] == LEGACY_SUPPLIER_DEPARTMENT_ID
+
+    marcus_list = client.get("/suppliers", headers=marcus)
+    assert marcus_list.status_code == 200
+    assert marcus_list.json() == []
+
+    admin_list = client.get("/suppliers", headers=james)
+    assert admin_list.status_code == 200
+    admin_ids = {row["id"] for row in admin_list.json()}
+    assert admin_ids == set(target_ids)
+    close_db()
+
+
+def test_legacy_supplier_guard_writes_nothing_on_conflict(
+    client: TestClient,
+) -> None:
+    from app.database import close_db, get_suppliers_table
+    from app.services.supplier_department import (
+        CONFLICT,
+        LEGACY_I03B_SUPPLIER_TARGETS,
+        LegacySupplierGroupConflict,
+        assess_legacy_supplier_group,
+        ensure_legacy_supplier_department_id,
+        inspect_supplier_group,
+    )
+    from tinydb.table import Document
+
+    def _snapshot() -> dict[int, str]:
+        return {row["id"]: row["row_sha256"] for row in inspect_supplier_group()["rows"]}
+
+    incomplete = LEGACY_I03B_SUPPLIER_TARGETS[:5]
+    _install_synthetic_legacy_supplier_group(incomplete)
+    incomplete_before = _snapshot()
+    with pytest.raises(LegacySupplierGroupConflict) as incomplete_error:
+        ensure_legacy_supplier_department_id()
+    assert "missing_id=6" in str(incomplete_error.value)
+    assert _snapshot() == incomplete_before
+    assert inspect_supplier_group()["tagged_count"] == 0
+
+    mismatched = list(LEGACY_I03B_SUPPLIER_TARGETS)
+    mismatched[2] = (3, "Renamed not I03b supplier")
+    _install_synthetic_legacy_supplier_group(tuple(mismatched))
+    mismatched_before = _snapshot()
+    with pytest.raises(LegacySupplierGroupConflict) as name_error:
+        ensure_legacy_supplier_department_id()
+    assert "id=3" in str(name_error.value)
+    assert _snapshot() == mismatched_before
+    assert inspect_supplier_group()["tagged_count"] == 0
+
+    _install_synthetic_legacy_supplier_group(
+        (
+            (1, "I03b 126 Disposable Supplier"),
+            (2, "I03b 126 UI Supplier"),
+        )
+    )
+    subset_before = _snapshot()
+    with pytest.raises(LegacySupplierGroupConflict) as subset_error:
+        ensure_legacy_supplier_department_id()
+    assert "missing_id=3" in str(subset_error.value)
+    assert _snapshot() == subset_before
+    assert inspect_supplier_group()["tagged_count"] == 0
+
+    _install_synthetic_legacy_supplier_group()
+    partial_table = get_suppliers_table()
+    partial_table.update({"department_id": "people_workforce"}, doc_ids=[1])
+    partial_before = _snapshot()
+    with pytest.raises(LegacySupplierGroupConflict) as partial_error:
+        ensure_legacy_supplier_department_id()
+    assert "partially_tagged" in str(partial_error.value)
+    assert _snapshot() == partial_before
+    partial_rows = {row["id"]: row for row in inspect_supplier_group()["rows"]}
+    assert partial_rows[1]["department_id"] == "people_workforce"
+    assert all(partial_rows[doc_id]["untagged"] is True for doc_id in (2, 3, 4, 5, 6))
+
+    _install_synthetic_legacy_supplier_group()
+    conflict_table = get_suppliers_table()
+    conflict_table.update({"department_id": "clinical_operations"}, doc_ids=[1])
+    conflict_before = _snapshot()
+    with pytest.raises(LegacySupplierGroupConflict) as dept_error:
+        ensure_legacy_supplier_department_id()
+    assert "conflicting_department='clinical_operations'" in str(dept_error.value)
+    assert _snapshot() == conflict_before
+    conflict_rows = {row["id"]: row for row in inspect_supplier_group()["rows"]}
+    assert conflict_rows[1]["department_id"] == "clinical_operations"
+    assert all(conflict_rows[doc_id]["untagged"] is True for doc_id in (2, 3, 4, 5, 6))
+
+    class DuplicateTable:
+        def all(self):
+            rows = [
+                Document(_synthetic_supplier_fields(name), doc_id=doc_id)
+                for doc_id, name in LEGACY_I03B_SUPPLIER_TARGETS
+            ]
+            rows.append(Document(_synthetic_supplier_fields("I03b 126 Disposable Supplier"), doc_id=1))
+            return rows
+
+    duplicate = assess_legacy_supplier_group(DuplicateTable())
+    assert duplicate["action"] == CONFLICT
+    assert any("duplicate_id=1" in item for item in duplicate["conflicts"])
+    close_db()
+
+
 def test_inventory_department_scope_and_admin_cross_department(
     client: TestClient,
 ) -> None:
