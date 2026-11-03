@@ -93,6 +93,8 @@ def readability_metrics(markdown: str) -> dict[str, Any]:
         fog = scores.gunning_fog()
         result["gunning_fog"] = _numeric_grade(fog.grade_level)
         if result["gunning_fog"] is None:
+            result["gunning_fog"] = _numeric_grade(getattr(fog, "score", None))
+        if result["gunning_fog"] is None:
             reasons.append(_unavailable_reason("gunning_fog", fog.grade_level))
     except Exception as exc:
         message = str(exc)

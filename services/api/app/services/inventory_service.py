@@ -59,6 +59,7 @@ def _to_supply_public(
         minimum_stock=supply.minimum_stock,
         expiry_date=supply.expiry_date,
         clinic_current_stock=clinic_current_stock,
+        department_id=getattr(supply, "department_id", None),
     )
 
 
@@ -104,6 +105,26 @@ def computed_stock_for_supply(session: Session, supply_id: int) -> int:
         )
     ).one()
     return int(delivery_total) - int(consumption_total)
+
+
+def assert_consumption_within_stock(
+    session: Session, supply: MedicalSupply, quantity: int
+) -> int:
+    """Reject a consumption quantity that would make computed stock negative.
+
+    This is the same delivery-minus-consumption rule used by authenticated
+    outbound writes. It does not decide actor identity or department access.
+    """
+    if supply.id is None:
+        raise RuntimeError("MedicalSupply.id is required to compute stock.")
+    available = computed_stock_for_supply(session, supply.id)
+    if quantity > available:
+        raise InsufficientSupplyStockError(
+            name=supply.name,
+            available=available,
+            requested=quantity,
+        )
+    return available
 
 
 def computed_stock_for_supply_at_clinic(session: Session, supply_id: int, clinic_id: int) -> int:
@@ -163,7 +184,12 @@ def get_medical_supply(
     )
 
 
-def create_medical_supply(session: Session, payload: MedicalSupplyCreate) -> MedicalSupplyPublic:
+def create_medical_supply(
+    session: Session,
+    payload: MedicalSupplyCreate,
+    *,
+    department_id: str | None = None,
+) -> MedicalSupplyPublic:
     supply = MedicalSupply(
         name=payload.name,
         sku=payload.sku,
@@ -172,6 +198,10 @@ def create_medical_supply(session: Session, payload: MedicalSupplyCreate) -> Med
         country=payload.country,
         minimum_stock=payload.minimum_stock,
         expiry_date=payload.expiry_date,
+        # Persist the caller-supplied department. Do not assume Clinical
+        # Operations on create; missing catalog rows are filled only by
+        # ensure_inventory_department_id.
+        department_id=department_id,
     )
     session.add(supply)
     try:
@@ -232,13 +262,7 @@ def create_supply_consumption(
     if locked is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medical supply not found")
 
-    available = computed_stock_for_supply(session, payload.supply_id)
-    if payload.quantity > available:
-        raise InsufficientSupplyStockError(
-            name=locked.name,
-            available=available,
-            requested=payload.quantity,
-        )
+    assert_consumption_within_stock(session, locked, payload.quantity)
 
     consumption = SupplyConsumption(
         supply_id=payload.supply_id,

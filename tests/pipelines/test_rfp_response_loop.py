@@ -105,3 +105,53 @@ def test_exhausted_section_stays_visible_until_every_department_finishes() -> No
     assert revenue_saw_feedback[0] is False
     assert revenue_saw_feedback.count(True) >= 2
     assert "Alex Example" not in json.dumps(handoff)
+
+
+def test_run_department_keeps_last_draft_when_later_attempt_raises() -> None:
+    from data.pipelines.rfp_intake.response_loop import run_department
+
+    def complete(messages: list[dict[str, str]]) -> str:
+        try:
+            payload = json.loads(messages[-1]["content"])
+        except (json.JSONDecodeError, KeyError, TypeError):
+            payload = {}
+        if isinstance(payload, dict) and "feedback_for_generator" in payload:
+            raise RuntimeError("synthetic")
+        return "This quote uses GBP."
+
+    outcome = run_department(
+        "revenue",
+        {"client_name": "Meridian Manufacturing", "client_country": "US"},
+        {"key_aspects": {"aspects": ["Contract term is twelve months."], "open_questions": []}},
+        complete,
+    )
+    assert outcome["draft_content"]
+    assert "GBP" in outcome["draft_content"]
+    assert outcome["needs_human_review"] is True
+    assert outcome["attempt_count"] == 2
+
+
+def test_run_department_retries_after_initial_pipeline_failure() -> None:
+    from data.pipelines.rfp_intake.generation import PipelineFailure
+    from data.pipelines.rfp_intake.response_loop import run_department
+
+    calls = {"count": 0}
+
+    def complete(messages: list[dict[str, str]]) -> str:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise PipelineFailure("model_output_invalid")
+        return PASSING_DRAFT + " Pricing is quoted in USD for this occupational health program."
+
+    outcome = run_department(
+        "revenue",
+        {
+            "client_name": "Meridian Manufacturing",
+            "client_country": "US",
+            "covered_population": "800 employees",
+        },
+        {"key_aspects": {"aspects": ["Contract term is twelve months."], "open_questions": []}},
+        complete,
+    )
+    assert calls["count"] >= 2
+    assert "USD" in outcome["draft_content"]

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
 from app.celery_app import celery_app
-from app.core.deps import get_current_user
+from app.access.permissions import require_authenticated
 from app.db.database import get_engine
 from app.models import TaskFailure
 from app.schemas.tasks import TaskStatusResponse
@@ -32,7 +32,7 @@ _CELERY_STATUS_MAP = {
 @router.get("/{task_id}", response_model=TaskStatusResponse)
 def get_task_status(
     task_id: str,
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> TaskStatusResponse:
     """Protected: current Celery state and result when the task has finished."""
     cached = load_task_result(task_id)

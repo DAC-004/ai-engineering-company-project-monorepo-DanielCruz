@@ -244,6 +244,41 @@ def _assert_completion_drops_held(text: str, committed: str) -> None:
         assert running.committed == committed
 
 
+REFERRAL_ESCALATION = (
+    "If a patient hasn't received appointment options within 5 business days of "
+    "the referral being created, the coordinator must escalate the case directly "
+    "to Marcus Reid (Director of Clinical Operations)."
+)
+REFERRAL_ANSWER = (
+    "An internal referral at HealthCore typically takes 11 days from the creation of the "
+    "referral to when the appointment options are confirmed. "
+    + REFERRAL_ESCALATION
+)
+
+
+def test_patient_hasnt_prefix_still_blocks_named_patient_smith() -> None:
+    assert appears_to_contain_phi("Patient Smith needs urgent scheduling.") is True
+    gate = StreamingReleaseGate()
+    gate.push("Patient Smith needs urgent scheduling.")
+    assert gate.stopped is True
+    assert "Smith" not in gate.committed
+
+
+def test_referral_escalation_policy_is_not_named_patient_phi() -> None:
+    assert _PATIENT_NAME.search(REFERRAL_ESCALATION) is None
+    assert appears_to_contain_phi(REFERRAL_ESCALATION) is False
+    gate = StreamingReleaseGate()
+    gate.push(REFERRAL_ESCALATION)
+    gate.complete()
+    assert gate.stopped is True
+    assert gate.committed == REFERRAL_ESCALATION
+    full_gate = StreamingReleaseGate()
+    full_gate.push(REFERRAL_ANSWER)
+    full_gate.complete()
+    assert full_gate.stopped is True
+    assert full_gate.committed == REFERRAL_ANSWER
+
+
 def test_private_pay_policy_sentence_is_not_phi() -> None:
     gate = _gate_without_flush(PRIVATE_PAY_POLICY)
     assert _cites_an_appointment_cancellation_for_a_patient(PRIVATE_PAY_POLICY) is False

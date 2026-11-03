@@ -82,10 +82,16 @@ def complete_local(
                 verbose=False,
                 chat_format="chatml",
             )
-        completion = _local_llm.create_chat_completion(
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-    content = completion["choices"][0]["message"]["content"]
+        try:
+            completion = _local_llm.create_chat_completion(
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            content = completion["choices"][0]["message"]["content"]
+        except PipelineFailure:
+            raise
+        except Exception:
+            # Type and stage only. Completion text can echo the source PDF or PHI.
+            raise PipelineFailure("model_output_invalid") from None
     return str(content).strip()

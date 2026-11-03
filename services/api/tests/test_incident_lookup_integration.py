@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
 from app.agent.graph import compile_support_graph, run_support_agent
 from app.core.config import get_settings
@@ -16,7 +17,6 @@ from app.db.database import reset_engine_for_tests
 from app.db.tinydb import reset_db_for_tests
 from app.main import app
 from app.routers import agent as agent_router
-from app.routers import incident_manager
 from app.schemas.incident import IncidentCreate, IncidentPublic
 from app.services import incident_service
 from app.services.ticket_lookup import TicketLookupQuery, lookup_ticket
@@ -35,6 +35,7 @@ def isolated_stores(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("TINYDB_PATH", str(tmp_path / "incidents.json"))
     monkeypatch.setenv("SECRET_KEY", "isolated-phase2-secret-key-32b")
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'inventory.db').as_posix()}")
+    monkeypatch.setenv("INCIDENT_DATA_DIR", str(tmp_path / "incident-data"))
     get_settings.cache_clear()
     reset_db_for_tests()
     reset_engine_for_tests()
@@ -95,6 +96,7 @@ def test_typed_contract_matches_integrated_manager() -> None:
         "status",
         "origin",
         "branch",
+        "department_id",
         "created_at",
         "updated_at",
     }
@@ -103,13 +105,35 @@ def test_typed_contract_matches_integrated_manager() -> None:
         + incident_service.list_incidents.__code__.co_names
     )
     assert "get_current_user" not in service_reads
-    router_source = Path(incident_manager.__file__).read_text(encoding="utf-8")
-    assert "get_current_user" in router_source
     lookup_names = lookup_ticket.__code__.co_names
     assert "get_incident" not in lookup_names
     assert "list_incidents" not in lookup_names
     with pytest.raises(RuntimeError, match="Direct incident lookup is disabled"):
         lookup_ticket(TicketLookupQuery(incident_id="00000000-0000-4000-8000-000000000099"))
+
+
+def test_unauthenticated_manager_requests_are_rejected(isolated_stores: None) -> None:
+    """Missing credentials are 401. These calls send no Authorization header."""
+    missing_id = "00000000-0000-4000-8000-000000000099"
+    create_body = {
+        "title": "Unauthenticated create",
+        "description": "Must be rejected before persistence",
+        "category": "clinical_equipment",
+        "origin": "branch",
+        "branch": "central",
+    }
+    with TestClient(app) as client:
+        responses = (
+            client.get("/api/incidents"),
+            client.get("/api/incidents/summary"),
+            client.get(f"/api/incidents/{missing_id}"),
+            client.post("/api/incidents", json=create_body),
+            client.patch(f"/api/incidents/{missing_id}/status", json={"status": "in_progress"}),
+        )
+    for response in responses:
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Not authenticated"
+    assert incident_service.list_incidents() == []
 
 
 def test_direct_lookup_stays_disabled_while_the_service_changes_status(

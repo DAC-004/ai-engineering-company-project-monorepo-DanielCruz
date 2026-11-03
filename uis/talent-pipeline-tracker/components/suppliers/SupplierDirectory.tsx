@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ApiError } from "@/lib/auth/types";
+import { useCurrentUser } from "@/lib/auth/CurrentUserContext";
+import { canUpdateDepartmentRecord } from "@/lib/auth/capabilities";
 import {
   VALID_SUPPLIER_CATEGORIES,
   createSupplier,
@@ -22,6 +24,8 @@ const formatMoney = (amount: number, currency: string) =>
   })} ${currency}`;
 
 export const SupplierDirectory = () => {
+  const currentUser = useCurrentUser();
+  const canUpdate = canUpdateDepartmentRecord(currentUser?.role);
   const [countryFilter, setCountryFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [suppliers, setSuppliers] = useState<SupplierRecord[]>([]);
@@ -240,6 +244,7 @@ export const SupplierDirectory = () => {
                     <td>{supplier.compliance_agreement ?? "—"}</td>
                     <td>{supplier.status}</td>
                     <td>
+                      {canUpdate ? (
                       <div className="supplier-actions">
                         <input
                           type="number"
@@ -269,6 +274,9 @@ export const SupplierDirectory = () => {
                           {supplier.status === "active" ? "Suspend" : "Activate"}
                         </button>
                       </div>
+                      ) : (
+                        <span>View only</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -278,6 +286,7 @@ export const SupplierDirectory = () => {
         </div>
       </section>
 
+      {canUpdate ? (
       <section aria-labelledby="register-heading">
         <h2 id="register-heading">Register supplier</h2>
         <form
@@ -381,6 +390,7 @@ export const SupplierDirectory = () => {
           </div>
         </form>
       </section>
+      ) : null}
     </div>
   );
 };

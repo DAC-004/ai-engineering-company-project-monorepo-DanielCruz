@@ -6,8 +6,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ErrorRecovery } from "@/components/auth/ErrorRecovery";
 import { ApiError } from "@/lib/auth/types";
 import { GENERIC_ERROR_MESSAGE } from "@/lib/auth/userFacingError";
+import { CurrentUserProvider } from "@/lib/auth/CurrentUserContext";
 import { fetchCurrentUser } from "@/lib/auth/session";
 import { hasAccessToken } from "@/lib/auth/token";
+import type { AuthMeResponse } from "@/lib/auth/types";
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -26,6 +28,7 @@ type SessionState = "checking" | "authenticated" | "anonymous" | "error";
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const router = useRouter();
   const [sessionState, setSessionState] = useState<SessionState>("checking");
+  const [currentUser, setCurrentUser] = useState<AuthMeResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -49,8 +52,9 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       try {
         // Server-side JWT validation via AUTH-01. A 401 from apiFetch clears
         // localStorage and redirects to /login before this catch runs.
-        await fetchCurrentUser();
+        const me = await fetchCurrentUser();
         if (!cancelled) {
+          setCurrentUser(me);
           setSessionState("authenticated");
         }
       } catch (error) {
@@ -104,5 +108,13 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  return <>{children}</>;
+  if (currentUser === null) {
+    return (
+      <div className="auth-loading" role="status" aria-live="polite">
+        Checking session…
+      </div>
+    );
+  }
+
+  return <CurrentUserProvider user={currentUser}>{children}</CurrentUserProvider>;
 };

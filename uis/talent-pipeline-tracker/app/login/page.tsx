@@ -1,21 +1,5 @@
-import { Suspense } from "react";
-
-import { LoginForm } from "@/components/auth/LoginForm";
+import { LoginScreen } from "@/components/auth/LoginScreen";
 
 export default function LoginPage() {
-  return (
-    <div className="auth-screen">
-      <div className="auth-card">
-        <p className="eyebrow">HealthCore Digital</p>
-        <h1>Sign in</h1>
-        <p className="auth-lede">
-          Authenticate against the HealthCore API. Your JWT is stored in localStorage
-          for protected requests.
-        </p>
-        <Suspense fallback={<p className="auth-loading">Loading sign-in form…</p>}>
-          <LoginForm />
-        </Suspense>
-      </div>
-    </div>
-  );
+  return <LoginScreen />;
 }

@@ -10,7 +10,11 @@ import pytest
 from data.pipelines.rfp_intake.agents import analyze_department, synthesize_findings
 from data.pipelines.rfp_intake.generation import PipelineFailure, _local_llm_lock
 from data.pipelines.rfp_intake.graph import build_intake_graph
-from data.pipelines.rfp_intake.grounding import apply_source_grounding, proposed_service_start_clause
+from data.pipelines.rfp_intake.grounding import (
+    apply_source_grounding,
+    proposed_service_start_clause,
+    sanitize_client_facing_draft,
+)
 from data.pipelines.rfp_intake.readability import readability_metrics
 
 
@@ -758,3 +762,21 @@ def test_department_workers_stay_separate_while_model_access_is_locked() -> None
     node_names = set(graph.nodes)
     assert {"revenue_worker", "clinical_worker", "compliance_worker"} <= node_names
     assert isinstance(_local_llm_lock, type(threading.Lock()))
+
+
+def test_sanitize_client_draft_drops_invented_price_and_scaffolding() -> None:
+    draft = (
+        "For Northbridge, quoting in USD. "
+        "Missing: Budget not stated, ask about budget. "
+        "Add more details: Estimated revenue per appointment is $100. "
+        "Missing: Budget not stated, ask about budget."
+    )
+    cleaned = sanitize_client_facing_draft(
+        draft,
+        "revenue",
+        {"budget_range": None, "client_country": "US"},
+        key_aspects=["No prices or discounts have been agreed."],
+    )
+    assert "$100" not in cleaned
+    assert "Missing:" not in cleaned
+    assert cleaned.count("For Northbridge") == 1

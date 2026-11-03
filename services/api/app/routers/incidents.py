@@ -11,6 +11,7 @@ from fastapi.responses import Response
 from shared.incident_analyzer import analysis_to_csv_rows
 from shared.incident_analyzer.export_csv import rows_to_csv_text
 
+from app.access.permissions import require_authenticated
 from app.core.deps import get_current_user
 from app.core.irreversible import require_explicit_confirmation
 from app.incidents_store import (
@@ -48,7 +49,7 @@ def _require_analysis_owner_or_admin(current_user: UserInDB) -> None:
 @router.post("/analyze", status_code=status.HTTP_202_ACCEPTED)
 async def analyze_incidents(
     file: UploadFile = File(...),
-    current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> TaskEnqueueResponse:
     """Protected: enqueue incident CSV analysis and return a task_id immediately."""
     filename = file.filename or "upload.csv"
@@ -91,7 +92,7 @@ async def analyze_incidents(
 
 @router.get("/results")
 async def get_results(
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> dict:
     """
     Protected: return the last analysis as JSON.
@@ -109,7 +110,7 @@ async def get_results(
 
 @router.get("/results/summary")
 async def get_results_summary(
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> dict:
     """
     Protected: compact operational summary of the last analysis.
@@ -135,7 +136,7 @@ async def get_results_summary(
 
 @router.get("/results/export")
 async def export_results(
-    _current_user: UserInDB = Depends(get_current_user),
+    _current_user: UserInDB = Depends(require_authenticated),
 ) -> Response:
     """Protected: export the last analysis CSV (sensitive operational output)."""
     result = get_last_analysis()
@@ -158,7 +159,7 @@ async def export_results(
 @router.delete("/results", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_results(
     request: Request,
-    current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> None:
     """
     Protected: clear the stored analysis.

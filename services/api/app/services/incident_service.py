@@ -74,13 +74,18 @@ def validate_create_payload(payload: IncidentCreate) -> dict[str, str]:
     }
 
 
-def create_incident(payload: IncidentCreate) -> IncidentInDB:
+def create_incident(
+    payload: IncidentCreate,
+    *,
+    department_id: str | None = None,
+) -> IncidentInDB:
     fields = validate_create_payload(payload)
     now = datetime.now(UTC)
     incident = IncidentInDB(
         id=str(uuid4()),
         created_at=now,
         updated_at=now,
+        department_id=department_id,
         **fields,
     )
     incidents_table().insert(incident.model_dump(mode="json"))
@@ -195,7 +200,7 @@ def update_incident_status(incident_id: str, new_status: str) -> IncidentInDB:
     return get_incident(incident_id)
 
 
-def summarize_incidents() -> IncidentSummary:
+def summarize_incidents_from(incidents: list[IncidentInDB]) -> IncidentSummary:
     """Zero-filled totals for every allowed HealthCore value, even if empty."""
     summary = IncidentSummary(
         by_status={status: 0 for status in STATUSES},
@@ -203,7 +208,7 @@ def summarize_incidents() -> IncidentSummary:
         by_origin={origin: 0 for origin in ORIGINS},
         by_branch={branch: 0 for branch in BRANCHES},
     )
-    for incident in list_incidents():
+    for incident in incidents:
         if incident.status in summary.by_status:
             summary.by_status[incident.status] += 1
         if incident.category in summary.by_category:
@@ -213,3 +218,7 @@ def summarize_incidents() -> IncidentSummary:
         if incident.branch in summary.by_branch:
             summary.by_branch[incident.branch] += 1
     return summary
+
+
+def summarize_incidents() -> IncidentSummary:
+    return summarize_incidents_from(list_incidents())

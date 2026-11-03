@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.deps import get_current_user
+from app.access.permissions import (
+    assert_department_allowed,
+    filter_department_rows,
+    require_authenticated,
+    require_create_record,
+    require_update_record,
+)
 from app.schemas.incident import (
     IncidentCreate,
     IncidentPublic,
@@ -20,10 +26,15 @@ router = APIRouter(prefix="/api/incidents", tags=["incident-manager"])
 @router.post("", response_model=IncidentPublic)
 def create_incident(
     payload: IncidentCreate,
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_create_record),
 ) -> IncidentPublic:
     """Create an incident. Generated id and timestamps are assigned by the service."""
-    return incident_service.create_incident(payload)
+    # Own-department create: a missing caller department is not a match.
+    assert_department_allowed(current_user, current_user.department_id)
+    return incident_service.create_incident(
+        payload,
+        department_id=current_user.department_id,
+    )
 
 
 @router.get("", response_model=list[IncidentPublic])
@@ -32,38 +43,48 @@ def list_incidents(
     origin: str | None = Query(default=None),
     branch: str | None = Query(default=None),
     category: str | None = Query(default=None),
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> list[IncidentPublic]:
     """Return incidents. Optional filters are exact HealthCore model values."""
-    return incident_service.list_incidents(
+    rows = incident_service.list_incidents(
         status=status,
         origin=origin,
         branch=branch,
         category=category,
     )
+    return filter_department_rows(current_user, rows, lambda row: row.department_id)
 
 
 @router.get("/summary", response_model=IncidentSummary)
 def incident_summary(
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> IncidentSummary:
-    """Aggregate totals by status, category, origin, and branch."""
-    return incident_service.summarize_incidents()
+    """Aggregate totals by status, category, origin, and branch for visible incidents."""
+    visible = filter_department_rows(
+        current_user,
+        incident_service.list_incidents(),
+        lambda row: row.department_id,
+    )
+    return incident_service.summarize_incidents_from(visible)
 
 
 @router.get("/{incident_id}", response_model=IncidentPublic)
 def get_incident(
     incident_id: str,
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> IncidentPublic:
-    return incident_service.get_incident(incident_id)
+    incident = incident_service.get_incident(incident_id)
+    assert_department_allowed(current_user, incident.department_id)
+    return incident
 
 
 @router.patch("/{incident_id}/status", response_model=IncidentPublic)
 def patch_incident_status(
     incident_id: str,
     payload: IncidentStatusUpdate,
-    _current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_update_record),
 ) -> IncidentPublic:
     """Update status only. Enforces the HealthCore lifecycle. Advances updated_at."""
+    incident = incident_service.get_incident(incident_id)
+    assert_department_allowed(current_user, incident.department_id)
     return incident_service.update_incident_status(incident_id, payload.status)

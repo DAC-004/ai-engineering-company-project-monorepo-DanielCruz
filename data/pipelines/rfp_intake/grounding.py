@@ -679,6 +679,195 @@ def _ensure_missing_budget_summary(summary: str, metadata: dict[str, Any]) -> st
     return f"{base}\n{line}".strip() if base else line
 
 
+_INTERNAL_DRAFT_LINE = re.compile(
+    r"^\s*(?:Missing:|Add more details:|Information still needed:|Information still required:)",
+    re.IGNORECASE,
+)
+_DOLLAR_AMOUNT = re.compile(r"\$\s*\d")
+_ENSURES_HIPAA = re.compile(r"\bensures\s+compliance\s+with\s+hipaa\b", re.IGNORECASE)
+
+
+def _split_sentences(text: str) -> list[str]:
+    parts = re.split(r"(?<=[.!?])\s+", text.strip())
+    return [part.strip() for part in parts if part.strip()]
+
+
+def _normalized_words(sentence: str) -> list[str]:
+    # Commas on "Agreement," otherwise prevent token overlap with "Agreement".
+    cleaned = re.sub(r"[^a-z0-9]+", " ", sentence.casefold())
+    return [word for word in cleaned.split() if word]
+
+
+_NEGATION_TOKENS = frozenset({"not", "no", "nor", "none", "never", "without", "except", "unless"})
+_CONDITION_TOKENS = frozenset(
+    {
+        "only",
+        "before",
+        "after",
+        "including",
+        "excluding",
+        "provided",
+        "until",
+        "if",
+        "unless",
+        "except",
+        "without",
+    }
+)
+_MONTH_TOKENS = frozenset(
+    {
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+    }
+)
+
+
+def _content_tokens(words: list[str]) -> set[str]:
+    """Tokens used for restatement detection. Short function words are ignored."""
+    skip = {
+        "the",
+        "and",
+        "for",
+        "with",
+        "that",
+        "this",
+        "from",
+        "will",
+        "need",
+        "also",
+        "such",
+        "as",
+        "are",
+        "is",
+        "to",
+        "of",
+        "in",
+        "a",
+        "an",
+    }
+    kept: set[str] = set()
+    for word in words:
+        if word in _NEGATION_TOKENS or word in _CONDITION_TOKENS or word in _MONTH_TOKENS:
+            kept.add(word)
+            continue
+        if word.isdigit():
+            kept.add(word)
+            continue
+        if len(word) >= 4 and word not in skip:
+            kept.add(word)
+    return kept
+
+
+def _distinguishing_tokens(tokens: set[str]) -> set[str]:
+    return {word for word in tokens if word in _NEGATION_TOKENS or word in _CONDITION_TOKENS or word in _MONTH_TOKENS or word.isdigit()}
+
+
+def _is_near_duplicate_sentence(sentence: str, kept: list[str]) -> bool:
+    """Drop restated openings and continuation padding that reuse the same clause."""
+    words = _normalized_words(sentence)
+    if not words:
+        return True
+    prefix = " ".join(words[:6] if len(words) >= 6 else words)
+    folded = " ".join(words)
+    tokens = _content_tokens(words)
+    for prior in kept:
+        prior_words = _normalized_words(prior)
+        prior_tokens = _content_tokens(prior_words)
+        if _distinguishing_tokens(tokens) != _distinguishing_tokens(prior_tokens):
+            continue
+        prior_prefix = " ".join(prior_words[:6] if len(prior_words) >= 6 else prior_words)
+        if prefix == prior_prefix:
+            return True
+        prior_fold = " ".join(prior_words)
+        if folded in prior_fold or prior_fold in folded:
+            return True
+        shared = tokens & prior_tokens
+        union = tokens | prior_tokens
+        if len(shared) >= 5 and union and len(shared) / len(union) >= 0.62:
+            return True
+    return False
+
+
+def sanitize_client_facing_draft(
+    draft: str,
+    department_id: str,
+    metadata: dict[str, Any],
+    *,
+    key_aspects: list[str] | None = None,
+) -> str:
+    """Remove generator scaffolding and unsupported claims. Keep legitimate gap statements."""
+    from data.pipelines.rfp_intake.source_fidelity import (
+        draft_asserts_invented_capacity_commitment,
+        draft_asserts_invented_facilities_in_place,
+        draft_asserts_unsupported_compliance_assurance,
+        draft_asserts_unsupported_price,
+        draft_mentions_irrelevant_uk_instrument_for_us_client,
+        is_generator_scaffolding_sentence,
+        is_redundant_known_fact_question,
+        keep_baa_requirement_without_usd_price,
+        rewrite_consent_met_as_confirmation,
+        rewrite_false_unstated_population,
+        rewrite_state_that_category_instruction,
+    )
+
+    aspects = key_aspects or []
+    sentences = _split_sentences(draft)
+    seen: set[str] = set()
+    kept: list[str] = []
+    for sentence in sentences:
+        rewritten_category_instruction = rewrite_state_that_category_instruction(sentence)
+        if rewritten_category_instruction is not None:
+            sentence = rewritten_category_instruction
+        if is_generator_scaffolding_sentence(sentence):
+            continue
+        if department_id == "clinical" and is_redundant_known_fact_question(sentence, aspects):
+            continue
+        if department_id == "revenue" and draft_asserts_unsupported_price(sentence, metadata, aspects):
+            continue
+        if department_id == "revenue":
+            rewritten_population = rewrite_false_unstated_population(
+                sentence, metadata.get("covered_population")
+            )
+            if rewritten_population is not None:
+                sentence = rewritten_population
+        if department_id == "compliance":
+            rewritten_baa = keep_baa_requirement_without_usd_price(sentence)
+            if rewritten_baa is not None:
+                sentence = rewritten_baa
+            rewritten_consent = rewrite_consent_met_as_confirmation(sentence)
+            if rewritten_consent is not None:
+                sentence = rewritten_consent
+            if draft_asserts_unsupported_compliance_assurance(sentence):
+                continue
+        if department_id == "clinical" and (
+            draft_asserts_invented_capacity_commitment(sentence)
+            or draft_asserts_invented_facilities_in_place(sentence)
+        ):
+            continue
+        if department_id == "compliance" and draft_mentions_irrelevant_uk_instrument_for_us_client(
+            sentence, metadata.get("client_country")
+        ):
+            continue
+        key = re.sub(r"\s+", " ", sentence.casefold())
+        if key in seen:
+            continue
+        if _is_near_duplicate_sentence(sentence, kept):
+            continue
+        seen.add(key)
+        kept.append(sentence)
+    return " ".join(kept)
+
+
 def apply_source_grounding(
     source: str,
     metadata: dict[str, Any],

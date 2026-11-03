@@ -11,7 +11,12 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from data.pipelines.rfp_intake.phi import screen_generated, screen_structure
+from data.pipelines.rfp_intake.grounding import normalize_optional_metadata_text
 from data.pipelines.rfp_intake.readability import readability_metrics
+from data.pipelines.rfp_intake.source_fidelity import (
+    draft_asserts_unsupported_compliance_assurance,
+    draft_asserts_unsupported_price,
+)
 
 READABILITY_LOW = 8.0
 READABILITY_HIGH = 14.0
@@ -19,6 +24,8 @@ _TOKEN = re.compile(r"[a-z0-9]+")
 _VOLUME = re.compile(r"\b\d{2,}\s+(?:employees|students|people|lives)\b", re.IGNORECASE)
 _SENTENCE_SPLIT = re.compile(r"[.!?]+")
 _NEGATION = re.compile(r"\b(?:not|no|never|without|isn't|aren't|doesn't|don't|cannot|can't)\b")
+_DOLLAR_AMOUNT = re.compile(r"\$\s*\d")
+_ENSURES_HIPAA = re.compile(r"\bensures\s+compliance\s+with\s+hipaa\b", re.IGNORECASE)
 _STOPWORDS = frozenset(
     {
         "about",
@@ -146,6 +153,7 @@ def evaluate_compliance(
     metadata: dict[str, Any],
     *,
     allowed_names: tuple[str, ...] = (),
+    key_aspects: tuple[str, ...] | list[str] = (),
 ) -> dict[str, Any]:
     """Apply HealthCore rules. contains_phi is set from the original draft."""
     screened = screen_generated(draft, allowed_names=allowed_names)
@@ -190,6 +198,18 @@ def evaluate_compliance(
         if "HC-UK-DPA" not in rule_ids:
             rule_ids.append("HC-UK-DPA")
         violations.append("A UK client must use a Data Processing Agreement referencing UK GDPR, not only a BAA.")
+    if department_id == "revenue" and draft_asserts_unsupported_price(screened.text, metadata, key_aspects):
+        rule_ids.append("HC-NO-INVENTED-PRICE")
+        violations.append(
+            "The handoff does not authorize unit prices, discounts, or revenue estimates. "
+            "Remove invented dollar amounts and per-appointment pricing."
+        )
+    if department_id == "compliance" and draft_asserts_unsupported_compliance_assurance(screened.text):
+        rule_ids.append("HC-NO-AFFIRMATIVE-COMPLIANCE")
+        violations.append(
+            "Do not assert HIPAA compliance is already ensured or that no additional safeguards are needed. "
+            "State required BAA steps and open questions without guaranteeing compliance."
+        )
     population_missing = not isinstance(population, str) or not population.strip()
     if population_missing and _VOLUME.search(screened.text):
         rule_ids.append("HC-NO-INVENTED-VOLUME")
@@ -285,6 +305,7 @@ def evaluate_in_parallel(
             department_id,
             metadata,
             allowed_names=allowed_names,
+            key_aspects=aspects,
         )
         readability = readability_task.result()
         relevance = relevance_task.result()

@@ -71,7 +71,7 @@ The legacy static site at `uis/web` links to `/incident-analysis` via `window.ST
 | Path | Auth | Purpose |
 | --- | --- | --- |
 | `/login` | Public | Email/password login → stores JWT in `localStorage` → redirects to `/`; includes **Forgot your password?** |
-| `/register` | Public | `POST /users` then `POST /auth/login` → stores JWT → redirects to `/` |
+| `/register` | Public | Public self-registration is disabled. Displays a notice with Sign in and Forgot your password? links. User creation remains Admin-only via `POST /users`. |
 | `/forgot-password` | Public | Requests `POST /auth/forgot-password`; always shows the anti-enumeration confirmation and disables the form after submit |
 | `/reset-password` | Public | Reads `token` from the query string; `POST /auth/reset-password`; redirects to `/login?reset=success` on success |
 | `/` | Protected | Main authenticated workspace (incidents, inventory, suppliers, knowledge, profile, change password, talent pipeline) |

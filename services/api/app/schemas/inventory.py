@@ -65,6 +65,7 @@ class MedicalSupplyPublic(BaseModel):
     minimum_stock: int
     expiry_date: date | None = None
     clinic_current_stock: int | None = None
+    department_id: str | None = None
 
 
 class SupplyDeliveryCreate(BaseModel):

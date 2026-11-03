@@ -363,6 +363,47 @@ h2,
   color: var(--hc-muted);
 }
 
+/*
+ * Create-account fields reuse .field/.auth-form so labels, values, and
+ * placeholders follow the same ink/panel tokens as login. The previous
+ * .supplier-register-form shell kept a hardcoded white background while
+ * prefers-color-scheme: dark flipped --hc-ink to near-white.
+ */
+.create-account-form .field input,
+.create-account-form .field select {
+  color: var(--hc-ink);
+  background: var(--hc-panel);
+}
+
+.create-account-form .field input::placeholder {
+  color: var(--hc-muted);
+  opacity: 1;
+}
+
+.create-account-form .field select option {
+  color: var(--hc-ink);
+  background: var(--hc-panel);
+}
+
+.create-account-form .field select option[value=""] {
+  color: var(--hc-muted);
+}
+
+.create-account-form .field input:focus,
+.create-account-form .field select:focus,
+.create-account-form .field input:focus-visible,
+.create-account-form .field select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hc-accent) 55%, white);
+  outline-offset: 2px;
+  border-color: var(--hc-accent);
+}
+
+.create-account-form .field input:disabled,
+.create-account-form .field select:disabled {
+  background: color-mix(in srgb, var(--hc-panel) 72%, var(--hc-line));
+  color: var(--hc-muted);
+}
+
 .optional-profile {
   margin: 0;
   padding: 1rem;

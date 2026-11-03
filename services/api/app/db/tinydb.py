@@ -12,6 +12,16 @@ from tinydb.storages import JSONStorage
 from app.core.config import get_settings
 
 _db: TinyDB | None = None
+# LockedJSONStorage serializes one JSON read or write. User uniqueness is a
+# get-then-insert across two I/O operations, so overlapping thread-pool
+# requests can both observe no row. This lock covers that logical mutation.
+# It is process-local, matching the supported single-process uvicorn runtime.
+_identity_mutation_lock = threading.RLock()
+
+
+def identity_mutation_lock() -> threading.RLock:
+    """Hold across an identity uniqueness check and the following write."""
+    return _identity_mutation_lock
 
 
 class LockedJSONStorage(JSONStorage):
@@ -66,6 +76,18 @@ def incident_seed_keys_table():
 def password_reset_tokens_table():
     """Opaque password-reset credentials (hashed) for one-time AUTH-03 use."""
     return get_db().table("password_reset_tokens")
+
+
+def roles_table():
+    return get_db().table("roles")
+
+
+def departments_table():
+    return get_db().table("departments")
+
+
+def internal_reports_table():
+    return get_db().table("internal_reports")
 
 
 def reset_db_for_tests() -> None:

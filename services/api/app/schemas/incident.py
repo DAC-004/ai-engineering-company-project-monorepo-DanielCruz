@@ -36,6 +36,7 @@ class IncidentPublic(BaseModel):
     status: str
     origin: str
     branch: str
+    department_id: str | None = None
     created_at: datetime
     updated_at: datetime
 

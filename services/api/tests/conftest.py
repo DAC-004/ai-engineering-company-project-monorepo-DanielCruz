@@ -11,6 +11,9 @@ from fastapi.testclient import TestClient
 
 from shared.healthcore_rag.qdrant import close_qdrant_client
 
+# Set before test modules import app.main so lifespan does not open live Redis.
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
+
 TEST_PASSWORD = "SecurePass1!"
 TEST_EMAIL = "alice@healthcore.com"
 
@@ -21,6 +24,10 @@ _AUTH_IDENTITY_TEST_FILES = frozenset(
         "test_me.py",
         "test_register.py",
         "test_token.py",
+        "test_roles_permissions.py",
+        "test_password_reset.py",
+        "test_rfp_demonstration_accounts.py",
+        "test_provision_personal_admin.py",
     }
 )
 
@@ -64,26 +71,36 @@ def isolated_identity_store(
         return
 
     from app.core.config import get_settings
+    from app.database import close_db as close_suppliers_db
     from app.db.database import reset_engine_for_tests
     from app.db.tinydb import reset_db_for_tests
 
     db_path = tmp_path / "auth.json"
     inventory_db = tmp_path / "inventory.db"
+    suppliers_path = tmp_path / "suppliers.json"
+    incident_data = tmp_path / "incident-data"
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-32chars!!!!")
     monkeypatch.setenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
     monkeypatch.setenv("JWT_ALGORITHM", "HS256")
     monkeypatch.setenv("TINYDB_PATH", str(db_path))
+    monkeypatch.setenv("SUPPLIERS_DB_PATH", str(suppliers_path))
+    monkeypatch.setenv("INCIDENT_DATA_DIR", str(incident_data))
     monkeypatch.setenv(
         "DATABASE_URL",
         f"sqlite:///{inventory_db.resolve().as_posix()}",
     )
+    close_suppliers_db()
     monkeypatch.setenv("RESEND_API_KEY", "test-resend-key")
     monkeypatch.setenv("RESEND_FROM_EMAIL", "HealthCore <onboarding@resend.dev>")
     monkeypatch.setenv("FRONTEND_BASE_URL", "http://localhost:3000")
+    monkeypatch.setenv("CELERY_TASK_ALWAYS_EAGER", "1")
+    monkeypatch.delenv("PLATFORM_SEED_PASSWORD", raising=False)
+    monkeypatch.delenv("RFP_DEMONSTRATION_PASSWORD", raising=False)
     get_settings.cache_clear()
     reset_engine_for_tests()
     reset_db_for_tests()
     yield db_path
+    close_suppliers_db()
     reset_db_for_tests()
     reset_engine_for_tests()
     get_settings.cache_clear()
@@ -105,7 +122,7 @@ def seeded_user():
 
     user = user_service.create_user(
         UserCreate(email=TEST_EMAIL, password=TEST_PASSWORD, name="Alice"),
-        role=UserRole.user,
+        role=UserRole.employee,
     )
     profile_service.create_profile(user_id=user.id, name="Alice")
     return user

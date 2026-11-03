@@ -48,6 +48,20 @@ re-ingest the selected store.
 
 Open interactive docs: <http://127.0.0.1:8000/docs>
 
+## Local personal Admin provisioning (operator command)
+
+Daniel-approved local operator command. It is not a public route and does not reopen registration.
+
+From `services/api`, using this API interpreter:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\provision_personal_admin.py
+```
+
+The command provisions only `cruzdaniel004@gmail.com` as Admin (rank 3) in Technology, using the persistent local identity file and loopback `healthcore_main`. It does not start the API and does not run the five-user seed.
+
+A new account prompts twice with hidden `getpass` confirmation. Passwords are not accepted as arguments, environment variables, or files. An existing matching account is upgraded in place, or left unchanged, without collecting a password. Duplicate matching identities abort without merging.
+
 ## Manual auth acceptance flow
 
 1. `POST /users` — register (JSON body with `email`, `password`, optional profile fields)

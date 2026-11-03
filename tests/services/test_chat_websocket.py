@@ -82,7 +82,7 @@ def isolated_stores(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 def _staff_token(email: str) -> str:
     user = user_service.create_user(
         UserCreate(email=email, password="test-password-1"),
-        role=UserRole.manager,
+        role=UserRole.supervisor,
     )
     return create_access_token(subject=user.id)
 
@@ -1409,6 +1409,22 @@ def test_prohibited_non_streamed_answer_is_not_published(
     events = asyncio.run(_run_socket())
     assert events[-1]["event"] == "generation_failed"
     assert "John Smith" not in json.dumps(events)
+
+
+def test_reconcile_streamed_answer_prefers_full_agent_outcome() -> None:
+    from app.services.chat_channel import _reconcile_streamed_answer
+
+    partial = (
+        "An internal referral at HealthCore typically takes 11 days from the creation of the "
+        "referral to when the appointment options are confirmed. If a "
+    )
+    full = (
+        partial
+        + "patient needs urgent scheduling, coordinators follow the escalation path in the referral policy."
+    )
+    reconciled = _reconcile_streamed_answer(partial, full)
+    assert "escalation path" in reconciled
+    assert len(reconciled) > len(partial.strip())
 
 
 def test_a_second_user_cannot_read_the_session(chat_server: _ChatServer) -> None:

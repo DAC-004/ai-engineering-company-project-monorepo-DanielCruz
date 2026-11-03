@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.agent.decision_log import append_decision
-from app.core.deps import get_current_user
+from app.access.catalog import department_name
+from app.access.permissions import capability_values, require_authenticated
 from app.core.security import create_access_token, verify_password
 from app.schemas.auth import (
     AuthMeResponse,
@@ -63,12 +64,15 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
 
 
 @router.get("/me", response_model=AuthMeResponse)
-def read_auth_me(current_user: UserInDB = Depends(get_current_user)) -> AuthMeResponse:
-    """Return the authenticated user's email, role, and linked Profile."""
+def read_auth_me(current_user: UserInDB = Depends(require_authenticated)) -> AuthMeResponse:
+    """Return the authenticated user's email, role, department, and linked Profile."""
     profile = profile_service.get_profile_by_user_id(current_user.id)
     return AuthMeResponse(
         email=current_user.email,
         role=current_user.role,
+        department_id=current_user.department_id,
+        department_name=department_name(current_user.department_id),
+        capabilities=capability_values(current_user.role),
         profile=profile,
     )
 
@@ -107,7 +111,7 @@ def reset_password(payload: ResetPasswordRequest) -> PasswordActionResponse:
 @router.post("/change-password", response_model=PasswordActionResponse)
 def change_password(
     payload: ChangePasswordRequest,
-    current_user: UserInDB = Depends(get_current_user),
+    current_user: UserInDB = Depends(require_authenticated),
 ) -> PasswordActionResponse:
     """Replace the authenticated user's password after verifying the current one."""
     try:

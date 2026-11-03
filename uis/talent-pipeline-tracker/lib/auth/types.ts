@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "manager" | "user";
+export type UserRole = "admin" | "supervisor" | "employee" | "manager" | "user";
 
 export type ProfilePublic = {
   id: string;
@@ -11,6 +11,9 @@ export type ProfilePublic = {
 export type AuthMeResponse = {
   email: string;
   role: UserRole;
+  department_id: string | null;
+  department_name: string | null;
+  capabilities: string[];
   profile: ProfilePublic | null;
 };
 
@@ -24,6 +27,8 @@ export type UserPublic = {
   email: string;
   is_active: boolean;
   role: UserRole;
+  role_id?: UserRole | null;
+  department_id?: string | null;
   created_at: string;
 };
 

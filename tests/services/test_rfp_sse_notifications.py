@@ -62,8 +62,14 @@ if _owns_database:
 
 
 def _auth_header(client: TestClient) -> dict[str, str]:
+    from app.schemas.user import UserCreate, UserRole
+    from app.services import user_service
+
     email = f"sse-{uuid.uuid4().hex[:10]}@example.com"
-    client.post("/users", json={"email": email, "password": "validpass1", "name": "SSE Tester"})
+    user_service.create_user(
+        UserCreate(email=email, password="validpass1", name="SSE Tester"),
+        role=UserRole.employee,
+    )
     login = client.post("/auth/login", data={"username": email, "password": "validpass1"})
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 

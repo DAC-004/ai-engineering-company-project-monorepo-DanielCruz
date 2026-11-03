@@ -225,7 +225,6 @@ def department_interrupted(path: Path, ticket_id: str, department_id: str) -> bo
         return bool(snapshot.next)
 
     return with_checkpointer(path, read)
-    return {"configurable": {"thread_id": thread_id(ticket_id, department_id)}}
 
 
 def _initial_state(ticket_id: str, section: dict[str, Any], metadata: dict[str, Any]) -> BranchState:
@@ -316,6 +315,9 @@ class ApprovalRun:
         for department_id in DEPARTMENT_IDS:
             self._ensure_interrupted(department_id)
         self._refresh_arbitration(force=True)
+        # Forced revisions update drafts. Recompute from the current text so a
+        # restored BAA or DPA clause does not stay flagged as a mismatch.
+        self._refresh_arbitration(force=False)
 
     def decide(
         self,
@@ -501,7 +503,14 @@ class ApprovalRun:
         if self.phi_detected or section_has_phi(section):
             return "approval_checks_failed"
         draft = section.get("draft_content") if isinstance(section.get("draft_content"), str) else ""
-        compliance = evaluate_compliance(draft, department_id, self.metadata)
+        key_aspects = section.get("key_aspects") if isinstance(section.get("key_aspects"), dict) else {}
+        aspects = key_aspects.get("aspects") if isinstance(key_aspects.get("aspects"), list) else []
+        compliance = evaluate_compliance(
+            draft,
+            department_id,
+            self.metadata,
+            key_aspects=[aspect for aspect in aspects if isinstance(aspect, str)],
+        )
         if not compliance.get("pass"):
             return "approval_checks_failed"
         capacity = self.arbitration.get("capacity") if isinstance(self.arbitration.get("capacity"), dict) else None

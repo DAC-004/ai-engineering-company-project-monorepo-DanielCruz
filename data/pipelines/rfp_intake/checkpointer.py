@@ -12,6 +12,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
 
+from filelock import FileLock
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from data.pipelines.rfp_intake.generation import REPO_ROOT
@@ -34,12 +35,18 @@ def thread_id(ticket_id: str, department_id: str | None = None) -> str:
 
 
 def with_checkpointer(path: Path, use: Callable[[SqliteSaver], T]) -> T:
-    """Open path, run use, and close the connection."""
+    """Open path, run use, and close the connection.
+
+    A process-wide file lock prevents concurrent writers (for example an HTTP
+    approval resume and an in-process service call) from corrupting SQLite.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(str(path), check_same_thread=False)
-    try:
-        saver = SqliteSaver(connection)
-        saver.setup()
-        return use(saver)
-    finally:
-        connection.close()
+    lock_path = Path(f"{path}.lock")
+    with FileLock(lock_path, timeout=300):
+        connection = sqlite3.connect(str(path), check_same_thread=False)
+        try:
+            saver = SqliteSaver(connection)
+            saver.setup()
+            return use(saver)
+        finally:
+            connection.close()

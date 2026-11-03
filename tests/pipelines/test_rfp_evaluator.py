@@ -18,6 +18,17 @@ HealthCore proposes a twelve month occupational health agreement for Meridian Ma
 """.strip()
 
 
+def test_revenue_rejects_invented_unit_price_even_when_budget_is_stated() -> None:
+    result = evaluate_compliance(
+        "Estimated revenue per appointment is $100 in USD.",
+        "revenue",
+        {"client_country": "US", "budget_range": "USD 500000-750000"},
+        key_aspects=["No prices or discounts have been agreed."],
+    )
+    assert result["pass"] is False
+    assert "HC-NO-INVENTED-PRICE" in result["rule_ids"]
+
+
 def test_revenue_section_passes_readability_relevance_and_compliance() -> None:
     result = evaluate_in_parallel(
         PASSING_DRAFT,
@@ -206,3 +217,48 @@ def test_readability_failure_names_the_grade_band() -> None:
 
     assert result["pass"] is False
     assert "100 words" in result["details"]
+
+
+def test_compliance_rejects_parenthetical_baa_quoted_in_usd() -> None:
+    result = evaluate_compliance(
+        "For Northbridge Community Services in the US, we need to ensure that a "
+        "Business Associate Agreement (BAA) is quoted in USD.",
+        "compliance",
+        {"client_country": "US"},
+        key_aspects=["Explain contractual requirements (e.g., Business Associate Agreement)"],
+    )
+    assert result["pass"] is False
+    assert "HC-NO-AFFIRMATIVE-COMPLIANCE" in result["rule_ids"]
+
+
+def test_sanitized_parenthetical_baa_passes_compliance_evaluator() -> None:
+    from data.pipelines.rfp_intake.grounding import sanitize_client_facing_draft
+
+    cleaned = sanitize_client_facing_draft(
+        "For Northbridge Community Services in the US, we need to ensure that a "
+        "Business Associate Agreement (BAA) is quoted in USD. "
+        "Consent requirements remain to be confirmed with the client.",
+        "compliance",
+        {"client_country": "US"},
+        key_aspects=["Explain contractual requirements (e.g., Business Associate Agreement)"],
+    )
+    result = evaluate_compliance(
+        cleaned,
+        "compliance",
+        {"client_country": "US"},
+        key_aspects=["Explain contractual requirements (e.g., Business Associate Agreement)"],
+    )
+    assert "business associate agreement" in cleaned.casefold()
+    assert "quoted in usd" not in cleaned.casefold()
+    assert result["pass"] is True
+
+
+def test_compliance_allows_quote_in_usd_and_include_baa() -> None:
+    result = evaluate_compliance(
+        "Quote in USD and include a Business Associate Agreement. "
+        "Consent requirements remain to be confirmed with the client.",
+        "compliance",
+        {"client_country": "US"},
+        key_aspects=["Explain contractual requirements (e.g., Business Associate Agreement)"],
+    )
+    assert result["pass"] is True

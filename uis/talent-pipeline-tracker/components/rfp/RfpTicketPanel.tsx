@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { useCurrentUser } from "@/lib/auth/CurrentUserContext";
+import { canUpdateDepartmentRecord } from "@/lib/auth/capabilities";
 import { fetchCurrentUser } from "@/lib/auth/session";
 import { ApiError } from "@/lib/auth/types";
 import {
@@ -61,6 +63,8 @@ type RfpTicketPanelProps = {
 };
 
 export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
+  const currentUser = useCurrentUser();
+  const canApprove = canUpdateDepartmentRecord(currentUser?.role);
   const [ticket, setTicket] = useState<RfpTicket | null>(null);
   const [finalDocument, setFinalDocument] = useState<RfpFinalDocument | null>(null);
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
@@ -246,7 +250,7 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
         </p>
       ) : null}
       {generationError ? <p className="form-error">{generationError}</p> : null}
-      {readyToStartApproval(ticket) ? (
+      {readyToStartApproval(ticket) && canApprove ? (
         <p className="action-row">
           <button
             type="button"
@@ -311,7 +315,10 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
             <li>Client: {ticket.metadata.client_name ?? "Not stated"}</li>
             <li>Country: {ticket.metadata.client_country ?? "Not stated"}</li>
             <li>Program: {ticket.metadata.program_type ?? "Not stated"}</li>
-            <li>Covered population: {ticket.metadata.covered_population ?? "Not stated"}</li>
+            <li>
+              Covered population (category or geography, not numeric headcount):{" "}
+              {ticket.metadata.covered_population ?? "Not stated"}
+            </li>
             <li>Deadline: {ticket.metadata.deadline ?? "Not stated"}</li>
             <li>Budget: {ticket.metadata.budget_range ?? "Not stated"}</li>
             <li>Flesch-Kincaid grade: {ticket.metadata.flesch_kincaid_grade ?? "Not scored"}</li>
@@ -343,7 +350,7 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
                 <li>None recorded.</li>
               )}
             </ul>
-            {section.needs_human_review ? (
+            {section.approval_status !== "approved" && section.needs_human_review ? (
               <p>Provisional draft. This section needs human review. The other departments still stay on this ticket.</p>
             ) : null}
             {section.draft_content ? (
@@ -365,13 +372,21 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
             ) : null}
             <h3>Open questions</h3>
             <ul>
-              {section.key_aspects.open_questions.length > 0 ? (
-                section.key_aspects.open_questions.map((question) => <li key={question}>{question}</li>)
-              ) : (
-                <li>None recorded.</li>
-              )}
+              {(() => {
+                const country = ticket.metadata?.client_country;
+                const questions = section.key_aspects.open_questions.filter((question) => {
+                  if (country === "US" && /for UK client/i.test(question)) {
+                    return false;
+                  }
+                  return true;
+                });
+                if (questions.length === 0) {
+                  return <li>None recorded.</li>;
+                }
+                return questions.map((question) => <li key={question}>{question}</li>);
+              })()}
             </ul>
-            {waiting ? (
+            {waiting && canApprove ? (
               <div className="decision-controls">
                 <label htmlFor={`note-${section.department_id}`} className="field">
                   Note, required for reject or request changes
