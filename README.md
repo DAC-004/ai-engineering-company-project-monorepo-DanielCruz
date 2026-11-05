@@ -1,6 +1,8 @@
 # HealthCore
 ## Connected operations and AI-assisted workflows
 
+**Project dates: June 2026 – November 2026**
+
 HealthCore is a full-stack application built around a simulated healthcare organization. It brings operational information, knowledge retrieval and agent-assisted workflows into connected staff-facing tools, with human review where a workflow requires approval.
 
 **Context:** Individual 4Geeks Academy AI Engineering capstone. This is educational work, not a paid healthcare engagement or a certified clinical system.
