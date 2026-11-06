@@ -308,3 +308,8 @@ The previous missing-company-briefing finding is superseded. The assets exist un
 
 ## Task 2 source compliance audit and review preparation (2026-11-06)
 Rechecked the specialized Task2 briefing and original assignment. Added reviewer-facing two-flow diagram, runbook and local PR draft under agents/federated_authentication. Existing passing backend evidence still matches (CRLF normalization only); no runtime code changed. Real Microsoft fixture checks remain documented separately; no real staff provisioning. Daniel now authorizes the supervisor to commit and push this branch; Cursor must never commit. CTO sign-off and Daniel approval before merge remain outstanding. Existing work and services preserved.
+
+
+## Auth-test TypeScript closure - 2026-11-06
+
+Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 66/66 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Supervisor owns commit/push; Cursor does not commit. Daniel review and merge approval remain pending.

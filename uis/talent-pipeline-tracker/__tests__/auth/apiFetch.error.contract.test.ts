@@ -323,13 +323,12 @@ describe("apiFetch error contract (simulated)", () => {
   });
 
   it("non-JSON error body uses status fallback", async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      status: 503,
-      ok: false,
-      json: async () => {
-        throw new SyntaxError("Unexpected token");
-      },
-    } as Response);
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response("Service unavailable", {
+        status: 503,
+        headers: { "content-type": "text/plain" },
+      }),
+    );
     await expect(apiFetch("/health")).rejects.toMatchObject({
       status: 503,
       message: GENERIC_ERROR_MESSAGE,
