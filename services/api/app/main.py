@@ -42,6 +42,7 @@ from app.routers import (  # noqa: E402
     internal_reports,
     inventory,
     chat,
+    financial_close,
     knowledge,
     profiles,
     rfp_intake,
@@ -134,6 +135,7 @@ app.include_router(suppliers.router)
 app.include_router(knowledge.router)
 app.include_router(agent.router)
 app.include_router(chat.router)
+app.include_router(financial_close.router)
 
 
 def _is_manager_write_request(request: Request) -> bool:
@@ -176,6 +178,11 @@ async def request_validation_handler(
 ) -> JSONResponse:
     """Manager write validation is HTTP 400. Other routes keep FastAPI 422."""
     if not _is_manager_write_request(request):
+        if request.url.path.startswith("/financial-close"):
+            return JSONResponse(
+                status_code=422,
+                content={"detail": "The request was not valid."},
+            )
         # Keep type and a safe location. Replace msg. Drop input and ctx.
         return JSONResponse(
             status_code=422,

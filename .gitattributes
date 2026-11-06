@@ -1,0 +1,2 @@
+# Preserve verified financial fixture bytes and provenance hashes.
+data/raw/healthcore-financial-close/*.csv -text whitespace=cr-at-eol

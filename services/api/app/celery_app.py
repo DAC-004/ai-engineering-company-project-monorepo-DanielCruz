@@ -49,8 +49,28 @@ celery_app.conf.update(
         Queue(DEFAULT_QUEUE),
         Queue(DEAD_LETTER_QUEUE),
     ),
-    imports=("app.tasks",),
+    imports=("app.tasks", "app.tasks_financial_close"),
+    timezone="America/Chicago",
+    enable_utc=True,
 )
+
+_close_interval = int(os.environ.get("FINANCIAL_CLOSE_BEAT_SECONDS", "0") or "0")
+if _close_interval > 0:
+    celery_app.conf.beat_schedule = {
+        "financial-close-sweep": {
+            "task": "app.tasks_financial_close.tick_financial_close",
+            "schedule": _close_interval,
+        }
+    }
+elif os.environ.get("FINANCIAL_CLOSE_ENABLE_CRONTAB", "").strip() in {"1", "true", "yes"}:
+    from celery.schedules import crontab
+
+    celery_app.conf.beat_schedule = {
+        "financial-close-third-business-day": {
+            "task": "app.tasks_financial_close.tick_financial_close",
+            "schedule": crontab(hour=6, minute=0),
+        }
+    }
 
 
 def ensure_broker_connection() -> None:

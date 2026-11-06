@@ -1,0 +1,2775 @@
+{
+  "period": "2026-10",
+  "load_date": "2026-11-06",
+  "catch_up": true,
+  "incomplete": true,
+  "facts_digest": "bd9776bbcfbbbba011ef1e5a93725d1dcfd7b31fd3174a60edb971d8b76289b4",
+  "file_hashes": {
+    "ledger.csv": "7f78ffd040dd3f862f1c01764a07f9a4d311cf8770dc741ab6e7cf9bf42c1361",
+    "budget.csv": "df2fe7f5845384ba659ca62007b864186848a040ac1eb359d88e7ca0227cfdc3",
+    "operations.csv": "039e6686defd607ed36f188328e941ecc48d05d053eb51456bd2171887682883"
+  },
+  "fx_rate": "1.27",
+  "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+  "executive_summary": "Close for 2026-10 is incomplete.",
+  "consolidated_usd": {
+    "status": "incomplete",
+    "budget_status": "complete",
+    "actual_status": "incomplete",
+    "known_revenue_actual_usd": "2027420.00",
+    "known_expense_actual_usd": "1708135.81",
+    "revenue_budget_usd": "2095450.00",
+    "expense_budget_usd": "1705142.00",
+    "result_actual_usd": null,
+    "result_budget_usd": "390308.00",
+    "complete": false,
+    "known_actuals_are_subtotals": true
+  },
+  "revenue_by_country_payer": [
+    {
+      "line_id": "us_commercial_revenue",
+      "country": "United States",
+      "payer": "commercial insurance",
+      "category": "revenue",
+      "currency": "USD",
+      "kind": "revenue",
+      "budget": "1150000",
+      "verified_actual": "1120000",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "-0.02608695652173913043478260870",
+      "percent_display": "-2.6%",
+      "amount_variance": "-30000",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-001",
+        "LED-202610-002",
+        "LED-202610-003",
+        "LED-202610-004",
+        "LED-202610-005",
+        "LED-202610-006",
+        "LED-202610-007",
+        "LED-202610-008",
+        "LED-202610-009"
+      ],
+      "budget_row_ids": [
+        "budget.csv:1#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:1",
+        "ledger.csv:2",
+        "ledger.csv:3",
+        "ledger.csv:4",
+        "ledger.csv:5",
+        "ledger.csv:6",
+        "ledger.csv:7",
+        "ledger.csv:8",
+        "ledger.csv:9"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "us_medicare_medicaid_revenue",
+      "country": "United States",
+      "payer": "Medicare / Medicaid",
+      "category": "revenue",
+      "currency": "USD",
+      "kind": "revenue",
+      "budget": "520000",
+      "verified_actual": "468000",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "-0.1",
+      "percent_display": "-10.0%",
+      "amount_variance": "-52000",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": true,
+      "entry_ids": [
+        "LED-202610-010",
+        "LED-202610-011",
+        "LED-202610-012",
+        "LED-202610-013",
+        "LED-202610-014",
+        "LED-202610-015",
+        "LED-202610-016",
+        "LED-202610-017",
+        "LED-202610-018"
+      ],
+      "budget_row_ids": [
+        "budget.csv:2#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:10",
+        "ledger.csv:11",
+        "ledger.csv:12",
+        "ledger.csv:13",
+        "ledger.csv:14",
+        "ledger.csv:15",
+        "ledger.csv:16",
+        "ledger.csv:17",
+        "ledger.csv:18"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "uk_private_revenue",
+      "country": "United Kingdom",
+      "payer": "private",
+      "category": "revenue",
+      "currency": "GBP",
+      "kind": "revenue",
+      "budget": "260000",
+      "verified_actual": "271000",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0.04230769230769230769230769231",
+      "percent_display": "4.2%",
+      "amount_variance": "11000",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-019",
+        "LED-202610-020",
+        "LED-202610-021"
+      ],
+      "budget_row_ids": [
+        "budget.csv:3#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:19",
+        "ledger.csv:20",
+        "ledger.csv:21"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "uk_nhs_revenue",
+      "country": "United Kingdom",
+      "payer": "NHS contract",
+      "category": "revenue",
+      "currency": "GBP",
+      "kind": "revenue",
+      "budget": "75000",
+      "verified_actual": "75000",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0",
+      "percent_display": "0.0%",
+      "amount_variance": "0",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-022",
+        "LED-202610-023",
+        "LED-202610-024"
+      ],
+      "budget_row_ids": [
+        "budget.csv:4#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:22",
+        "ledger.csv:23",
+        "ledger.csv:24"
+      ],
+      "issues": []
+    }
+  ],
+  "expenses_by_country": [
+    {
+      "line_id": "us_consumables",
+      "country": "United States",
+      "payer": "n/a",
+      "category": "clinical consumables",
+      "currency": "USD",
+      "kind": "expense",
+      "budget": "44800",
+      "verified_actual": "46816",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0.045",
+      "percent_display": "4.5%",
+      "amount_variance": "2016",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-025",
+        "LED-202610-026"
+      ],
+      "budget_row_ids": [
+        "budget.csv:5#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:25",
+        "ledger.csv:26"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "us_laboratory",
+      "country": "United States",
+      "payer": "n/a",
+      "category": "laboratory",
+      "currency": "USD",
+      "kind": "expense",
+      "budget": "45000",
+      "verified_actual": "48150",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0.07",
+      "percent_display": "7.0%",
+      "amount_variance": "3150",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": true,
+      "entry_ids": [
+        "LED-202610-027",
+        "LED-202610-028"
+      ],
+      "budget_row_ids": [
+        "budget.csv:6#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:27",
+        "ledger.csv:28"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "us_interpreting",
+      "country": "United States",
+      "payer": "n/a",
+      "category": "medical interpreting",
+      "currency": "USD",
+      "kind": "expense",
+      "budget": "17550",
+      "verified_actual": "17550",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0",
+      "percent_display": "0.0%",
+      "amount_variance": "0",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-029",
+        "LED-202610-030"
+      ],
+      "budget_row_ids": [
+        "budget.csv:7#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:29",
+        "ledger.csv:30"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "us_payroll",
+      "country": "United States",
+      "payer": "n/a",
+      "category": "payroll",
+      "currency": "USD",
+      "kind": "expense",
+      "budget": "1050000",
+      "verified_actual": "1060000",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0.009523809523809523809523809524",
+      "percent_display": "1.0%",
+      "amount_variance": "10000",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-031",
+        "LED-202610-032"
+      ],
+      "budget_row_ids": [
+        "budget.csv:8#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:31",
+        "ledger.csv:32"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "us_rent",
+      "country": "United States",
+      "payer": "n/a",
+      "category": "clinic rent",
+      "currency": "USD",
+      "kind": "expense",
+      "budget": "180000",
+      "verified_actual": "179000",
+      "known_subtotal": "179000",
+      "amount_status": "known_subtotal",
+      "percent": null,
+      "percent_display": null,
+      "amount_variance": null,
+      "incomplete": true,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-033",
+        "LED-202610-034"
+      ],
+      "budget_row_ids": [
+        "budget.csv:9#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:33",
+        "ledger.csv:34"
+      ],
+      "issues": [
+        "patient_identifying_description"
+      ]
+    },
+    {
+      "line_id": "uk_consumables",
+      "country": "United Kingdom",
+      "payer": "n/a",
+      "category": "clinical consumables",
+      "currency": "GBP",
+      "kind": "expense",
+      "budget": "9450",
+      "verified_actual": "9450",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0",
+      "percent_display": "0.0%",
+      "amount_variance": "0",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-035",
+        "LED-202610-036"
+      ],
+      "budget_row_ids": [
+        "budget.csv:10#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:36",
+        "ledger.csv:37"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "uk_laboratory",
+      "country": "United Kingdom",
+      "payer": "n/a",
+      "category": "laboratory",
+      "currency": "GBP",
+      "kind": "expense",
+      "budget": "10150",
+      "verified_actual": "10353",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0.02",
+      "percent_display": "2.0%",
+      "amount_variance": "203",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-037",
+        "LED-202610-038"
+      ],
+      "budget_row_ids": [
+        "budget.csv:11#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:38",
+        "ledger.csv:39"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "uk_payroll",
+      "country": "United Kingdom",
+      "payer": "n/a",
+      "category": "payroll",
+      "currency": "GBP",
+      "kind": "expense",
+      "budget": "210000",
+      "verified_actual": "209000",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "-0.004761904761904761904761904762",
+      "percent_display": "-0.5%",
+      "amount_variance": "-1000",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-039",
+        "LED-202610-040"
+      ],
+      "budget_row_ids": [
+        "budget.csv:12#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:40",
+        "ledger.csv:41"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "uk_rent",
+      "country": "United Kingdom",
+      "payer": "n/a",
+      "category": "clinic rent",
+      "currency": "GBP",
+      "kind": "expense",
+      "budget": "52000",
+      "verified_actual": "52000",
+      "known_subtotal": null,
+      "amount_status": "complete",
+      "percent": "0",
+      "percent_display": "0.0%",
+      "amount_variance": "0",
+      "incomplete": false,
+      "missing_actual": false,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [
+        "LED-202610-041",
+        "LED-202610-042"
+      ],
+      "budget_row_ids": [
+        "budget.csv:13#df2fe7f58453"
+      ],
+      "source_refs": [
+        "ledger.csv:42",
+        "ledger.csv:43"
+      ],
+      "issues": []
+    },
+    {
+      "line_id": "uk_software",
+      "country": "United Kingdom",
+      "payer": "n/a",
+      "category": "clinical software licences",
+      "currency": "GBP",
+      "kind": "expense",
+      "budget": "8000",
+      "verified_actual": null,
+      "known_subtotal": null,
+      "amount_status": "missing",
+      "percent": null,
+      "percent_display": null,
+      "amount_variance": null,
+      "incomplete": true,
+      "missing_actual": true,
+      "missing_budget": false,
+      "relevant": false,
+      "entry_ids": [],
+      "budget_row_ids": [
+        "budget.csv:14#df2fe7f58453"
+      ],
+      "source_refs": [],
+      "issues": []
+    }
+  ],
+  "relevant_deviations": [
+    {
+      "line_id": "us_medicare_medicaid_revenue",
+      "hypothesis": "Claims 4000 unchanged; denials 14.0 to 22.6. Revenue below budget. Hypothesis (not proved causality): Medicare: increased denials to collections or revenue shortfall.",
+      "percent": "-0.1",
+      "percent_display": "-10.0%",
+      "amount_variance": "-52000",
+      "budget": "520000",
+      "verified_actual": "468000",
+      "entry_ids": [
+        "LED-202610-010",
+        "LED-202610-011",
+        "LED-202610-012",
+        "LED-202610-013",
+        "LED-202610-014",
+        "LED-202610-015",
+        "LED-202610-016",
+        "LED-202610-017",
+        "LED-202610-018"
+      ],
+      "source_refs": [
+        "ledger.csv:10",
+        "ledger.csv:11",
+        "ledger.csv:12",
+        "ledger.csv:13",
+        "ledger.csv:14",
+        "ledger.csv:15",
+        "ledger.csv:16",
+        "ledger.csv:17",
+        "ledger.csv:18"
+      ]
+    },
+    {
+      "line_id": "us_laboratory",
+      "hypothesis": "Observed 19.26 vs budget-implied 18; qty 2500; variance 1.26; increase 3150. Hypothesis (not proved causality): Laboratory: higher supplier or unit price to expense increase. Unchanged quantity is a brief expectation, not observed budget quantity data.",
+      "percent": "0.07",
+      "percent_display": "7.0%",
+      "amount_variance": "3150",
+      "budget": "45000",
+      "verified_actual": "48150",
+      "entry_ids": [
+        "LED-202610-027",
+        "LED-202610-028"
+      ],
+      "source_refs": [
+        "ledger.csv:27",
+        "ledger.csv:28"
+      ]
+    }
+  ],
+  "missing_or_uncertain": [
+    {
+      "line_id": "uk_software",
+      "reason": "missing_actual"
+    },
+    {
+      "entry_id": "LED-202610-PHI1",
+      "reason": "uncertain_quarantined"
+    }
+  ],
+  "operations": [
+    {
+      "ingest_ref": "ingest.operations.1",
+      "row_id": "operations.csv:1#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "Medicare / Medicaid",
+      "metric": "claims_submitted_budget",
+      "value": "4000"
+    },
+    {
+      "ingest_ref": "ingest.operations.2",
+      "row_id": "operations.csv:2#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "Medicare / Medicaid",
+      "metric": "claims_submitted_actual",
+      "value": "4000"
+    },
+    {
+      "ingest_ref": "ingest.operations.3",
+      "row_id": "operations.csv:3#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "Medicare / Medicaid",
+      "metric": "denial_rate_pct_budget",
+      "value": "14.0"
+    },
+    {
+      "ingest_ref": "ingest.operations.4",
+      "row_id": "operations.csv:4#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "Medicare / Medicaid",
+      "metric": "denial_rate_pct_actual",
+      "value": "22.6"
+    },
+    {
+      "ingest_ref": "ingest.operations.5",
+      "row_id": "operations.csv:5#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "commercial insurance",
+      "metric": "claims_submitted_budget",
+      "value": "6500"
+    },
+    {
+      "ingest_ref": "ingest.operations.6",
+      "row_id": "operations.csv:6#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "commercial insurance",
+      "metric": "claims_submitted_actual",
+      "value": "6400"
+    },
+    {
+      "ingest_ref": "ingest.operations.7",
+      "row_id": "operations.csv:7#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "commercial insurance",
+      "metric": "denial_rate_pct_budget",
+      "value": "12.0"
+    },
+    {
+      "ingest_ref": "ingest.operations.8",
+      "row_id": "operations.csv:8#039e6686defd",
+      "uncertain": false,
+      "issues": [],
+      "payer": "commercial insurance",
+      "metric": "denial_rate_pct_actual",
+      "value": "12.0"
+    }
+  ],
+  "figures": {
+    "us_commercial_revenue.verified_actual": {
+      "figure_id": "us_commercial_revenue.verified_actual",
+      "value": "1120000",
+      "currency": "USD",
+      "formula": "sum(verified revenue amounts for us_commercial_revenue)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-001",
+          "value": "180000",
+          "source_ref": "ledger.csv:1"
+        },
+        {
+          "entry_id": "LED-202610-002",
+          "value": "160000",
+          "source_ref": "ledger.csv:2"
+        },
+        {
+          "entry_id": "LED-202610-003",
+          "value": "140000",
+          "source_ref": "ledger.csv:3"
+        },
+        {
+          "entry_id": "LED-202610-004",
+          "value": "130000",
+          "source_ref": "ledger.csv:4"
+        },
+        {
+          "entry_id": "LED-202610-005",
+          "value": "120000",
+          "source_ref": "ledger.csv:5"
+        },
+        {
+          "entry_id": "LED-202610-006",
+          "value": "110000",
+          "source_ref": "ledger.csv:6"
+        },
+        {
+          "entry_id": "LED-202610-007",
+          "value": "100000",
+          "source_ref": "ledger.csv:7"
+        },
+        {
+          "entry_id": "LED-202610-008",
+          "value": "90000",
+          "source_ref": "ledger.csv:8"
+        },
+        {
+          "entry_id": "LED-202610-009",
+          "value": "90000",
+          "source_ref": "ledger.csv:9"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "47acb4e8bf75d7eab732d673bba8022283cea39d913639ab6bc1c3c51f511f9d"
+    },
+    "us_commercial_revenue.budget": {
+      "figure_id": "us_commercial_revenue.budget",
+      "value": "1150000",
+      "currency": "USD",
+      "formula": "sum(budget amounts for us_commercial_revenue)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:1#df2fe7f58453",
+          "value": "1150000",
+          "ingest_ref": "ingest.budget.1"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "7797b8b081a94b54a6f1d47b6c3f1b776f0b1e696f13b32f0088bf986119f8d4"
+    },
+    "us_commercial_revenue.percent": {
+      "figure_id": "us_commercial_revenue.percent",
+      "value": "-0.02608695652173913043478260870",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_commercial_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "us_commercial_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "e94952d8789d83c7a330501e9d49d566d012b6579d0222fc5e2f0cff8a345f5c"
+    },
+    "us_commercial_revenue.amount_variance": {
+      "figure_id": "us_commercial_revenue.amount_variance",
+      "value": "-30000",
+      "currency": "USD",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_commercial_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "us_commercial_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "e3f4076fc3a3143e1ccb47480c1cdc323acf053921c238b9d7be59933ea3041a"
+    },
+    "us_commercial_revenue.known_subtotal": {
+      "figure_id": "us_commercial_revenue.known_subtotal",
+      "value": "1120000",
+      "currency": "USD",
+      "formula": "sum(verified amounts for us_commercial_revenue); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-001",
+          "value": "180000",
+          "source_ref": "ledger.csv:1"
+        },
+        {
+          "entry_id": "LED-202610-002",
+          "value": "160000",
+          "source_ref": "ledger.csv:2"
+        },
+        {
+          "entry_id": "LED-202610-003",
+          "value": "140000",
+          "source_ref": "ledger.csv:3"
+        },
+        {
+          "entry_id": "LED-202610-004",
+          "value": "130000",
+          "source_ref": "ledger.csv:4"
+        },
+        {
+          "entry_id": "LED-202610-005",
+          "value": "120000",
+          "source_ref": "ledger.csv:5"
+        },
+        {
+          "entry_id": "LED-202610-006",
+          "value": "110000",
+          "source_ref": "ledger.csv:6"
+        },
+        {
+          "entry_id": "LED-202610-007",
+          "value": "100000",
+          "source_ref": "ledger.csv:7"
+        },
+        {
+          "entry_id": "LED-202610-008",
+          "value": "90000",
+          "source_ref": "ledger.csv:8"
+        },
+        {
+          "entry_id": "LED-202610-009",
+          "value": "90000",
+          "source_ref": "ledger.csv:9"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "4f58e78e9d96fa99c4689d53ad5a2392ee33bb875645fdf38dcbb808d23b29b6"
+    },
+    "us_medicare_medicaid_revenue.verified_actual": {
+      "figure_id": "us_medicare_medicaid_revenue.verified_actual",
+      "value": "468000",
+      "currency": "USD",
+      "formula": "sum(verified revenue amounts for us_medicare_medicaid_revenue)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-010",
+          "value": "80000",
+          "source_ref": "ledger.csv:10"
+        },
+        {
+          "entry_id": "LED-202610-011",
+          "value": "70000",
+          "source_ref": "ledger.csv:11"
+        },
+        {
+          "entry_id": "LED-202610-012",
+          "value": "60000",
+          "source_ref": "ledger.csv:12"
+        },
+        {
+          "entry_id": "LED-202610-013",
+          "value": "55000",
+          "source_ref": "ledger.csv:13"
+        },
+        {
+          "entry_id": "LED-202610-014",
+          "value": "50000",
+          "source_ref": "ledger.csv:14"
+        },
+        {
+          "entry_id": "LED-202610-015",
+          "value": "45000",
+          "source_ref": "ledger.csv:15"
+        },
+        {
+          "entry_id": "LED-202610-016",
+          "value": "40000",
+          "source_ref": "ledger.csv:16"
+        },
+        {
+          "entry_id": "LED-202610-017",
+          "value": "38000",
+          "source_ref": "ledger.csv:17"
+        },
+        {
+          "entry_id": "LED-202610-018",
+          "value": "30000",
+          "source_ref": "ledger.csv:18"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "dd5e8282b56ab2088109cc8c79bdc626f82ebfbc32139f7252c89cf5e1467d63"
+    },
+    "us_medicare_medicaid_revenue.budget": {
+      "figure_id": "us_medicare_medicaid_revenue.budget",
+      "value": "520000",
+      "currency": "USD",
+      "formula": "sum(budget amounts for us_medicare_medicaid_revenue)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:2#df2fe7f58453",
+          "value": "520000",
+          "ingest_ref": "ingest.budget.2"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "72cdeb3b21bbf7772529d2495548dec19678f92d6a51fd8cc0214127d8a8ce68"
+    },
+    "us_medicare_medicaid_revenue.percent": {
+      "figure_id": "us_medicare_medicaid_revenue.percent",
+      "value": "-0.1",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_medicare_medicaid_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "us_medicare_medicaid_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "461ccb526381683b980e07f6be0af1903f0d727178ff314233ca37120b544353"
+    },
+    "us_medicare_medicaid_revenue.amount_variance": {
+      "figure_id": "us_medicare_medicaid_revenue.amount_variance",
+      "value": "-52000",
+      "currency": "USD",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_medicare_medicaid_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "us_medicare_medicaid_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "424914aa5fa8d648ef3153314bfebe74502eb8ffb239eca772bd930a32239e8d"
+    },
+    "us_medicare_medicaid_revenue.known_subtotal": {
+      "figure_id": "us_medicare_medicaid_revenue.known_subtotal",
+      "value": "468000",
+      "currency": "USD",
+      "formula": "sum(verified amounts for us_medicare_medicaid_revenue); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-010",
+          "value": "80000",
+          "source_ref": "ledger.csv:10"
+        },
+        {
+          "entry_id": "LED-202610-011",
+          "value": "70000",
+          "source_ref": "ledger.csv:11"
+        },
+        {
+          "entry_id": "LED-202610-012",
+          "value": "60000",
+          "source_ref": "ledger.csv:12"
+        },
+        {
+          "entry_id": "LED-202610-013",
+          "value": "55000",
+          "source_ref": "ledger.csv:13"
+        },
+        {
+          "entry_id": "LED-202610-014",
+          "value": "50000",
+          "source_ref": "ledger.csv:14"
+        },
+        {
+          "entry_id": "LED-202610-015",
+          "value": "45000",
+          "source_ref": "ledger.csv:15"
+        },
+        {
+          "entry_id": "LED-202610-016",
+          "value": "40000",
+          "source_ref": "ledger.csv:16"
+        },
+        {
+          "entry_id": "LED-202610-017",
+          "value": "38000",
+          "source_ref": "ledger.csv:17"
+        },
+        {
+          "entry_id": "LED-202610-018",
+          "value": "30000",
+          "source_ref": "ledger.csv:18"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "52286fd30db7d1a5a01ffa01f2d84b7ebbbaf5a689b365c92a3f247d2a45d6a1"
+    },
+    "uk_private_revenue.verified_actual": {
+      "figure_id": "uk_private_revenue.verified_actual",
+      "value": "271000",
+      "currency": "GBP",
+      "formula": "sum(verified revenue amounts for uk_private_revenue)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-019",
+          "value": "120000",
+          "source_ref": "ledger.csv:19"
+        },
+        {
+          "entry_id": "LED-202610-020",
+          "value": "90000",
+          "source_ref": "ledger.csv:20"
+        },
+        {
+          "entry_id": "LED-202610-021",
+          "value": "61000",
+          "source_ref": "ledger.csv:21"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "35dabc536e88461081cfc223f83e92d7b89324d23b74d71ad456bea37f805a17"
+    },
+    "uk_private_revenue.budget": {
+      "figure_id": "uk_private_revenue.budget",
+      "value": "260000",
+      "currency": "GBP",
+      "formula": "sum(budget amounts for uk_private_revenue)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:3#df2fe7f58453",
+          "value": "260000",
+          "ingest_ref": "ingest.budget.3"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "3ea8cb79fee2257378dccaa8567d7ac8251f46ec883a457d7afbd3c23f2617f1"
+    },
+    "uk_private_revenue.percent": {
+      "figure_id": "uk_private_revenue.percent",
+      "value": "0.04230769230769230769230769231",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_private_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_private_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "69d22ef0a3e9f320afc2c1f45632b36a1aa560e15bc311da4341c2a830a6f476"
+    },
+    "uk_private_revenue.amount_variance": {
+      "figure_id": "uk_private_revenue.amount_variance",
+      "value": "11000",
+      "currency": "GBP",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_private_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_private_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "1d36c401919986fa39766331a06c3869b4a48aec760c1a65333de4914c81d975"
+    },
+    "uk_private_revenue.known_subtotal": {
+      "figure_id": "uk_private_revenue.known_subtotal",
+      "value": "271000",
+      "currency": "GBP",
+      "formula": "sum(verified amounts for uk_private_revenue); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-019",
+          "value": "120000",
+          "source_ref": "ledger.csv:19"
+        },
+        {
+          "entry_id": "LED-202610-020",
+          "value": "90000",
+          "source_ref": "ledger.csv:20"
+        },
+        {
+          "entry_id": "LED-202610-021",
+          "value": "61000",
+          "source_ref": "ledger.csv:21"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "01af4e7783657e17782e05126065e65429908f73527b5147813f3b4205248546"
+    },
+    "uk_nhs_revenue.verified_actual": {
+      "figure_id": "uk_nhs_revenue.verified_actual",
+      "value": "75000",
+      "currency": "GBP",
+      "formula": "sum(verified revenue amounts for uk_nhs_revenue)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-022",
+          "value": "30000",
+          "source_ref": "ledger.csv:22"
+        },
+        {
+          "entry_id": "LED-202610-023",
+          "value": "25000",
+          "source_ref": "ledger.csv:23"
+        },
+        {
+          "entry_id": "LED-202610-024",
+          "value": "20000",
+          "source_ref": "ledger.csv:24"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "517aabe945ec139eb572e9fbebb18771a7649493315ed37c489ddbd3f7e0ade9"
+    },
+    "uk_nhs_revenue.budget": {
+      "figure_id": "uk_nhs_revenue.budget",
+      "value": "75000",
+      "currency": "GBP",
+      "formula": "sum(budget amounts for uk_nhs_revenue)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:4#df2fe7f58453",
+          "value": "75000",
+          "ingest_ref": "ingest.budget.4"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "b485bf29f4b13d2826b97c1210da675e6b8385767745d8fb57a667d6e7df843d"
+    },
+    "uk_nhs_revenue.percent": {
+      "figure_id": "uk_nhs_revenue.percent",
+      "value": "0",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_nhs_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_nhs_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "a160a34e877b790850d252ed9988942ef8fdbaee21cb6930946cf7a3344cbd15"
+    },
+    "uk_nhs_revenue.amount_variance": {
+      "figure_id": "uk_nhs_revenue.amount_variance",
+      "value": "0",
+      "currency": "GBP",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_nhs_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_nhs_revenue.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "d64afb6a2a736e6a426e067f3dd86a109c7d96649a85c5340fa54962ddaa5777"
+    },
+    "uk_nhs_revenue.known_subtotal": {
+      "figure_id": "uk_nhs_revenue.known_subtotal",
+      "value": "75000",
+      "currency": "GBP",
+      "formula": "sum(verified amounts for uk_nhs_revenue); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-022",
+          "value": "30000",
+          "source_ref": "ledger.csv:22"
+        },
+        {
+          "entry_id": "LED-202610-023",
+          "value": "25000",
+          "source_ref": "ledger.csv:23"
+        },
+        {
+          "entry_id": "LED-202610-024",
+          "value": "20000",
+          "source_ref": "ledger.csv:24"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "aef89828abbb996d783b78ea3b4e16e3adec9fe259db3f383513c4ed4379bf25"
+    },
+    "us_consumables.verified_actual": {
+      "figure_id": "us_consumables.verified_actual",
+      "value": "46816",
+      "currency": "USD",
+      "formula": "sum(verified expense amounts for us_consumables)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-025",
+          "value": "26752",
+          "source_ref": "ledger.csv:25"
+        },
+        {
+          "entry_id": "LED-202610-026",
+          "value": "20064",
+          "source_ref": "ledger.csv:26"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "bf96a5f60fb1608cbe6083fde56be16e7af3201ddcc91e1d998f713aaa862e2f"
+    },
+    "us_consumables.budget": {
+      "figure_id": "us_consumables.budget",
+      "value": "44800",
+      "currency": "USD",
+      "formula": "sum(budget amounts for us_consumables)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:5#df2fe7f58453",
+          "value": "44800",
+          "ingest_ref": "ingest.budget.5"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "22685d7f6d9576838c6f46af61d588a330ab72b411f095eb202b4480dcb497db"
+    },
+    "us_consumables.percent": {
+      "figure_id": "us_consumables.percent",
+      "value": "0.045",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_consumables.verified_actual"
+        },
+        {
+          "source_figure_id": "us_consumables.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "46be05361fc0e509f536e645628792ae882c197ac9a2256b419fb21e56017098"
+    },
+    "us_consumables.amount_variance": {
+      "figure_id": "us_consumables.amount_variance",
+      "value": "2016",
+      "currency": "USD",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_consumables.verified_actual"
+        },
+        {
+          "source_figure_id": "us_consumables.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "1c948d34e17fa7dde226a93f1818e0a93a54f39ca50055f5f59a6440dacb2abc"
+    },
+    "us_consumables.known_subtotal": {
+      "figure_id": "us_consumables.known_subtotal",
+      "value": "46816",
+      "currency": "USD",
+      "formula": "sum(verified amounts for us_consumables); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-025",
+          "value": "26752",
+          "source_ref": "ledger.csv:25"
+        },
+        {
+          "entry_id": "LED-202610-026",
+          "value": "20064",
+          "source_ref": "ledger.csv:26"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "77665f4159576738440a5e5b4d511853e430c7faab7a96e5a2746cf2a897ebc8"
+    },
+    "us_laboratory.verified_actual": {
+      "figure_id": "us_laboratory.verified_actual",
+      "value": "48150",
+      "currency": "USD",
+      "formula": "sum(verified expense amounts for us_laboratory)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-027",
+          "value": "28890",
+          "source_ref": "ledger.csv:27"
+        },
+        {
+          "entry_id": "LED-202610-028",
+          "value": "19260",
+          "source_ref": "ledger.csv:28"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "3917bde8f5c34aa883eb351fe2bdb99c3ba452d0e8f08b572043bf00ba8cf2aa"
+    },
+    "us_laboratory.budget": {
+      "figure_id": "us_laboratory.budget",
+      "value": "45000",
+      "currency": "USD",
+      "formula": "sum(budget amounts for us_laboratory)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:6#df2fe7f58453",
+          "value": "45000",
+          "ingest_ref": "ingest.budget.6"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "a275401b4ed5bec336a5d20c87d55ee82e7a317acc6b5cfa3ffef50b63aeebb0"
+    },
+    "us_laboratory.percent": {
+      "figure_id": "us_laboratory.percent",
+      "value": "0.07",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "us_laboratory.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "4a13041c5abd0853eecd563e9f7446e2cf085f79c2a6367b64c0ffa1d2d6eff3"
+    },
+    "us_laboratory.amount_variance": {
+      "figure_id": "us_laboratory.amount_variance",
+      "value": "3150",
+      "currency": "USD",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "us_laboratory.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "ee2a6a5f3d5c5c6ff2c5f94b6005472155973fd76778a0e935a7c303f8198e47"
+    },
+    "us_laboratory.known_subtotal": {
+      "figure_id": "us_laboratory.known_subtotal",
+      "value": "48150",
+      "currency": "USD",
+      "formula": "sum(verified amounts for us_laboratory); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-027",
+          "value": "28890",
+          "source_ref": "ledger.csv:27"
+        },
+        {
+          "entry_id": "LED-202610-028",
+          "value": "19260",
+          "source_ref": "ledger.csv:28"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "86506c223320edb3556e6b27861f8083ba0e72dd53febf7f45ed1bc45615be75"
+    },
+    "us_interpreting.verified_actual": {
+      "figure_id": "us_interpreting.verified_actual",
+      "value": "17550",
+      "currency": "USD",
+      "formula": "sum(verified expense amounts for us_interpreting)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-029",
+          "value": "9750",
+          "source_ref": "ledger.csv:29"
+        },
+        {
+          "entry_id": "LED-202610-030",
+          "value": "7800",
+          "source_ref": "ledger.csv:30"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "4ccc76689cdd0879638c21d0c9f928382974360ac83e47ae5b3f381eed80767c"
+    },
+    "us_interpreting.budget": {
+      "figure_id": "us_interpreting.budget",
+      "value": "17550",
+      "currency": "USD",
+      "formula": "sum(budget amounts for us_interpreting)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:7#df2fe7f58453",
+          "value": "17550",
+          "ingest_ref": "ingest.budget.7"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "3e4b82dd90189a5fd20e6bf42de8f0feb88bfe6f3668398f8c61abe77f91f938"
+    },
+    "us_interpreting.percent": {
+      "figure_id": "us_interpreting.percent",
+      "value": "0",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_interpreting.verified_actual"
+        },
+        {
+          "source_figure_id": "us_interpreting.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "0bffe0c465a5132e16151aa29f071412b94200041d43167ac22aedbabcea67c4"
+    },
+    "us_interpreting.amount_variance": {
+      "figure_id": "us_interpreting.amount_variance",
+      "value": "0",
+      "currency": "USD",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_interpreting.verified_actual"
+        },
+        {
+          "source_figure_id": "us_interpreting.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "d0606f1efd349797159588bbd139dcdb2aecdc501628314d86fd3ddac4ab1e8f"
+    },
+    "us_interpreting.known_subtotal": {
+      "figure_id": "us_interpreting.known_subtotal",
+      "value": "17550",
+      "currency": "USD",
+      "formula": "sum(verified amounts for us_interpreting); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-029",
+          "value": "9750",
+          "source_ref": "ledger.csv:29"
+        },
+        {
+          "entry_id": "LED-202610-030",
+          "value": "7800",
+          "source_ref": "ledger.csv:30"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "3109a0f569e6c4a587f592434da7791124227c9c16f1ca38df947863ac363aae"
+    },
+    "us_payroll.verified_actual": {
+      "figure_id": "us_payroll.verified_actual",
+      "value": "1060000",
+      "currency": "USD",
+      "formula": "sum(verified expense amounts for us_payroll)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-031",
+          "value": "600000",
+          "source_ref": "ledger.csv:31"
+        },
+        {
+          "entry_id": "LED-202610-032",
+          "value": "460000",
+          "source_ref": "ledger.csv:32"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "11b01c34f17fcdb11876f1f3151482fd4baa98582294788fbd8ca38e57551245"
+    },
+    "us_payroll.budget": {
+      "figure_id": "us_payroll.budget",
+      "value": "1050000",
+      "currency": "USD",
+      "formula": "sum(budget amounts for us_payroll)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:8#df2fe7f58453",
+          "value": "1050000",
+          "ingest_ref": "ingest.budget.8"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "11ec2d1d9c66ae6d14dee8194bc0a8561ea76e53d6a9bc71ad57ec1bffb0d4ee"
+    },
+    "us_payroll.percent": {
+      "figure_id": "us_payroll.percent",
+      "value": "0.009523809523809523809523809524",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_payroll.verified_actual"
+        },
+        {
+          "source_figure_id": "us_payroll.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "e145db8a9c31057d95f506f01cf1a1ebd6d2be6ba87905d217b851fe4b200493"
+    },
+    "us_payroll.amount_variance": {
+      "figure_id": "us_payroll.amount_variance",
+      "value": "10000",
+      "currency": "USD",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_payroll.verified_actual"
+        },
+        {
+          "source_figure_id": "us_payroll.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "df11041b9f1374a52d30ae45c5221c1d69c0493265fb2e82cdbbc429ae667422"
+    },
+    "us_payroll.known_subtotal": {
+      "figure_id": "us_payroll.known_subtotal",
+      "value": "1060000",
+      "currency": "USD",
+      "formula": "sum(verified amounts for us_payroll); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-031",
+          "value": "600000",
+          "source_ref": "ledger.csv:31"
+        },
+        {
+          "entry_id": "LED-202610-032",
+          "value": "460000",
+          "source_ref": "ledger.csv:32"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "210c465f3e82a2b304ced5c5e586e80143be881f9bd2675385b488165e3d0d62"
+    },
+    "us_rent.verified_actual": {
+      "figure_id": "us_rent.verified_actual",
+      "value": "179000",
+      "currency": "USD",
+      "formula": "sum(verified expense amounts for us_rent)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-033",
+          "value": "120000",
+          "source_ref": "ledger.csv:33"
+        },
+        {
+          "entry_id": "LED-202610-034",
+          "value": "59000",
+          "source_ref": "ledger.csv:34"
+        }
+      ],
+      "amount_status": "known_subtotal",
+      "hash": "75f5d71ffc90995345bcfc81e36f6c0bd177194c021f3ba1e4fe3fb5eca63113"
+    },
+    "us_rent.budget": {
+      "figure_id": "us_rent.budget",
+      "value": "180000",
+      "currency": "USD",
+      "formula": "sum(budget amounts for us_rent)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:9#df2fe7f58453",
+          "value": "180000",
+          "ingest_ref": "ingest.budget.9"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "99ad4aecc50050827f9c805ec1339504462c2c291559cde14e096c970b784367"
+    },
+    "us_rent.percent": {
+      "figure_id": "us_rent.percent",
+      "value": null,
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_rent.verified_actual"
+        },
+        {
+          "source_figure_id": "us_rent.budget"
+        }
+      ],
+      "amount_status": "missing",
+      "hash": "6c67a3f687654aee267caa86569fcaa98ff9f2ed770f6283453acdfc8b56b24f"
+    },
+    "us_rent.amount_variance": {
+      "figure_id": "us_rent.amount_variance",
+      "value": null,
+      "currency": "USD",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_rent.verified_actual"
+        },
+        {
+          "source_figure_id": "us_rent.budget"
+        }
+      ],
+      "amount_status": "missing",
+      "hash": "0577c669640bbb7bcb843befeee3737898f16add8a6e57e2f0a05d0dcf966c1c"
+    },
+    "us_rent.known_subtotal": {
+      "figure_id": "us_rent.known_subtotal",
+      "value": "179000",
+      "currency": "USD",
+      "formula": "sum(verified amounts for us_rent); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-033",
+          "value": "120000",
+          "source_ref": "ledger.csv:33"
+        },
+        {
+          "entry_id": "LED-202610-034",
+          "value": "59000",
+          "source_ref": "ledger.csv:34"
+        }
+      ],
+      "amount_status": "known_subtotal",
+      "hash": "2255fa877e677eb225130676249022ee141d332a4ac721c75d56e806cb14fdae"
+    },
+    "uk_consumables.verified_actual": {
+      "figure_id": "uk_consumables.verified_actual",
+      "value": "9450",
+      "currency": "GBP",
+      "formula": "sum(verified expense amounts for uk_consumables)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-035",
+          "value": "5400",
+          "source_ref": "ledger.csv:36"
+        },
+        {
+          "entry_id": "LED-202610-036",
+          "value": "4050",
+          "source_ref": "ledger.csv:37"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "68ede2582bcd530e220ebbca25b7f46b4c19415bfc38dac713a06d0b3b310c99"
+    },
+    "uk_consumables.budget": {
+      "figure_id": "uk_consumables.budget",
+      "value": "9450",
+      "currency": "GBP",
+      "formula": "sum(budget amounts for uk_consumables)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:10#df2fe7f58453",
+          "value": "9450",
+          "ingest_ref": "ingest.budget.10"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "8e3372c1ae92b88b339a4562c10904f4c8bf7a64543165fe7c188603d596e929"
+    },
+    "uk_consumables.percent": {
+      "figure_id": "uk_consumables.percent",
+      "value": "0",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_consumables.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_consumables.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "cabd6c7b275fa1fa9b7b88eee2135c695a6c8ae651bb69618f09595763a34c4c"
+    },
+    "uk_consumables.amount_variance": {
+      "figure_id": "uk_consumables.amount_variance",
+      "value": "0",
+      "currency": "GBP",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_consumables.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_consumables.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "d824f3275eeeca2c9f4d51ceb536d22b7a3bd66d81b78ae680d8e50e256fd219"
+    },
+    "uk_consumables.known_subtotal": {
+      "figure_id": "uk_consumables.known_subtotal",
+      "value": "9450",
+      "currency": "GBP",
+      "formula": "sum(verified amounts for uk_consumables); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-035",
+          "value": "5400",
+          "source_ref": "ledger.csv:36"
+        },
+        {
+          "entry_id": "LED-202610-036",
+          "value": "4050",
+          "source_ref": "ledger.csv:37"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "2aacb8f7a744431de3f5989db6a016c47a8d3d718b811627b2a593afbdca6262"
+    },
+    "uk_laboratory.verified_actual": {
+      "figure_id": "uk_laboratory.verified_actual",
+      "value": "10353",
+      "currency": "GBP",
+      "formula": "sum(verified expense amounts for uk_laboratory)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-037",
+          "value": "5916",
+          "source_ref": "ledger.csv:38"
+        },
+        {
+          "entry_id": "LED-202610-038",
+          "value": "4437",
+          "source_ref": "ledger.csv:39"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "e7e061cb0b05b436fa5fcba2087b9b321b59d4c86a559acbc0879172c0b2cfbe"
+    },
+    "uk_laboratory.budget": {
+      "figure_id": "uk_laboratory.budget",
+      "value": "10150",
+      "currency": "GBP",
+      "formula": "sum(budget amounts for uk_laboratory)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:11#df2fe7f58453",
+          "value": "10150",
+          "ingest_ref": "ingest.budget.11"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "e72d3c9aabdf519fd113b7b323d1e496b1122e023058ea1f730aeaf4443faef0"
+    },
+    "uk_laboratory.percent": {
+      "figure_id": "uk_laboratory.percent",
+      "value": "0.02",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_laboratory.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "bb19fd79fa019a6a6f7cf59d1a061aa6e1311501af12b32058ab8cce477f3657"
+    },
+    "uk_laboratory.amount_variance": {
+      "figure_id": "uk_laboratory.amount_variance",
+      "value": "203",
+      "currency": "GBP",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_laboratory.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "0dc706e43afaa51a776ae9edf44a38ea6f26644ae5122ca38ca040c5605071b2"
+    },
+    "uk_laboratory.known_subtotal": {
+      "figure_id": "uk_laboratory.known_subtotal",
+      "value": "10353",
+      "currency": "GBP",
+      "formula": "sum(verified amounts for uk_laboratory); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-037",
+          "value": "5916",
+          "source_ref": "ledger.csv:38"
+        },
+        {
+          "entry_id": "LED-202610-038",
+          "value": "4437",
+          "source_ref": "ledger.csv:39"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "64f11aa6e96562150ece347eda985bd9d2473453ea9f051ab57829fdfdcaddde"
+    },
+    "uk_payroll.verified_actual": {
+      "figure_id": "uk_payroll.verified_actual",
+      "value": "209000",
+      "currency": "GBP",
+      "formula": "sum(verified expense amounts for uk_payroll)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-039",
+          "value": "120000",
+          "source_ref": "ledger.csv:40"
+        },
+        {
+          "entry_id": "LED-202610-040",
+          "value": "89000",
+          "source_ref": "ledger.csv:41"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "62580bd399fc44b3dc283a7f30573db6cf388c233ceec503a82d357ed84ae343"
+    },
+    "uk_payroll.budget": {
+      "figure_id": "uk_payroll.budget",
+      "value": "210000",
+      "currency": "GBP",
+      "formula": "sum(budget amounts for uk_payroll)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:12#df2fe7f58453",
+          "value": "210000",
+          "ingest_ref": "ingest.budget.12"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "9f0fe542e9b1a0df7b047393a2d2a8ad1c1e397e24039601b73ce0d1e0af6837"
+    },
+    "uk_payroll.percent": {
+      "figure_id": "uk_payroll.percent",
+      "value": "-0.004761904761904761904761904762",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_payroll.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_payroll.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "8bf8d7e7327cd02087bcfcc85b90eff5f6a6162bd6d055247ed758c02180f15e"
+    },
+    "uk_payroll.amount_variance": {
+      "figure_id": "uk_payroll.amount_variance",
+      "value": "-1000",
+      "currency": "GBP",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_payroll.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_payroll.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "65c16afda02e09fa854f231de277ad0feeb5050371988b9ba2a56229e0300a6f"
+    },
+    "uk_payroll.known_subtotal": {
+      "figure_id": "uk_payroll.known_subtotal",
+      "value": "209000",
+      "currency": "GBP",
+      "formula": "sum(verified amounts for uk_payroll); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-039",
+          "value": "120000",
+          "source_ref": "ledger.csv:40"
+        },
+        {
+          "entry_id": "LED-202610-040",
+          "value": "89000",
+          "source_ref": "ledger.csv:41"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "770b525702339ea93a75d350ce0992f18ddd379b970a201d60ebacbe9648ccea"
+    },
+    "uk_rent.verified_actual": {
+      "figure_id": "uk_rent.verified_actual",
+      "value": "52000",
+      "currency": "GBP",
+      "formula": "sum(verified expense amounts for uk_rent)",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-041",
+          "value": "32000",
+          "source_ref": "ledger.csv:42"
+        },
+        {
+          "entry_id": "LED-202610-042",
+          "value": "20000",
+          "source_ref": "ledger.csv:43"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "570194c2fbedf5ddedd018aa19fe4f8304e12b26874eeb898dd4f6847165aa3d"
+    },
+    "uk_rent.budget": {
+      "figure_id": "uk_rent.budget",
+      "value": "52000",
+      "currency": "GBP",
+      "formula": "sum(budget amounts for uk_rent)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:13#df2fe7f58453",
+          "value": "52000",
+          "ingest_ref": "ingest.budget.13"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "3e6cf4b592bf6f20f6f1d3be37c3ac53a0801b12fb3b06887500bb39c40268a1"
+    },
+    "uk_rent.percent": {
+      "figure_id": "uk_rent.percent",
+      "value": "0",
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_rent.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_rent.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "e52435ad37e794e22f354370e722066a3c1f0b705879291ef664bbcf35e11649"
+    },
+    "uk_rent.amount_variance": {
+      "figure_id": "uk_rent.amount_variance",
+      "value": "0",
+      "currency": "GBP",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_rent.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_rent.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "106595cfc71cc67b38f6a9242eee8d143518d4bb6952dbfb2e2d794dc2f6bfd6"
+    },
+    "uk_rent.known_subtotal": {
+      "figure_id": "uk_rent.known_subtotal",
+      "value": "52000",
+      "currency": "GBP",
+      "formula": "sum(verified amounts for uk_rent); not a complete total",
+      "contributing_rows": [
+        {
+          "entry_id": "LED-202610-041",
+          "value": "32000",
+          "source_ref": "ledger.csv:42"
+        },
+        {
+          "entry_id": "LED-202610-042",
+          "value": "20000",
+          "source_ref": "ledger.csv:43"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "a48682922efe032d44bc878f84c422d2e7f5a593ec9c051f32bf9d77c399872a"
+    },
+    "uk_software.verified_actual": {
+      "figure_id": "uk_software.verified_actual",
+      "value": null,
+      "currency": "GBP",
+      "formula": "sum(verified expense amounts for uk_software)",
+      "contributing_rows": [],
+      "amount_status": "missing",
+      "hash": "cf2c1b0f9570afc619e64739c5aa9dc431177b3c64214c3555bfc89088bc1ecf"
+    },
+    "uk_software.budget": {
+      "figure_id": "uk_software.budget",
+      "value": "8000",
+      "currency": "GBP",
+      "formula": "sum(budget amounts for uk_software)",
+      "contributing_rows": [
+        {
+          "row_id": "budget.csv:14#df2fe7f58453",
+          "value": "8000",
+          "ingest_ref": "ingest.budget.14"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "72f77d64689aa8dc97e7d7272ea33b56d728a56b07f07538dbb3241eb7d7b705"
+    },
+    "uk_software.percent": {
+      "figure_id": "uk_software.percent",
+      "value": null,
+      "formula": "(verified_actual - budget) / budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_software.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_software.budget"
+        }
+      ],
+      "amount_status": "missing",
+      "hash": "6546566ef2264ac15132db461bb932ceeb5e40c381d93e7e80cf4dcece59d8b7"
+    },
+    "uk_software.amount_variance": {
+      "figure_id": "uk_software.amount_variance",
+      "value": null,
+      "currency": "GBP",
+      "formula": "verified_actual - budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "uk_software.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_software.budget"
+        }
+      ],
+      "amount_status": "missing",
+      "hash": "f29a13639f253453559e841be71d6ef442345f18021ce0f61d68f4e01dc341be"
+    },
+    "uk_software.known_subtotal": {
+      "figure_id": "uk_software.known_subtotal",
+      "value": null,
+      "currency": "GBP",
+      "formula": "sum(verified amounts for uk_software); not a complete total",
+      "contributing_rows": [],
+      "amount_status": "missing",
+      "hash": "8879c56eb4f0e3af0448c5a51f9ddd6134758d792e77cf3e546376a56c9f775a"
+    },
+    "consolidated.revenue_budget_usd": {
+      "figure_id": "consolidated.revenue_budget_usd",
+      "value": "2095450.00",
+      "currency": "USD",
+      "formula": "sum of the four revenue line budgets in native currency converted to USD at briefing FX",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_commercial_revenue.budget"
+        },
+        {
+          "source_figure_id": "us_medicare_medicaid_revenue.budget"
+        },
+        {
+          "source_figure_id": "uk_private_revenue.budget"
+        },
+        {
+          "source_figure_id": "uk_nhs_revenue.budget"
+        },
+        {
+          "source_figure_id": "fx.rate"
+        }
+      ],
+      "amount_status": "complete",
+      "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+      "hash": "4b539f706fb2aca3a510ffc15922eb0a4f020e7438ee2afd3ee8d07e8f3a2d03"
+    },
+    "consolidated.expense_budget_usd": {
+      "figure_id": "consolidated.expense_budget_usd",
+      "value": "1705142.00",
+      "currency": "USD",
+      "formula": "sum of the ten expense line budgets in native currency converted to USD at briefing FX",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_consumables.budget"
+        },
+        {
+          "source_figure_id": "us_laboratory.budget"
+        },
+        {
+          "source_figure_id": "us_interpreting.budget"
+        },
+        {
+          "source_figure_id": "us_payroll.budget"
+        },
+        {
+          "source_figure_id": "us_rent.budget"
+        },
+        {
+          "source_figure_id": "uk_consumables.budget"
+        },
+        {
+          "source_figure_id": "uk_laboratory.budget"
+        },
+        {
+          "source_figure_id": "uk_payroll.budget"
+        },
+        {
+          "source_figure_id": "uk_rent.budget"
+        },
+        {
+          "source_figure_id": "uk_software.budget"
+        },
+        {
+          "source_figure_id": "fx.rate"
+        }
+      ],
+      "amount_status": "complete",
+      "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+      "hash": "d81ba0993c6cafbd118f674c93fcfedaf34ed87c7aa902428f7d02928615cbb1"
+    },
+    "consolidated.result_budget_usd": {
+      "figure_id": "consolidated.result_budget_usd",
+      "value": "390308.00",
+      "currency": "USD",
+      "formula": "revenue_budget_usd - expense_budget_usd; GBP native amounts converted to USD at briefing FX",
+      "contributing_rows": [
+        {
+          "source_figure_id": "consolidated.revenue_budget_usd"
+        },
+        {
+          "source_figure_id": "consolidated.expense_budget_usd"
+        },
+        {
+          "source_figure_id": "fx.rate"
+        }
+      ],
+      "amount_status": "complete",
+      "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+      "hash": "dd442c97f0d749f8e538aa8185ffe771493f200afea838645775e4b11408e711"
+    },
+    "consolidated.known_revenue_actual_usd": {
+      "figure_id": "consolidated.known_revenue_actual_usd",
+      "value": "2027420.00",
+      "currency": "USD",
+      "formula": "sum of verified revenue ledger actuals in native currency converted to USD at briefing FX; incomplete known subtotal",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_commercial_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "us_medicare_medicaid_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_private_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_nhs_revenue.verified_actual"
+        },
+        {
+          "source_figure_id": "fx.rate"
+        }
+      ],
+      "amount_status": "incomplete",
+      "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+      "hash": "c3fdc89a71f5a0f2dd0cd4d9007bbb9a751327d18424cbae6c794e56d047b6a0"
+    },
+    "consolidated.known_expense_actual_usd": {
+      "figure_id": "consolidated.known_expense_actual_usd",
+      "value": "1708135.81",
+      "currency": "USD",
+      "formula": "sum of verified expense ledger actuals in native currency converted to USD at briefing FX; incomplete known subtotal",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_consumables.verified_actual"
+        },
+        {
+          "source_figure_id": "us_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "us_interpreting.verified_actual"
+        },
+        {
+          "source_figure_id": "us_payroll.verified_actual"
+        },
+        {
+          "source_figure_id": "us_rent.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_consumables.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_payroll.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_rent.verified_actual"
+        },
+        {
+          "source_figure_id": "uk_software.verified_actual"
+        },
+        {
+          "source_figure_id": "fx.rate"
+        }
+      ],
+      "amount_status": "incomplete",
+      "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+      "hash": "e35c45f166958a2c9d22d71bf5b2bd232bbd201f447ac4541b441e0c2768de9c"
+    },
+    "fx.rate": {
+      "figure_id": "fx.rate",
+      "value": "1.27",
+      "formula": "briefing reference rate",
+      "contributing_rows": [
+        {
+          "source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "664e0a8a9822234a9c5410a80c0fe5448b665fd31ce3d0f15214c44e76f24d80"
+    },
+    "operations.medicare.claims_submitted_actual": {
+      "figure_id": "operations.medicare.claims_submitted_actual",
+      "value": "4000",
+      "formula": "operations claims_submitted_actual for Medicare / Medicaid",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.2",
+          "row_id": "operations.csv:2#039e6686defd",
+          "value": "4000"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "9906058d897d5533e3c8b8e4ba3090f7531069927b0db0ec6e6b8a92b6e96fb5"
+    },
+    "operations.medicare.claims_submitted_budget": {
+      "figure_id": "operations.medicare.claims_submitted_budget",
+      "value": "4000",
+      "formula": "operations claims_submitted_budget for Medicare / Medicaid",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.1",
+          "row_id": "operations.csv:1#039e6686defd",
+          "value": "4000"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "1d94b03e44ee1d6e1d382c42efc4189bebde4cb7158e52988a4cc31d34277586"
+    },
+    "operations.medicare.denial_rate_pct_actual": {
+      "figure_id": "operations.medicare.denial_rate_pct_actual",
+      "value": "22.6",
+      "formula": "operations denial_rate_pct_actual for Medicare / Medicaid",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.4",
+          "row_id": "operations.csv:4#039e6686defd",
+          "value": "22.6"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "2c19dc2767724fb10c4191a928d3ef9b896c39d52639ac90f5e280c21204e77d"
+    },
+    "operations.medicare.denial_rate_pct_budget": {
+      "figure_id": "operations.medicare.denial_rate_pct_budget",
+      "value": "14.0",
+      "formula": "operations denial_rate_pct_budget for Medicare / Medicaid",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.3",
+          "row_id": "operations.csv:3#039e6686defd",
+          "value": "14.0"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "c7b5c79f5e83f6afb6a6809f8a9ce6ae1bcc2beaa34d79d0e2fd2206ccced466"
+    },
+    "operations.commercial.claims_submitted_actual": {
+      "figure_id": "operations.commercial.claims_submitted_actual",
+      "value": "6400",
+      "formula": "operations claims_submitted_actual for commercial insurance",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.6",
+          "row_id": "operations.csv:6#039e6686defd",
+          "value": "6400"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "5a1e6e42ad4c6cf9f0e67861d3cb795ad285a802800e72ae1bed42c32bd5d74c"
+    },
+    "operations.commercial.claims_submitted_budget": {
+      "figure_id": "operations.commercial.claims_submitted_budget",
+      "value": "6500",
+      "formula": "operations claims_submitted_budget for commercial insurance",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.5",
+          "row_id": "operations.csv:5#039e6686defd",
+          "value": "6500"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "5e2401016fda05d9db771a8335a53659cb206b4976d3d133671653b5fe3d3e7d"
+    },
+    "operations.commercial.denial_rate_pct_actual": {
+      "figure_id": "operations.commercial.denial_rate_pct_actual",
+      "value": "12.0",
+      "formula": "operations denial_rate_pct_actual for commercial insurance",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.8",
+          "row_id": "operations.csv:8#039e6686defd",
+          "value": "12.0"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "90e06432ba5c71a6626db4694cf4030505c6550373bb2cbfb42b346cc76311ab"
+    },
+    "operations.commercial.denial_rate_pct_budget": {
+      "figure_id": "operations.commercial.denial_rate_pct_budget",
+      "value": "12.0",
+      "formula": "operations denial_rate_pct_budget for commercial insurance",
+      "contributing_rows": [
+        {
+          "ingest_ref": "ingest.operations.7",
+          "row_id": "operations.csv:7#039e6686defd",
+          "value": "12.0"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "8823f79b100a317457a93d8eac11830a08d241edbb7cad274af2912b5033d7f4"
+    },
+    "us_laboratory.unit_price": {
+      "figure_id": "us_laboratory.unit_price",
+      "value": "19.26",
+      "formula": "observed ClearPath Labs unit price",
+      "contributing_rows": [
+        {
+          "source_refs": [
+            "ledger.csv:27",
+            "ledger.csv:28"
+          ]
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "f2a66db220d2f0309ec60ec787c976f05152f2f7ac85f25444c61dd6d1221b00"
+    },
+    "us_laboratory.observed_quantity": {
+      "figure_id": "us_laboratory.observed_quantity",
+      "value": "2500",
+      "formula": "sum of laboratory test quantities",
+      "contributing_rows": [
+        {
+          "source_refs": [
+            "ledger.csv:27",
+            "ledger.csv:28"
+          ]
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "69580056acb830831317bf60d02a2ac5a98369b50fd67dfeb586451a83eb9fea"
+    },
+    "us_laboratory.budget_implied_unit_price": {
+      "figure_id": "us_laboratory.budget_implied_unit_price",
+      "value": "18",
+      "formula": "laboratory budget divided by observed quantity",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "us_laboratory.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "296149744b4df818ed0136feb72014faff5b27aecce93444efcc8242c4c8250a"
+    },
+    "us_laboratory.increase": {
+      "figure_id": "us_laboratory.increase",
+      "value": "3150",
+      "formula": "verified laboratory actual minus budget",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "us_laboratory.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "005a3c0b120aa654f50b9b086ed3dfabe19503baa98c7622648ac512c0297d81"
+    },
+    "us_laboratory.unit_price_variance": {
+      "figure_id": "us_laboratory.unit_price_variance",
+      "value": "1.26",
+      "formula": "observed unit price minus budget-implied unit price",
+      "contributing_rows": [
+        {
+          "source_figure_id": "us_laboratory.verified_actual"
+        },
+        {
+          "source_figure_id": "us_laboratory.budget"
+        }
+      ],
+      "amount_status": "complete",
+      "hash": "7fdb13a61a1736d696524eac3b885dc05f75d5d568fc3584f6906e2ec95e5257"
+    }
+  },
+  "traceability": {
+    "file_hashes": {
+      "ledger.csv": "7f78ffd040dd3f862f1c01764a07f9a4d311cf8770dc741ab6e7cf9bf42c1361",
+      "budget.csv": "df2fe7f5845384ba659ca62007b864186848a040ac1eb359d88e7ca0227cfdc3",
+      "operations.csv": "039e6686defd607ed36f188328e941ecc48d05d053eb51456bd2171887682883"
+    },
+    "missing_files": [],
+    "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+    "fx_rate": "1.27",
+    "invoked_tools": [
+      "ingest_and_normalize",
+      "aggregate_lines",
+      "actual_versus_budget",
+      "convert_gbp_usd",
+      "select_relevant_deviations",
+      "completeness",
+      "lookup_sources"
+    ],
+    "lines": {
+      "us_commercial_revenue": {
+        "figure_id": "us_commercial_revenue.verified_actual",
+        "entry_ids": [
+          "LED-202610-001",
+          "LED-202610-002",
+          "LED-202610-003",
+          "LED-202610-004",
+          "LED-202610-005",
+          "LED-202610-006",
+          "LED-202610-007",
+          "LED-202610-008",
+          "LED-202610-009"
+        ],
+        "budget_row_ids": [
+          "budget.csv:1#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:1",
+          "ledger.csv:2",
+          "ledger.csv:3",
+          "ledger.csv:4",
+          "ledger.csv:5",
+          "ledger.csv:6",
+          "ledger.csv:7",
+          "ledger.csv:8",
+          "ledger.csv:9"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "us_medicare_medicaid_revenue": {
+        "figure_id": "us_medicare_medicaid_revenue.verified_actual",
+        "entry_ids": [
+          "LED-202610-010",
+          "LED-202610-011",
+          "LED-202610-012",
+          "LED-202610-013",
+          "LED-202610-014",
+          "LED-202610-015",
+          "LED-202610-016",
+          "LED-202610-017",
+          "LED-202610-018"
+        ],
+        "budget_row_ids": [
+          "budget.csv:2#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:10",
+          "ledger.csv:11",
+          "ledger.csv:12",
+          "ledger.csv:13",
+          "ledger.csv:14",
+          "ledger.csv:15",
+          "ledger.csv:16",
+          "ledger.csv:17",
+          "ledger.csv:18"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "uk_private_revenue": {
+        "figure_id": "uk_private_revenue.verified_actual",
+        "entry_ids": [
+          "LED-202610-019",
+          "LED-202610-020",
+          "LED-202610-021"
+        ],
+        "budget_row_ids": [
+          "budget.csv:3#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:19",
+          "ledger.csv:20",
+          "ledger.csv:21"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "uk_nhs_revenue": {
+        "figure_id": "uk_nhs_revenue.verified_actual",
+        "entry_ids": [
+          "LED-202610-022",
+          "LED-202610-023",
+          "LED-202610-024"
+        ],
+        "budget_row_ids": [
+          "budget.csv:4#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:22",
+          "ledger.csv:23",
+          "ledger.csv:24"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "us_consumables": {
+        "figure_id": "us_consumables.verified_actual",
+        "entry_ids": [
+          "LED-202610-025",
+          "LED-202610-026"
+        ],
+        "budget_row_ids": [
+          "budget.csv:5#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:25",
+          "ledger.csv:26"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "us_laboratory": {
+        "figure_id": "us_laboratory.verified_actual",
+        "entry_ids": [
+          "LED-202610-027",
+          "LED-202610-028"
+        ],
+        "budget_row_ids": [
+          "budget.csv:6#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:27",
+          "ledger.csv:28"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "us_interpreting": {
+        "figure_id": "us_interpreting.verified_actual",
+        "entry_ids": [
+          "LED-202610-029",
+          "LED-202610-030"
+        ],
+        "budget_row_ids": [
+          "budget.csv:7#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:29",
+          "ledger.csv:30"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "us_payroll": {
+        "figure_id": "us_payroll.verified_actual",
+        "entry_ids": [
+          "LED-202610-031",
+          "LED-202610-032"
+        ],
+        "budget_row_ids": [
+          "budget.csv:8#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:31",
+          "ledger.csv:32"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "us_rent": {
+        "figure_id": "us_rent.verified_actual",
+        "entry_ids": [
+          "LED-202610-033",
+          "LED-202610-034"
+        ],
+        "budget_row_ids": [
+          "budget.csv:9#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:33",
+          "ledger.csv:34"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "known_subtotal"
+      },
+      "uk_consumables": {
+        "figure_id": "uk_consumables.verified_actual",
+        "entry_ids": [
+          "LED-202610-035",
+          "LED-202610-036"
+        ],
+        "budget_row_ids": [
+          "budget.csv:10#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:36",
+          "ledger.csv:37"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "uk_laboratory": {
+        "figure_id": "uk_laboratory.verified_actual",
+        "entry_ids": [
+          "LED-202610-037",
+          "LED-202610-038"
+        ],
+        "budget_row_ids": [
+          "budget.csv:11#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:38",
+          "ledger.csv:39"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "uk_payroll": {
+        "figure_id": "uk_payroll.verified_actual",
+        "entry_ids": [
+          "LED-202610-039",
+          "LED-202610-040"
+        ],
+        "budget_row_ids": [
+          "budget.csv:12#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:40",
+          "ledger.csv:41"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "uk_rent": {
+        "figure_id": "uk_rent.verified_actual",
+        "entry_ids": [
+          "LED-202610-041",
+          "LED-202610-042"
+        ],
+        "budget_row_ids": [
+          "budget.csv:13#df2fe7f58453"
+        ],
+        "source_refs": [
+          "ledger.csv:42",
+          "ledger.csv:43"
+        ],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "complete"
+      },
+      "uk_software": {
+        "figure_id": "uk_software.verified_actual",
+        "entry_ids": [],
+        "budget_row_ids": [
+          "budget.csv:14#df2fe7f58453"
+        ],
+        "source_refs": [],
+        "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
+        "amount_status": "missing"
+      }
+    },
+    "fx_conversions": [
+      {
+        "line_id": "uk_private_revenue",
+        "basis": "verified_actual",
+        "usd_amount": "344170.00",
+        "source_refs": [
+          "ledger.csv:19",
+          "ledger.csv:20",
+          "ledger.csv:21"
+        ]
+      },
+      {
+        "line_id": "uk_private_revenue",
+        "basis": "budget",
+        "usd_amount": "330200.00",
+        "source_refs": [
+          "budget.csv:3#df2fe7f58453"
+        ]
+      },
+      {
+        "line_id": "uk_nhs_revenue",
+        "basis": "verified_actual",
+        "usd_amount": "95250.00",
+        "source_refs": [
+          "ledger.csv:22",
+          "ledger.csv:23",
+          "ledger.csv:24"
+        ]
+      },
+      {
+        "line_id": "uk_nhs_revenue",
+        "basis": "budget",
+        "usd_amount": "95250.00",
+        "source_refs": [
+          "budget.csv:4#df2fe7f58453"
+        ]
+      },
+      {
+        "line_id": "uk_consumables",
+        "basis": "verified_actual",
+        "usd_amount": "12001.50",
+        "source_refs": [
+          "ledger.csv:36",
+          "ledger.csv:37"
+        ]
+      },
+      {
+        "line_id": "uk_consumables",
+        "basis": "budget",
+        "usd_amount": "12001.50",
+        "source_refs": [
+          "budget.csv:10#df2fe7f58453"
+        ]
+      },
+      {
+        "line_id": "uk_laboratory",
+        "basis": "verified_actual",
+        "usd_amount": "13148.31",
+        "source_refs": [
+          "ledger.csv:38",
+          "ledger.csv:39"
+        ]
+      },
+      {
+        "line_id": "uk_laboratory",
+        "basis": "budget",
+        "usd_amount": "12890.50",
+        "source_refs": [
+          "budget.csv:11#df2fe7f58453"
+        ]
+      },
+      {
+        "line_id": "uk_payroll",
+        "basis": "verified_actual",
+        "usd_amount": "265430.00",
+        "source_refs": [
+          "ledger.csv:40",
+          "ledger.csv:41"
+        ]
+      },
+      {
+        "line_id": "uk_payroll",
+        "basis": "budget",
+        "usd_amount": "266700.00",
+        "source_refs": [
+          "budget.csv:12#df2fe7f58453"
+        ]
+      },
+      {
+        "line_id": "uk_rent",
+        "basis": "verified_actual",
+        "usd_amount": "66040.00",
+        "source_refs": [
+          "ledger.csv:42",
+          "ledger.csv:43"
+        ]
+      },
+      {
+        "line_id": "uk_rent",
+        "basis": "budget",
+        "usd_amount": "66040.00",
+        "source_refs": [
+          "budget.csv:13#df2fe7f58453"
+        ]
+      },
+      {
+        "line_id": "uk_software",
+        "basis": "budget",
+        "usd_amount": "10160.00",
+        "source_refs": [
+          "budget.csv:14#df2fe7f58453"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "ingest_ref": "ingest.operations.1",
+        "row_id": "operations.csv:1#039e6686defd",
+        "issues": [],
+        "metric": "claims_submitted_budget",
+        "payer": "Medicare / Medicaid"
+      },
+      {
+        "ingest_ref": "ingest.operations.2",
+        "row_id": "operations.csv:2#039e6686defd",
+        "issues": [],
+        "metric": "claims_submitted_actual",
+        "payer": "Medicare / Medicaid"
+      },
+      {
+        "ingest_ref": "ingest.operations.3",
+        "row_id": "operations.csv:3#039e6686defd",
+        "issues": [],
+        "metric": "denial_rate_pct_budget",
+        "payer": "Medicare / Medicaid"
+      },
+      {
+        "ingest_ref": "ingest.operations.4",
+        "row_id": "operations.csv:4#039e6686defd",
+        "issues": [],
+        "metric": "denial_rate_pct_actual",
+        "payer": "Medicare / Medicaid"
+      },
+      {
+        "ingest_ref": "ingest.operations.5",
+        "row_id": "operations.csv:5#039e6686defd",
+        "issues": [],
+        "metric": "claims_submitted_budget",
+        "payer": "commercial insurance"
+      },
+      {
+        "ingest_ref": "ingest.operations.6",
+        "row_id": "operations.csv:6#039e6686defd",
+        "issues": [],
+        "metric": "claims_submitted_actual",
+        "payer": "commercial insurance"
+      },
+      {
+        "ingest_ref": "ingest.operations.7",
+        "row_id": "operations.csv:7#039e6686defd",
+        "issues": [],
+        "metric": "denial_rate_pct_budget",
+        "payer": "commercial insurance"
+      },
+      {
+        "ingest_ref": "ingest.operations.8",
+        "row_id": "operations.csv:8#039e6686defd",
+        "issues": [],
+        "metric": "denial_rate_pct_actual",
+        "payer": "commercial insurance"
+      }
+    ]
+  },
+  "reviewer_guidance": null
+}
