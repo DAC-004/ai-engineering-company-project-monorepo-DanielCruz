@@ -77,11 +77,7 @@ notice 90 days, deadline 2027-03-06; clause 5 exit 90 days no penalty;
 clause 6 DPA missing despite fictional proceed; clause 8 annual 121800 GBP
 => 154686 USD, required Marcus and Claire.
 
-Backend hashes for the 191 Task 4 sources match the 53-pass run. Supervisor
-later saved two UI null guards only; focused ESLint and production-only
-typecheck exit 0. Full-project `tsc` still fails only at unchanged
-`uis/talent-pipeline-tracker/__tests__/auth/apiFetch.error.contract.test.ts:326`
-(baseline TS2352). That is not a full typecheck or build pass.
+Backend hashes for the 191 Task 4 sources still match the 53-pass run. Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 63/63 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged.
 
 ## Out of scope for this PR
 

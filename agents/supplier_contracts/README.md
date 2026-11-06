@@ -87,9 +87,4 @@ Separate evidence, not included in the 53:
 - Autonomous worker on owned 6382: 211+ ticks, first 9 alerts then 0
   duplicates, no HTTP `/tick`. External transports disabled.
 
-Backend hashes for the 191 Task 4 sources match the 53-pass run. Supervisor
-later saved two UI null guards only; focused ESLint and production-only
-typecheck exit 0. Full-project `tsc` still fails only at unchanged
-`__tests__/auth/apiFetch.error.contract.test.ts:326` (baseline TS2352). That
-is not a production typecheck or build pass. Real Operations sign-off and
-developer Git publication remain pending.
+Backend hashes for the 191 Task 4 sources still match the 53-pass run. Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 63/63 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged.
