@@ -1,0 +1,3 @@
+# Preserve verified supplier fixture bytes and PDF cross-reference offsets.
+data/raw/healthcore-supplier-contracts/pdfs/*.pdf binary
+data/raw/healthcore-supplier-contracts/prices.csv -text whitespace=cr-at-eol

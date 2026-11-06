@@ -149,6 +149,16 @@ export const AppShell = ({ children }: AppShellProps) => {
             Supplier directory
           </Link>
           <Link
+            href="/backoffice/supplier-contracts"
+            className={
+              pathname.startsWith("/backoffice/supplier-contracts")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Supplier contracts
+          </Link>
+          <Link
             href="/backoffice/rfp"
             className={
               pathname.startsWith("/backoffice/rfp")

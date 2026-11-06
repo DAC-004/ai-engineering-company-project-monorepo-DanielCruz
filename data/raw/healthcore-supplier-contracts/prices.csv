@@ -1,0 +1,85 @@
+supplier_id,product,unit,currency,month,unit_price,monthly_volume
+HC-S01,Disposable consultation kit,kit,USD,2025-12,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-01,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-02,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-03,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-04,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-05,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-06,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-07,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-08,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-09,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-10,3.20,14000
+HC-S01,Disposable consultation kit,kit,USD,2026-11,3.344,14000
+HC-S02,Disposable consultation kit,kit,USD,2025-12,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-01,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-02,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-03,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-04,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-05,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-06,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-07,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-08,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-09,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-10,3.05,0
+HC-S02,Disposable consultation kit,kit,USD,2026-11,3.05,0
+HC-S03,Basic metabolic panel,test,USD,2025-12,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-01,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-02,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-03,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-04,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-05,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-06,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-07,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-08,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-09,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-10,18.00,2500
+HC-S03,Basic metabolic panel,test,USD,2026-11,19.26,2500
+HC-S04,Basic metabolic panel,test,USD,2025-12,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-01,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-02,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-03,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-04,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-05,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-06,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-07,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-08,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-09,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-10,17.20,0
+HC-S04,Basic metabolic panel,test,USD,2026-11,17.20,0
+HC-S05,Disposable consultation kit,kit,GBP,2025-12,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-01,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-02,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-03,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-04,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-05,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-06,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-07,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-08,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-09,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-10,2.70,3500
+HC-S05,Disposable consultation kit,kit,GBP,2026-11,2.70,3500
+HC-S06,Basic metabolic panel,test,GBP,2025-12,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-01,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-02,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-03,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-04,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-05,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-06,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-07,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-08,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-09,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-10,14.50,700
+HC-S06,Basic metabolic panel,test,GBP,2026-11,14.79,700
+HC-S07,Medical interpreting,minute,USD,2025-12,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-01,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-02,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-03,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-04,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-05,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-06,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-07,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-08,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-09,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-10,1.95,9000
+HC-S07,Medical interpreting,minute,USD,2026-11,1.95,9000
