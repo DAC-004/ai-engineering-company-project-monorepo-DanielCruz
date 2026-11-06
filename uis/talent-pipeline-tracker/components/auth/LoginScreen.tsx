@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { LoginForm } from "@/components/auth/LoginForm";
 import { LoginResetNotice } from "@/components/auth/LoginResetNotice";
+import { MicrosoftSignInButton } from "@/components/auth/MicrosoftSignInButton";
 
 /**
  * Single client boundary for the login card so static copy and form hydrate together.
@@ -22,6 +23,7 @@ export const LoginScreen = () => {
           <LoginResetNotice />
         </Suspense>
         <LoginForm />
+        <MicrosoftSignInButton />
       </div>
     </div>
   );

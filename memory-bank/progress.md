@@ -289,3 +289,22 @@
 - **Gap closed:** I02b pre-commit R-3 re-run with F05 replacement `What does UK GDPR Article 9 require for processing health data?` (not the earlier wrong minimum-necessary re-ask).
 - **Non-streamed path:** `run_support_agent` → empty trace nodes, 230-char `GENERAL_REGULATION` answer; WS after interrupt → 33 gate `token_chunk` events summing 230 chars vs Q1 streamed profile (~63 chunks); browser shows **That is general industry context.** after interrupt.
 - **Evidence (gitignored):** `healthcore-i02-auth/services/api/data/i02-evidence/i02b-precommit/` — `R3-ARTICLE9-BROWSER-EVIDENCE.md`, `r3-article9-ws-summary.json`, `r3-article9-agent-direct.txt`, `I02B-PRECOMMIT-RECONCILIATION.md`. External main-owning Qdrant used read-only with `HEALTHCORE_ALLOW_EXTERNAL_QDRANT=1` (validation opt-in only). I02b user merge commit still pending; main promotion/L2/push not approved.
+
+## Task 2 federated auth Prompt 14 (2026-11-04)
+
+- Worktree `feature/federated-auth`. `uv lock` aligned `pyjwt>=2.10.0` on `healthcore-api`; PyJWT 2.15.1 retained. Callback page executed via mocked signed provider response; last-method warning rendered. Duplicate-effect not demonstrated. 13+5 API results retained. No Git. Actual Entra still NOT EXECUTED. Isolated 3010/8010 scheduled for owned cleanup after identity confirmation.
+
+## Task 2 real Microsoft IdP verification and Task 3 readiness (2026-11-06 UTC)
+
+- Approved isolated live frontend 3011/API 8011 completed password login, account-only Microsoft consent, real identity link, federated login with the same Priya identity/role, unlink, unlinked rejection with audit and unchanged two-user count, password fallback and restored link. This is a fictional staff fixture, not real employee provisioning.
+- Entra credentials remain in a restricted private configuration outside the repository; no credential values belong in this file. Existing services and real data were preserved.
+- Source/evidence reconciliation: saved JUnit 13 federation + 5 login tests passed with no failures/errors/skips; all 15 recorded source files match current content allowing for line endings. Four UI evidence files also match after LF normalization; prior 3 Jest passes, lint and build remain the source-matching evidence. No new code change required a rerun.
+- Sanitized report, Tasks 2–5 checklist and PR draft are under C:\Users\cruzd\Documents\Codex\2026-11-04\task. Task 2 CTO signoff and developer-run Git publication remain pending. No overall submission/merge PASS claimed; no agent Git writes.
+- Task 3 generic onboarding assignment was read. Company-specific onboarding BRIEFING and official material were not found in the searched project evidence. Exact stages, documents, approvers and deadlines must be supplied before implementation. The required feature/onboarding-orchestrator worktree is also absent; agents must not create/switch branches. Tasks 4–5 remain unstarted in the requested sequence.
+
+## Task 3 source correction (2026-11-06 UTC)
+
+The previous missing-company-briefing finding is superseded. The assets exist under C:\Users\cruzd\Downloads\Tasks\Task 3 (the earlier search missed the nested Tasks directory). healthcore-BRIEFING.en.md was read in full; the original Onboarding Agent image was visually inspected and matches the generic assignment. The briefing defines all seven stages, deadlines, approvers, exact comprehension thresholds, routing/escalation, early-access rejection and sensitive-data exclusions. Prior history confirms the same sources were handed to Capstone on 2026-11-04 at 17:25 UTC. No missing-source blocker remains. Official learning documents are implementation deliverables explicitly required by this briefing. See the corrected workspace checklist and healthcore-task3-source-verification.md for paths, SHA-256 hashes and source-bound details. Task-specific worktree/Git restrictions remain; no Git write performed.
+
+## Task 2 source compliance audit and review preparation (2026-11-06)
+Rechecked the specialized Task2 briefing and original assignment. Added reviewer-facing two-flow diagram, runbook and local PR draft under agents/federated_authentication. Existing passing backend evidence still matches (CRLF normalization only); no runtime code changed. Real Microsoft fixture checks remain documented separately; no real staff provisioning. Daniel now authorizes the supervisor to commit and push this branch; Cursor must never commit. CTO sign-off and Daniel approval before merge remain outstanding. Existing work and services preserved.
