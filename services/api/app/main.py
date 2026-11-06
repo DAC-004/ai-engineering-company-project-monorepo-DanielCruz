@@ -43,6 +43,7 @@ from app.routers import (  # noqa: E402
     inventory,
     chat,
     knowledge,
+    onboarding,
     profiles,
     rfp_intake,
     roles,
@@ -134,6 +135,7 @@ app.include_router(suppliers.router)
 app.include_router(knowledge.router)
 app.include_router(agent.router)
 app.include_router(chat.router)
+app.include_router(onboarding.router)
 
 
 def _is_manager_write_request(request: Request) -> bool:

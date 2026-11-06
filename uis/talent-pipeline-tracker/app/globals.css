@@ -79,6 +79,22 @@ h2,
 
 .home-panel {
   width: min(100%, 48rem);
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.onboarding-official-content {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.onboarding-official-body {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .rfp-arrival-panel {

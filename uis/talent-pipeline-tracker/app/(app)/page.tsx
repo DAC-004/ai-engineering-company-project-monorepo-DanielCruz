@@ -71,6 +71,12 @@ export default function HomePage() {
         <Link href="/backoffice/internal-reports" className="btn-secondary">
           Internal reports
         </Link>
+        <Link href="/onboarding" className="btn-secondary">
+          Onboarding board
+        </Link>
+        <Link href="/onboarding/me" className="btn-secondary">
+          My onboarding
+        </Link>
         {isAccessAdmin ? (
         <Link href="/backoffice/access" className="btn-secondary">
           Roles and departments
