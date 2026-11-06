@@ -326,3 +326,8 @@ This is technical verification evidence, not real People-team signoff and not Gi
 
 ## Task 3 source compliance and publication preparation (2026-11-06)
 Reconciled the task-specific original project_specs sources with recorded passing evidence. No runtime code changed in this audit. Task4 additionally includes byte-identical already-tested CSV/PDF delivery fixtures with provenance manifest. Daniel authorized supervisor commits and pushes for review; Cursor must never commit. Required human task sign-off and Daniel review before any merge remain pending. Existing work and services preserved.
+
+
+## Auth-test TypeScript closure - 2026-11-06
+
+Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 69/69 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Supervisor owns commit/push; Cursor does not commit. Daniel review and merge approval remain pending.
