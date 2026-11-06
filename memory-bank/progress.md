@@ -317,3 +317,8 @@
 Supersedes the historical held/pending notes above. Supervisor verified 89/89 non-live tests, 6/6 UI behavior tests, scoped lint/production types and isolated production build. Actual local model proves tool plan, FX and both source-driver explanations. Real owned worker/beat/process refresh and queued replay preserve approved successor v2 with exactly seven internal report notices, zero extra drafts/notices and unchanged CSVs. Normal browser flow exercised source IDs, Tom rejection/comments/revision/approval and ordinary employee denial. The specifically approved two-file source-ID UI fix is applied and verified.
 
 Canonical and missing-operations examples, source compliance and sanitized validation are delivered. Full TypeScript retains only the unchanged baseline auth-test TS2352:326; production build/types pass. No real identities, financial transactions or external communications were used. All original services/WIP were preserved. Ready for Daniel's review; human leadership signoff and merge approval remain separate. Supervisor owns commits/push; Cursor must not commit.
+
+
+## Auth-test TypeScript closure - 2026-11-06
+
+Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 69/69 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Supervisor owns commit/push; Cursor does not commit. Daniel review and merge approval remain pending.
