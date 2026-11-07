@@ -501,6 +501,20 @@ def test_knowledge_routing_eval_patches_retrieval_and_generation(monkeypatch) ->
     assert stored["error"] == ""
 
 
+@pytest.fixture
+def release_live_rag_after_case():
+    """Close native resources before interpreter module teardown."""
+    try:
+        yield
+    finally:
+        if _live_rag_requested():
+            from data.pipelines.rag import release_local_llm
+            from shared.healthcore_rag.qdrant import close_qdrant_client
+            release_local_llm()
+            close_qdrant_client()
+
+
+@pytest.mark.usefixtures("release_live_rag_after_case")
 def test_knowledge_eval_uses_real_retrieval_and_local_generation() -> None:
     """Live retrieval and local GGUF generation. Opt in with PART2_LIVE_RAG_EVAL.
 

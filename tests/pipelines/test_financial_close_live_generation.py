@@ -27,6 +27,18 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.fixture(autouse=True)
+def release_live_rag_after_case():
+    """Close native resources before interpreter module teardown."""
+    try:
+        yield
+    finally:
+        from data.pipelines.rag import release_local_llm
+        from shared.healthcore_rag.qdrant import close_qdrant_client
+        release_local_llm()
+        close_qdrant_client()
+
+
 def test_live_configured_transport_parses_plan_fx_and_both_hypotheses(tmp_path) -> None:
     raw = tmp_path / "raw"
     write_fixtures(raw, date(2026, 11, 6))

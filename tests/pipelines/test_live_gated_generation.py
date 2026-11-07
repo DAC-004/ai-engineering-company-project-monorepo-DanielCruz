@@ -61,6 +61,18 @@ def _compliance_state() -> dict[str, Any]:
     }
 
 
+@pytest.fixture(autouse=True)
+def release_live_rag_after_case():
+    """Close native resources before interpreter module teardown."""
+    try:
+        yield
+    finally:
+        from data.pipelines.rag import release_local_llm
+        from shared.healthcore_rag.qdrant import close_qdrant_client
+        release_local_llm()
+        close_qdrant_client()
+
+
 @pytest.mark.skipif(not _live_requested(), reason=f"Set {LIVE_ENV}=1 for the local GGUF stream")
 def test_real_model_releases_during_sampling_and_interrupt_stops_it() -> None:
     if GENERATION_API_KEY:

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from sqlmodel import Session, select
+from sqlalchemy import update
 
 from app.rfp_models import DepartmentSection, RfpMetadata, RfpTicket, utc_now
 from app.schemas.rfp import (
@@ -68,21 +69,36 @@ def create_ticket(session: Session) -> RfpTicket:
 
 
 def begin_response(session: Session, ticket_id: str) -> RfpTicket:
-    """Mark one ready ticket as drafting. Do not open the PDF or rebuild the summary."""
-    ticket = session.get(RfpTicket, ticket_id)
-    if ticket is None:
-        raise ResponseNotReady("ticket_missing")
-    decision = assess_readiness(ticket.status, ticket.ticket_id, ticket.part2_handoff)
-    if not decision.accepted:
-        raise ResponseNotReady(decision.reason or "not_intake_complete")
-    ticket.status = "drafting"
-    ticket.processing_failed = False
-    ticket.processing_error_code = None
-    ticket.updated_at = utc_now()
-    session.add(ticket)
-    session.commit()
-    session.refresh(ticket)
-    return ticket
+    """Claim new or stale interrupted work on the original, validated intake."""
+    with _RESPONSE_LOCK:
+        ticket = session.get(RfpTicket, ticket_id)
+        if ticket is None:
+            raise ResponseNotReady("ticket_missing")
+        if ticket_id in RUNNING_TICKETS or _response_is_complete(ticket):
+            raise ResponseNotReady("response_in_progress_or_complete")
+        recovering = ticket.status in {"drafting", "under_evaluation"} and _stalled(ticket)
+        decision = assess_readiness("intake_complete" if recovering else ticket.status,
+                                    ticket.ticket_id, ticket.part2_handoff)
+        if not decision.accepted:
+            raise ResponseNotReady(decision.reason or "not_intake_complete")
+        # Compare-and-swap protects the claim across API processes as well as
+        # threads. A fresh claim cannot be mistaken for stale interrupted work.
+        claimed = session.exec(
+            update(RfpTicket).where(
+                RfpTicket.ticket_id == ticket_id,
+                RfpTicket.status == ticket.status,
+                RfpTicket.updated_at == ticket.updated_at,
+            ).values(status="drafting", processing_failed=False,
+                     processing_error_code=None, updated_at=utc_now())
+            .execution_options(synchronize_session=False)
+        )
+        if claimed.rowcount != 1:
+            session.rollback()
+            raise ResponseNotReady("response_in_progress_or_complete")
+        session.commit()
+        session.refresh(ticket)
+        RUNNING_TICKETS.add(ticket_id)
+        return ticket
 
 
 # Proposal sections need multi-paragraph prose (100+ words). The default
@@ -200,12 +216,27 @@ def run_response(session: Session, ticket_id: str) -> None:
         if ticket is None or not isinstance(ticket.part2_handoff, dict):
             _mark_response_failed(ticket_id, "handoff_missing")
             return
+        saved_sections = session.exec(
+            select(DepartmentSection).where(DepartmentSection.ticket_id == ticket_id)
+        ).all()
+        completed_outcomes = {
+            section.department_id: {
+                "department_id": section.department_id,
+                "draft_content": section.draft_content,
+                "evaluation_results": section.evaluation_results,
+                "needs_human_review": section.needs_human_review,
+            }
+            for section in saved_sections
+            if section.draft_content and isinstance(section.evaluation_results, dict)
+            and section.evaluation_results
+        }
         handoff = run_response_generation(
             ticket.part2_handoff,
             _complete_for_response,
             on_progress=lambda event: _apply_progress(ticket_id, event),
             on_department_done=lambda outcome: _store_department_outcome(ticket_id, outcome),
             on_node=lambda event: _append_response_trace(ticket_id, event),
+            completed_outcomes=completed_outcomes,
         )
         with _RESPONSE_LOCK:
             with Session(session_bind()) as write_session:
@@ -367,7 +398,9 @@ def run_ticket(session: Session, ticket_id: str, pdf_bytes: bytes) -> None:
 
 
 def _stalled(ticket: RfpTicket) -> bool:
-    if ticket.status != "analyzing" or ticket.processing_failed:
+    if ticket.status not in {"analyzing", "drafting", "under_evaluation"} or ticket.processing_failed:
+        return False
+    if _response_is_complete(ticket):
         return False
     if ticket.ticket_id in RUNNING_TICKETS:
         return False

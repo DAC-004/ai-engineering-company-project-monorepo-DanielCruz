@@ -6,7 +6,7 @@ The repository now has two Python projects: the root pipeline/forecast project r
 
 Current access contract: `POST /users` is Admin-only provisioning, not public onboarding. Anonymous requests must return 401, and Employee/Supervisor requests must return 403. Acceptance harnesses authenticate a disposable, explicitly seeded Admin before creating fictional service users with an explicit role and department. Do not weaken this gate to satisfy historical validators.
 
-The 17 August 2026 results below are historical AUTH-088 evidence, not a current comprehensive integration result. Current final-main candidate checks passed 160 API tests, including all three coverage targets (auth 89.8%, security 100%, dependencies 94.1%); full UI TypeScript, ESLint, 78 Jest tests and production build also passed. Pipeline, MCP and browser evidence is tracked in `memory-bank/progress.md`.
+The 17 August 2026 results below are historical AUTH-088 evidence, not a current comprehensive integration result. Current final-main candidate checks passed 169 API tests, including all three coverage targets (auth 89.8%, security 100%, dependencies 94.1%); full UI TypeScript, ESLint, 78 Jest tests and production build also passed. Pipeline, MCP and browser evidence is tracked in `memory-bank/progress.md`.
 
 ## How to run the tests
 
