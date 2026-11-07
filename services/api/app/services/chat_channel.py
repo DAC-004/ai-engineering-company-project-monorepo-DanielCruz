@@ -6,6 +6,8 @@ subscribe to ``chat.<session_id>`` and do not call the model themselves.
 
 from __future__ import annotations
 
+from app.audit.process import audited_process
+
 import asyncio
 import logging
 import threading
@@ -401,6 +403,7 @@ def request_interrupt(session_id: str, new_input: str) -> None:
         watch.request_stop()
 
 
+@audited_process("process:support-agent", None)
 def _generate_turn(session_id: str, question: str) -> None:
     hub = get_chat_hub()
     session = hub.get_session(session_id)

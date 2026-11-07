@@ -10,6 +10,7 @@ from app.access.permissions import (
     require_authenticated,
     require_manage_users,
 )
+from app.audit.capture import target
 from app.core.irreversible import require_explicit_confirmation
 from app.core.deps import require_self_or_admin
 from app.schemas.access_admin import UserAdminCreate, UserAssignmentUpdate
@@ -79,6 +80,7 @@ def list_users(_current_user: UserInDB = Depends(require_manage_users)) -> list[
 @router.patch("/{user_id}/assignment", response_model=UserPublic)
 def patch_user_assignment(
     user_id: str,
+    request: Request,
     payload: UserAssignmentUpdate,
     _current_user: UserInDB = Depends(require_manage_users),
 ) -> UserPublic:
@@ -102,6 +104,7 @@ def patch_user_assignment(
         raise HTTPException(status_code=code, detail=message) from exc
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    target(request, "user", updated.id, updated.department_id, "user.assignment")
     return _to_public(updated)
 
 
@@ -120,6 +123,7 @@ def get_user(
 @router.put("/{user_id}", response_model=UserPublic)
 def update_user(
     user_id: str,
+    request: Request,
     payload: UserUpdate,
     current_user: UserInDB = Depends(require_authenticated),
 ) -> UserPublic:
@@ -148,6 +152,7 @@ def update_user(
 
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    target(request, "user", updated.id, updated.department_id, "user.update")
     return _to_public(updated)
 
 
@@ -164,5 +169,7 @@ def delete_user(
     if not user_service.get_user_by_id(user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    affected = user_service.get_user_by_id(user_id)
+    target(request, "user", user_id, affected.department_id, "user.delete")
     profile_service.delete_profile_for_user(user_id)
     user_service.delete_user(user_id)

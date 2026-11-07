@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 
+from app.audit.capture import identify, target
 from app.access.permissions import require_authenticated
 from app.core.security import (
     AUTH_METHOD_CLAIM,
@@ -86,11 +87,12 @@ def start_federated(
 @router.post("/{provider}/callback")
 def complete_federated(
     provider: str,
+    request: Request,
     payload: FederatedCallbackRequest,
     caller: OptionalFederatedCaller = Depends(_optional_caller),
 ) -> Token | FederatedStatusResponse:
     try:
-        return federated_auth.complete_callback(
+        result = federated_auth.complete_callback(
             provider=provider,
             code=payload.code,
             state=payload.state,
@@ -99,6 +101,11 @@ def complete_federated(
             current_user=caller.user,
             auth_method=caller.auth_method,
         )
+        user = user_service.get_user_by_id(decode_access_token(result.access_token)["sub"]) if isinstance(result, Token) else caller.user
+        if user is not None:
+            identify(request, user)
+            target(request, "user", user.id, user.department_id, "auth.federated_login" if isinstance(result, Token) else "auth.federated_link")
+        return result
     except FederatedAuthError as exc:
         _raise(exc)
 

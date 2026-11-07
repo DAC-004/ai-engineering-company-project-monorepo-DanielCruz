@@ -1,0 +1,11 @@
+{
+  "exit": 1,
+  "seconds": 20.99,
+  "junit": {
+    "tests": 12,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "case": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\healthcore-audit-log-verification\\baseline-rfp-02"
+}
