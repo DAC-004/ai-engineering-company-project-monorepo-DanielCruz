@@ -18,6 +18,8 @@ if str(REPO_ROOT) not in sys.path:
 if str(API_DIR) not in sys.path:
     sys.path.insert(0, str(API_DIR))
 
+from agents.onboarding_orchestrator.deadline_sweep import celery_beat_schedule
+
 load_dotenv(API_DIR / ".env")
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
@@ -29,9 +31,23 @@ celery_app = Celery("healthcore")
 # AUTH-01 TestClient sets this so delay() runs in-process without a broker.
 _eager = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "").lower() in ("1", "true", "yes")
 
+
+def _eager_result_backend() -> str:
+    """In-process result store for eager/isolated runs. Never Redis.
+
+    Isolated REDIS_URL points at unused loopback port 1. AsyncResult still
+    talks to result_backend unless eager results are stored locally with
+    task_store_eager_result. This is not evidence of a live worker.
+    """
+    return "cache+memory://"
+
+
+_eager_backend = _eager_result_backend() if _eager else REDIS_URL
+
 celery_app.conf.update(
-    broker_url=REDIS_URL,
-    result_backend=REDIS_URL,
+    broker_url="memory://" if _eager else REDIS_URL,
+    result_backend=_eager_backend,
+    task_store_eager_result=_eager,
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     task_track_started=True,
@@ -49,7 +65,8 @@ celery_app.conf.update(
         Queue(DEFAULT_QUEUE),
         Queue(DEAD_LETTER_QUEUE),
     ),
-    imports=("app.tasks",),
+    imports=("app.tasks", "app.onboarding_tasks"),
+    beat_schedule=celery_beat_schedule(),
 )
 
 

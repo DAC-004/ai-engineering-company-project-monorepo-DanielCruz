@@ -1,0 +1,9 @@
+{
+  "question": "Which HIPAA policy covers the fictional lunar office?",
+  "covered": false,
+  "route_to": "claire",
+  "recipient_user_id": "user-claire",
+  "channel": "internal_outbox",
+  "source_of_evidence": "test_uncovered_question_handoff_is_actionable_without_logging_the_question",
+  "question_in_audit_or_checkpoint": false
+}

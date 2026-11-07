@@ -1,0 +1,271 @@
+{
+  "date": "2026-11-07",
+  "task": 3,
+  "previous_pr_head": "686d9e54b7ceacf9098c70e2cea17020911eb731",
+  "integrated_main": "677cce9d55f8e23bd00ba7475e1ed583ff96fa50",
+  "source_files_sha256": {
+    "Agentic Engineering \u2013 Onboarding Agent.png": "abdb82abd8b98916b14f8b9883294bd321ab4de1ed97084d95d12a0c4f5c0cce",
+    "healthcore-BRIEFING.en.md": "d8ea61e8be97e3d73a3df04f7befd9539224991799d6e1531420b7a1ba54748c",
+    "project_specs.md": "0a45976941d5d482f23168ee2b6915197fea63bf046357bf078f5d5c52b8d26b"
+  },
+  "official_material_sha256": {
+    "checks.json": "94554639436efe91b62f74514b8ebb2540e0e3f527a228975fee726b8fe2f850",
+    "MANIFEST.md": "1ed40f57f7505731f9781a41662a48283f61fcad0aa395de185aca9acf7084d7",
+    "stage-02-the-company.md": "c2313ca5c665a4991e50f82a886d4b252f39db1cb6763fdd727ef6bde73e0544",
+    "stage-03-how-we-operate.md": "92f03f15c477088cc619889d283e4420bd131867083a298ade7af1dda3d6ecfa",
+    "stage-04-compliance-hipaa.md": "3b1038a8bd8ad60ff995f98afd44133e21a5b0824699ad111a6079e78ae58a87",
+    "stage-04-compliance-uk-gdpr.md": "8cf2668b286587833d7e9bab151710e21236007e9d9141c7d72cb933eaee5637",
+    "stage-05-role-digital-engineer.md": "85a867bccbe48826c3854ae6ff42f9818f1d344d534a24a7257668dc5a2eb59d",
+    "stage-05-role-revenue-cycle-analyst.md": "5073b66d0fc6824e6051aa6149637f8224cb87bc91e0ee609f7b5d2b237faf2d",
+    "stage-06-how-we-work.md": "5849909c9aa9c00ec4f924dc6973f27d630a8efc5da4b4a866968f343f624537"
+  },
+  "catalog_validation": [
+    {
+      "catalog": "company",
+      "threshold": 0.8,
+      "questions_per_bank": [
+        5,
+        5
+      ]
+    },
+    {
+      "catalog": "operations",
+      "threshold": 0.8,
+      "questions_per_bank": [
+        5,
+        5
+      ]
+    },
+    {
+      "catalog": "compliance_hipaa",
+      "threshold": 1.0,
+      "questions_per_bank": [
+        5,
+        5
+      ]
+    },
+    {
+      "catalog": "compliance_uk_gdpr",
+      "threshold": 1.0,
+      "questions_per_bank": [
+        5,
+        5
+      ]
+    },
+    {
+      "catalog": "role_digital_engineer",
+      "threshold": 0.8,
+      "questions_per_bank": [
+        5,
+        5
+      ]
+    },
+    {
+      "catalog": "role_revenue_cycle_analyst",
+      "threshold": 0.8,
+      "questions_per_bank": [
+        5,
+        5
+      ]
+    },
+    {
+      "catalog": "how_we_work",
+      "threshold": 0.8,
+      "questions_per_bank": [
+        5,
+        5
+      ]
+    }
+  ],
+  "current_code_sha256": {
+    "agents\\onboarding_orchestrator\\access.py": "732f9d028ce243f65640b5de1f085f0b37a9aa6e06cdb8a1ffaa4dea25604c80",
+    "agents\\onboarding_orchestrator\\calendar.py": "8f59119e51c92d5dad6cd82bca1a846d2997e1e7812c39338b2f0eaef4ac9f7d",
+    "agents\\onboarding_orchestrator\\checks.py": "02689b4b7c58b7a6f48d0f92ba97f8baae7ce45a2f056a65868d80b01b4be717",
+    "agents\\onboarding_orchestrator\\content.py": "a38f107682fb015bef3d7550a92c73610f1424ac14895ee49f664496649afd0f",
+    "agents\\onboarding_orchestrator\\deadline_sweep.py": "2acca32f568613e5ba68531a0277ba0b840dd5ab4796646a20d0e894676ee950",
+    "agents\\onboarding_orchestrator\\graph.py": "558981331a9549eff367ba3459dc9833baca19f89f5929f9675b9a8a3d1472e1",
+    "agents\\onboarding_orchestrator\\identity.py": "519626f2e104b0763301d6c64ba7594918959abfdd7b928e053a44f644dcaf97",
+    "agents\\onboarding_orchestrator\\qa.py": "9cb9bb99cd7583d6bdcd9a81b8751ee923c5be9ea0377b6e1b5a5ed29d8b8b2a",
+    "agents\\onboarding_orchestrator\\runtime.py": "df0f3007fe9775e39357a883462f22d1e963fe59c8a2e2ce2690eb62222a0cff",
+    "agents\\onboarding_orchestrator\\seed.py": "9488be43fd38bbd3320bd541a443b08541240fc2633d9c6fe6c1b0dd8844ef79",
+    "agents\\onboarding_orchestrator\\sensitive.py": "73c67a27d4880ae3eb740e26e694851c7c77290bc3887c5d98a2b0ebebb76e9f",
+    "agents\\onboarding_orchestrator\\state.py": "7e24b04c49b6d127efce1af8a7963a421aa4450b114e3d5f282850b631b27d9c",
+    "agents\\onboarding_orchestrator\\store.py": "cb37d352978472441ecda16ca807d6d99a963fe95198635ed2fbfe6959735c82",
+    "agents\\onboarding_orchestrator\\__init__.py": "8c19c73140a835fd62c8595df7fdb66afd3fe932f623fffa1eaf4736882413c5",
+    "services\\api\\app\\routers\\onboarding.py": "26c3c401e257e0e31fa4d6f0b673fee9c99b5ec3659e3c3e99eefb95665e384f",
+    "services\\api\\app\\onboarding_tasks.py": "51bf333ec054cca9ac629bf38b9c78d65670c5435f9879c82563f244a6606a64",
+    "services\\api\\app\\services\\onboarding_service.py": "ca0a485c0214e6a64c4b2201e558d9f81438c2c7c18d1228eb9b652843786451",
+    "services\\api\\app\\schemas\\onboarding.py": "614ecdde871110173d15a9648877fb3bc1acffede3da0c6ff1ea323e10fcaa33"
+  },
+  "agent": {
+    "mode": "full",
+    "exit": 0,
+    "junit": {
+      "tests": 41,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "source_changed": [],
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-source-review-43_klgl1",
+    "runner_sha256": "bf8417495955e4ccf1317ec5fb26a52d7de56544e656465683e65b0522d34e20",
+    "passed": true
+  },
+  "onboarding_api": {
+    "mode": "api",
+    "exit": 0,
+    "junit": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "source_changed": [],
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-source-review-a2vjgmx9",
+    "runner_sha256": "bf8417495955e4ccf1317ec5fb26a52d7de56544e656465683e65b0522d34e20",
+    "passed": true
+  },
+  "combined_federation_and_auth_before_final_notice_payload_only_change": {
+    "mode": "full",
+    "runs": [
+      {
+        "selection": [
+          "tests/test_federated_auth.py"
+        ],
+        "exit": 0,
+        "junit": {
+          "tests": 32,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      {
+        "selection": [
+          "tests/test_login.py",
+          "tests/test_me.py",
+          "tests/test_token.py",
+          "tests/test_roles_permissions.py",
+          "tests/test_password_reset.py",
+          "tests/test_onboarding_routes.py"
+        ],
+        "exit": 0,
+        "junit": {
+          "tests": 60,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      }
+    ],
+    "source_changed": [],
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-combined-auth-regression-p7lrpa7p",
+    "passed": true
+  },
+  "unchanged_main_auth_modules": [
+    "app/routers/federated.py",
+    "app/schemas/federated.py",
+    "app/services/federated_auth.py",
+    "app/services/federated_oidc.py",
+    "app/core/security.py",
+    "app/core/deps.py",
+    "app/routers/auth.py",
+    "app/db/tinydb.py"
+  ],
+  "ui": {
+    "passed": true,
+    "results": [
+      {
+        "branch": "feature/onboarding-orchestrator",
+        "pull_request": 40,
+        "exits": {
+          "full_types": 0,
+          "lint": 0,
+          "regression": 0,
+          "build": 0
+        },
+        "source_changed": [],
+        "tests_passed": 72,
+        "tests_failed": 0,
+        "suites_passed": 9,
+        "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-combined-ui-review-xprzak_f\\40",
+        "passed": true
+      }
+    ],
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-combined-ui-review-xprzak_f",
+    "runner_sha256": "d63bc5d6495e869f0983d3122f4b40a964142f90ce754005a028d84da0fd0e8a"
+  },
+  "current_worker_beat": {
+    "passed": true,
+    "http_calls": 0,
+    "real_communications": 0,
+    "broker": "127.0.0.1:6381/4",
+    "evidence": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-final-autonomous-cvlmglsk",
+    "notice_count": 3,
+    "expected_recipients_and_kinds": true,
+    "compliance_not_bypassed": true,
+    "source_changed": false,
+    "owned_children_stopped": true
+  },
+  "current_distinct_process_restart": {
+    "child_exits": [
+      0,
+      0
+    ],
+    "source_changed": false,
+    "fixture_root": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-process-resume-bt25dc6n",
+    "distinct_process_resume_passed": true
+  },
+  "syntax": "passed",
+  "uv_lock_check_offline_exit": 0,
+  "counterexamples": {
+    "first_three_gaps": {
+      "mode": "red",
+      "exit": 1,
+      "junit": {
+        "tests": 3,
+        "failures": 3,
+        "errors": 0,
+        "skipped": 0
+      },
+      "source_changed": [],
+      "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-source-review-y_4hryvo",
+      "runner_sha256": "e957cce5480d8c23f460cd19ea9aefd512e9bc3c9e4d351fdeec5862a364a483",
+      "passed": false
+    },
+    "deadline_projection_race": {
+      "mode": "race",
+      "exit": 1,
+      "junit": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "source_changed": [],
+      "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-source-review-7lrf2012",
+      "runner_sha256": "0bf452889cb7acd336e98fd8fdd4249cc093379804de0e690b78c9f7238112c5",
+      "passed": false
+    },
+    "unactionable_question_handoff": {
+      "mode": "handoff",
+      "exit": 1,
+      "junit": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "source_changed": [],
+      "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task3-source-review-f4jbnhst",
+      "runner_sha256": "bf8417495955e4ccf1317ec5fb26a52d7de56544e656465683e65b0522d34e20",
+      "passed": false
+    }
+  },
+  "existing_services_restarted": false,
+  "new_browser_run": false,
+  "historical_browser_evidence": "healthcore-task3-review-findings.md (2026-11-06); unchanged onboarding UI sources",
+  "external_communications": false,
+  "people_signoff_received": false,
+  "pr_merge_approved": false
+}

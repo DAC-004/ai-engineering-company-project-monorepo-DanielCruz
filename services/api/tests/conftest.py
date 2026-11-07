@@ -33,6 +33,7 @@ _AUTH_IDENTITY_TEST_FILES = frozenset(
         "test_rfp_demonstration_accounts.py",
         "test_provision_personal_admin.py",
         "test_federated_auth.py",
+        "test_onboarding_routes.py",
     }
 )
 
