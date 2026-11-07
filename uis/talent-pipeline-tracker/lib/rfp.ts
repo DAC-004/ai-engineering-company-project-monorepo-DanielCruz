@@ -79,6 +79,15 @@ export type RfpTicket = {
   } | null;
 };
 
+export const canStartRfpResponse = (
+  ticket: Pick<RfpTicket, "status" | "stalled" | "part3_handoff">,
+): boolean => {
+  if (ticket.part3_handoff?.response_complete === true) return false;
+  return ticket.status === "intake_complete" || (
+    ticket.stalled && (ticket.status === "drafting" || ticket.status === "under_evaluation")
+  );
+};
+
 export type RfpFinalDocument = {
   ticket_id: string;
   sections: Array<{ department_id: string; draft_content: string }>;

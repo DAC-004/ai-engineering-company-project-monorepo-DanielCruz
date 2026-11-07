@@ -8,6 +8,7 @@ import { canUpdateDepartmentRecord } from "@/lib/auth/capabilities";
 import { fetchCurrentUser } from "@/lib/auth/session";
 import { ApiError } from "@/lib/auth/types";
 import {
+  canStartRfpResponse,
   getRfpFinalDocument,
   getRfpTicket,
   startRfpApproval,
@@ -233,10 +234,10 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
         <p className="form-error">Processing failed. Code: {ticket.processing_error_code ?? "pipeline_exception"}</p>
       ) : null}
       {ticket.stalled ? (
-        <p>This ticket is still analyzing and has not been updated recently.</p>
+        <p>This ticket has not been updated recently.</p>
       ) : null}
       {ticket.status === "discarded" ? <p>This request was discarded. No department work was stored.</p> : null}
-      {ticket.status === "intake_complete" && !responseComplete(ticket) ? (
+      {canStartRfpResponse(ticket) ? (
         <p className="action-row">
           <button
             type="button"
@@ -245,7 +246,7 @@ export const RfpTicketPanel = ({ ticketId }: RfpTicketPanelProps) => {
             disabled={actionInFlight !== null}
             aria-busy={actionInFlight === "generate"}
           >
-            {actionInFlight === "generate" ? "Starting generation…" : "Generate proposal sections"}
+            {actionInFlight === "generate" ? "Starting generation…" : ticket.stalled ? "Resume proposal sections" : "Generate proposal sections"}
           </button>
         </p>
       ) : null}
