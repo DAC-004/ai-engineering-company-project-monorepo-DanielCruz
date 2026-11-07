@@ -499,4 +499,7 @@ def _record_audit(
         record["reason"] = reason
     for forbidden in SECRET_FIELD_NAMES:
         record.pop(forbidden, None)
-    federated_audit_table().insert(record)
+    # TinyDB insert is a read-modify-write; serialize the whole operation,
+    # not just its separate JSON read/write, across API request threads.
+    with identity_mutation_lock():
+        federated_audit_table().insert(record)

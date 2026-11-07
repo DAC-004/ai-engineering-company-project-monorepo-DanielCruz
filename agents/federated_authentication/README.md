@@ -8,3 +8,6 @@ Platform work, not a multi-agent system. Reviewer entry points:
 
 Authoritative external sanitized live evidence:
 `C:\Users\cruzd\Documents\Codex\2026-11-04\task\healthcore-task2-live-evidence.md`
+
+
+Task 2 four-file source audit: [SOURCE-COMPLIANCE.md](SOURCE-COMPLIANCE.md). Current source-matching validation: [rejection-audit-validation.json](rejection-audit-validation.json).

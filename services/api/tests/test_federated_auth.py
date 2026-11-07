@@ -844,3 +844,69 @@ def test_early_login_rejections_are_sanitized_and_audited_once(
     assert "untrusted-" not in serialized
     assert federated_auth.user_count() == users_before
     assert [dict(row) for row in federated_links_table().all()] == links_before
+
+
+
+def test_matching_email_cannot_link_or_create_user_on_login(client: TestClient) -> None:
+    fixtures = _install_briefing_fixtures()
+    before_users = federated_auth.user_count()
+    before_links = [dict(row) for row in federated_links_table().all()]
+    started = _start(client, provider="microsoft", purpose="login")
+    response = _complete_started(client, started, oid=UNKNOWN_OID, email=MARCUS_EMAIL)
+    assert response.status_code == 401
+    assert response.json()["detail"] == UNLINKED_IDENTITY_DETAIL
+    assert federated_auth.user_count() == before_users
+    assert [dict(row) for row in federated_links_table().all()] == before_links
+    event = federated_auth.list_audit_events()[-1]
+    assert event["event"] == "federated_login_rejected"
+    assert event["user_id"] is None
+    assert event["provider_user_id"] == UNKNOWN_OID
+    assert users_table().get(Query().id == fixtures["marcus"].id)
+
+
+@pytest.mark.parametrize("revocation", ["inactive", "expired"])
+def test_password_and_federated_sessions_share_expiry_and_revocation(
+    client: TestClient, revocation: str,
+) -> None:
+    fixtures = _install_briefing_fixtures()
+    password_headers = _password_headers(client, MARCUS_EMAIL)
+    started = _start(client, provider="microsoft", purpose="login")
+    response = _complete_started(client, started, oid=MARCUS_OID, email=MARCUS_EMAIL)
+    assert response.status_code == 200
+    tokens = [password_headers["Authorization"].split(" ", 1)[1], response.json()["access_token"]]
+    claims = [jwt.decode(token, STATE_SECRET, algorithms=["HS256"]) for token in tokens]
+    assert claims[0]["sub"] == claims[1]["sub"] == fixtures["marcus"].id
+    assert abs(claims[0]["exp"] - claims[1]["exp"]) <= 5
+    assert 1790 <= claims[1]["exp"] - datetime.now(UTC).timestamp() <= 1800
+    assert {claim[AUTH_METHOD_CLAIM] for claim in claims} == {AUTH_METHOD_PASSWORD, AUTH_METHOD_MICROSOFT}
+    for token in tokens:
+        assert client.get("/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 200
+    if revocation == "inactive":
+        user_service.update_user(fixtures["marcus"].id, UserUpdate(is_active=False))
+    else:
+        tokens = [jwt.encode(dict(claim, exp=datetime.now(UTC) - timedelta(seconds=60)), STATE_SECRET, algorithm="HS256") for claim in claims]
+    for token in tokens:
+        assert client.get("/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+
+
+def test_parallel_rejections_preserve_every_audit_event(client: TestClient) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    _install_briefing_fixtures()
+    before = len(federated_auth.list_audit_events())
+    attempts = 40
+
+    def reject(_: int) -> int:
+        response = _callback(
+            client, provider="microsoft", code="untrusted-code-sentinel",
+            state="untrusted-state-sentinel", tx_binding="untrusted-binding-sentinel",
+        )
+        return response.status_code
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        assert list(pool.map(reject, range(attempts))) == [400] * attempts
+    events = federated_auth.list_audit_events()[before:]
+    assert len(events) == attempts
+    assert len({row["id"] for row in events}) == attempts
+    assert all(row["event"] == "federated_login_rejected" and row["reason"] == "invalid_state" for row in events)
+    assert "untrusted-" not in json.dumps(events)
