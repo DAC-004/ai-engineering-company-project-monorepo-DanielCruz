@@ -27,6 +27,7 @@ from app.core.security import verify_password  # noqa: E402
 from app.db.tinydb import password_reset_tokens_table, reset_db_for_tests  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services import user_service  # noqa: E402
+from app.schemas.user import UserCreate, UserRole  # noqa: E402
 
 get_settings.cache_clear()
 reset_db_for_tests()
@@ -40,9 +41,25 @@ class Auth03ApiTests(unittest.TestCase):
         self.client = TestClient(app)
         self.email = "reset.user@example.com"
         self.password = "old-password-1"
+        # Current staff provisioning is Admin-only; seed only the disposable
+        # administrator internally, then exercise the real authenticated API.
+        admin = user_service.create_user(
+            UserCreate(email="auth03.admin@healthcore.example", password=self.password),
+            role=UserRole.admin,
+            department_id="technology",
+        )
+        admin_login = self.client.post(
+            "/auth/login",
+            data={"username": admin.email, "password": self.password},
+        )
+        self.assertEqual(admin_login.status_code, 200)
         register = self.client.post(
             "/users",
-            json={"email": self.email, "password": self.password},
+            headers={"Authorization": f"Bearer {admin_login.json()['access_token']}"},
+            json={
+                "email": self.email, "password": self.password,
+                "role_id": "employee", "department_id": "patient_experience",
+            },
         )
         self.assertEqual(register.status_code, 201, register.text)
 
