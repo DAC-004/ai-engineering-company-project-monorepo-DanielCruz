@@ -32,12 +32,11 @@ Daniel explicitly approved the protected tracker page, panel, client/tests and A
 
 Run services/api/scripts/seed_audit_log.py --db <isolated-ledger-path> --synthetic-only. This is an explicit opt-in command, not startup population. It is idempotent by deterministic operation references and generates eighteen fictional opaque patient events.
 
-## Verification so far
+## Verification
 
-Focused run focused-02: 17 passed, including trigger immutability, offline tamper detection, removed-tail detection, PHI/unknown-metadata rejection, seed coverage/idempotency, parallel-process chain consistency, filters/pagination, role/department authorization, actual authentication/assignment capture and fail-closed behavior.
+Final current API suite:181passed, zero failures/errors/skips. The initial two RFP failures were traced to the test fixture overwriting configured offline NLTK assets; honoring that configuration resolved them without changing evaluator logic, thresholds or assertions. Historical failure/baseline summaries remain available as before-fix evidence.
 
-First full API run: 174 passed, 3 failed. The direct-call signature regression was corrected; permitted-startup-01 passed all 24 Audit/user-registration tests. baseline-rfp-02 reproduced both RFP failures identically on unchanged main b93a51c (10 pass, 2 fail). These are not introduced by this branch. The full-api-02 run completed with 177 passed and the same two baseline RFP failures. This run predates the final reporting-prefix/chat-process additions, which have a separate focused rerun. The focused-04 run passed all 19 audit tests, including the actual decorated incident task and direct deactivation. The focused-06 run passed all 44 tests: 21 Audit Log and 23 existing chat/WebSocket cases, including the final reporting-prefix/chat-process additions. Full live worker, UI and browser evidence remains pending.
-
+Focused Audit/chat44pass; all80UIJest/fullTypeScript/lint/productionbuild checks pass. Independent real Celery worker and built-browser access/filter/integrity checks pass. See the final evidence mapping below.
 
 ## Final evidence and evaluation mapping
 
@@ -47,7 +46,7 @@ First full API run: 174 passed, 3 failed. The direct-call signature regression w
 - Process attribution: actual independent Celery incident worker proof records attempted/success with process:incident-analysis and the same opaque task ID. This proof deliberately uses the cached-result path; it does not claim a new model or clinical integration.
 - Metadata-only company rules and synthetic seed: strict-field/privacy tests plus eighteen idempotent synthetic patient entries cover read, modification and export.
 - Query/filter/pagination/access: API scope/filter tests and built-browser evidence for Admin full scope + integrity + patient.read filtering, Supervisor Clinical Operations-only rows with no global integrity action, and Employee hidden navigation + denied direct page.
-- Required tests: focused44 pass (21 Audit Log,23 chat); full current API179 pass/2 fail. The identical two RFP failures reproduce on unchanged main (baseline10 pass/2 fail) and are disclosed, not waived or hidden. UI80 Jest tests plus full TypeScript, lint and production build pass. Counts overlap.
+- Required tests: focused44 pass (21 Audit Log,23 chat); full current API181 pass with zero failures/errors/skips. The two initial RFP failures were reproduced and then resolved by the offline-resource fixture correction; no assertion or production threshold was weakened. UI80 Jest tests plus full TypeScript, lint and production build pass. Counts overlap.
 
 Machine-readable summaries and browser screenshots are in audit-log-evidence/.
 
