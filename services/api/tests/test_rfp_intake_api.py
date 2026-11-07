@@ -46,6 +46,26 @@ get_settings.cache_clear()
 reset_db_for_tests()
 reset_engine_for_tests()
 
+@pytest.fixture(autouse=True)
+def isolated_intake_store(tmp_path, monkeypatch):
+    """Collection of another RFP module must not redirect privacy assertions."""
+    global _sqlite_path, STORAGE_DIR
+    monkeypatch.setattr(sys.modules[__name__], "_sqlite_path", (tmp_path / "rfp.db").as_posix())
+    monkeypatch.setattr(sys.modules[__name__], "STORAGE_DIR", tmp_path / "raw")
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///" + _sqlite_path)
+    monkeypatch.setenv("TINYDB_PATH", str(tmp_path / "auth.json"))
+    monkeypatch.setattr(rfp_service, "RUNNING_TICKETS", set())
+    get_settings.cache_clear()
+    reset_db_for_tests()
+    reset_engine_for_tests()
+    from app.db.database import init_databases
+    init_databases()
+    yield
+    reset_engine_for_tests()
+    reset_db_for_tests()
+    get_settings.cache_clear()
+
+
 PATIENT_NAME = "Alex Example"
 PATIENT_DIAGNOSIS = "example condition"
 STORAGE_DIR = Path(_tmpdir) / "raw"

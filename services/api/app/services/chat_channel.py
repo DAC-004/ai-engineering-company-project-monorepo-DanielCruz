@@ -357,8 +357,15 @@ def _finalize_successful_generation(
             return False
     else:
         reconciled = _reconcile_streamed_answer(streamed, outcome_answer)
-        if reconciled != assistant.text:
-            assistant.text = reconciled
+        blocked = watch.replacement_unpublished or watch.replaced_kept_text or any(
+            item.gate_stopped or item.withheld_text or item.interrupted
+            for item in watch.observations
+        )
+        # Already published text belongs to every subscriber and the transcript.
+        # A safe extension must use that same gate and publication callback;
+        # an unpublished retry or withheld suffix cannot silently replace it.
+        if not blocked and reconciled.startswith(streamed) and len(reconciled) > len(streamed):
+            _publish_through_release_gate(watch, reconciled[len(streamed):])
     session.last_generation = _generation_report(watch)
     if outcome_answer != assistant.text:
         session.last_generation["unpublished_agent_answer"] = outcome_answer

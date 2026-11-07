@@ -2,7 +2,11 @@
 
 Unit tests for the HealthCore authentication API. This document is the test plan and the run book.
 
-The Git repository root is **not** a Python/uv project. Python commands in this file must be run from `services/api/`. A literal `uv run pytest` from the repository root cannot work because there is no `pyproject.toml` there.
+The repository now has two Python projects: the root pipeline/forecast project requires Python 3.14; the authentication API has its own `services/api/pyproject.toml` and Python 3.13 environment. Run the API commands below from `services/api/`; run root pipeline tests using the root project dependencies. Do not mix the forecast dependencies into the API environment.
+
+Current access contract: `POST /users` is Admin-only provisioning, not public onboarding. Anonymous requests must return 401, and Employee/Supervisor requests must return 403. Acceptance harnesses authenticate a disposable, explicitly seeded Admin before creating fictional service users with an explicit role and department. Do not weaken this gate to satisfy historical validators.
+
+The 17 August 2026 results below are historical AUTH-088 evidence, not a current comprehensive integration result. Current final-main candidate checks passed 169 API tests, including all three coverage targets (auth 89.8%, security 100%, dependencies 94.1%); full UI TypeScript, ESLint, 80 Jest tests (11 suites) and production build also passed after the approved RFP Resume UI change. Pipeline, MCP and browser evidence is tracked in `memory-bank/progress.md`.
 
 ## How to run the tests
 
@@ -43,7 +47,7 @@ Jest covers the existing authentication token-storage helpers in `lib/auth/token
 
 | Endpoint or module | Responsibility |
 | --- | --- |
-| `POST /users` | Public registration only: hash password, default role, create linked Profile, reject duplicate email |
+| `POST /users` | Admin-only provisioning: enforce role, hash password, persist explicit role/department and linked Profile, reject duplicate email |
 | `POST /auth/login` | Validate credentials and issue a JWT |
 | `GET /auth/me` | Resolve the authenticated user and linked Profile |
 | `app.core.security` | Password hashing/verification and JWT create/decode |
@@ -79,15 +83,16 @@ Excluded as required AUTH-088 cases because they fail in the framework/schema be
 
 Written before any AUTH-088 test file was created.
 
-### `POST /users` — `services/api/tests/test_register.py`
+### `POST /users` â€” `services/api/tests/test_register.py`
 
 | Kind | Case | Why |
 | --- | --- | --- |
-| Happy | Valid email and password create a user; stored password is hashed; `verify_password` succeeds; role defaults to `user`; a linked Profile is created | Core identity-creation behavior |
+| Happy | An authenticated Admin provisions an explicit Employee role and department; the password is hashed, `verify_password` succeeds, and a linked Profile is created | Current identity-creation contract |
+| Failure | Anonymous creation returns 401; Employee and Supervisor creation return 403 without creating a user | Staff-only provisioning |
 | Edge | Mixed-case email is stored lowercased | Same normalization used at login; easy to regress |
 | Failure | Duplicate email is rejected with 409 and no second user is created | Application `ValueError` in `create_user`, not schema validation |
 
-### `POST /auth/login` — `services/api/tests/test_login.py`
+### `POST /auth/login` â€” `services/api/tests/test_login.py`
 
 | Kind | Case | Why |
 | --- | --- | --- |
@@ -97,7 +102,7 @@ Written before any AUTH-088 test file was created.
 | Failure | Unknown email is rejected with 401 and no token | `get_user_by_email` returns None; same application branch as a missing user |
 | Failure | Inactive user is rejected with 401 and detail `Inactive user` | Distinct branch after password check |
 
-### `GET /auth/me` — `services/api/tests/test_me.py`
+### `GET /auth/me` â€” `services/api/tests/test_me.py`
 
 | Kind | Case | Why |
 | --- | --- | --- |
@@ -107,7 +112,7 @@ Written before any AUTH-088 test file was created.
 | Failure | Expired token is rejected with 401 | CTO regression: expiration must be enforced |
 | Failure | Malformed token is rejected with 401 | `decode_access_token` / `JWTError` path |
 
-### Security helpers — `services/api/tests/test_token.py`
+### Security helpers â€” `services/api/tests/test_token.py`
 
 | Kind | Case | Why |
 | --- | --- | --- |
@@ -117,7 +122,7 @@ Written before any AUTH-088 test file was created.
 | Failure | Expired JWT raises `JWTError` | Expiration at the helper layer |
 | Failure | Incorrect password does not verify | Negative password check |
 
-### TypeScript token helpers — `uis/talent-pipeline-tracker/__tests__/auth/token.test.ts`
+### TypeScript token helpers â€” `uis/talent-pipeline-tracker/__tests__/auth/token.test.ts`
 
 For each of `getAccessToken`, `setAccessToken`, `clearAccessToken`, and `hasAccessToken`: one happy-path test and one failure-mode test against a controlled `localStorage` mock.
 
@@ -158,7 +163,7 @@ Working directory: `services/api/`
 
 The 70% authentication-module threshold is met (89% combined). Missed lines in `app.core.deps` are `require_self_or_admin` (authorization for `/users` CRUD), which is outside AUTH-088.
 
-A literal `uv run pytest` from the Git repository root fails with `Failed to spawn: pytest` / `program not found`. The repository root has no Python/uv project. Use `services/api/` as shown above.
+That root-command failure was recorded for the historical August checkout. The current root has its own Python 3.14 project; API validation still uses the separate `services/api/` project as shown above.
 
 ### Jest
 
