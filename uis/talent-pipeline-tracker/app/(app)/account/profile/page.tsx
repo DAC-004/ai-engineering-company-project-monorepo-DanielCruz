@@ -1,3 +1,4 @@
+import { FederatedLinkControls } from "@/components/auth/FederatedLinkControls";
 import { ProfileForm } from "@/components/auth/ProfileForm";
 
 export default function ProfilePage() {
@@ -10,6 +11,7 @@ export default function ProfilePage() {
         the linked Profile and can be updated with PUT /profiles/me.
       </p>
       <ProfileForm />
+      <FederatedLinkControls />
     </section>
   );
 }

@@ -9,7 +9,11 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from shared.healthcore_rag.qdrant import close_qdrant_client
+# Do not import federated_isolation here. That module rewrites storage, seed,
+# and live-endpoint env at import. Shared collection of login/RFP/other API
+# tests must keep the baseline eager-broker setting below and their own
+# DATABASE_URL/TINYDB_PATH handling. Federated pre-import isolation lives in
+# tests/test_federated_auth.py, which imports federated_isolation first.
 
 # Set before test modules import app.main so lifespan does not open live Redis.
 os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
@@ -28,6 +32,7 @@ _AUTH_IDENTITY_TEST_FILES = frozenset(
         "test_password_reset.py",
         "test_rfp_demonstration_accounts.py",
         "test_provision_personal_admin.py",
+        "test_federated_auth.py",
     }
 )
 
@@ -40,16 +45,30 @@ def _use_runtime_qdrant() -> bool:
 
 @pytest.fixture(autouse=True)
 def isolate_embedded_qdrant(
-    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[None, None, None]:
     """Send non-live API tests to a throwaway store so they cannot wipe the knowledge index."""
+    from shared.healthcore_rag.qdrant import close_qdrant_client
+
     close_qdrant_client()
     if _use_runtime_qdrant():
         yield
         close_qdrant_client()
         return
 
-    isolated = tmp_path_factory.mktemp("qdrant")
+    module_file = getattr(request.module, "__file__", None)
+    iso_root = os.environ.get("FEDERATED_ISO_ROOT", "").strip()
+    if (
+        module_file
+        and Path(module_file).name == "test_federated_auth.py"
+        and iso_root
+    ):
+        isolated = Path(iso_root) / "cases" / request.node.name / "qdrant"
+        isolated.mkdir(parents=True, exist_ok=True)
+    else:
+        isolated = tmp_path_factory.mktemp("qdrant")
     monkeypatch.setenv("QDRANT_PATH", str(isolated))
     monkeypatch.delenv("QDRANT_URL", raising=False)
     monkeypatch.setattr("shared.healthcore_rag.config.QDRANT_PATH", str(isolated))
@@ -75,10 +94,21 @@ def isolated_identity_store(
     from app.db.database import reset_engine_for_tests
     from app.db.tinydb import reset_db_for_tests
 
-    db_path = tmp_path / "auth.json"
-    inventory_db = tmp_path / "inventory.db"
-    suppliers_path = tmp_path / "suppliers.json"
-    incident_data = tmp_path / "incident-data"
+    module_name = Path(module_file).name
+    iso_root = os.environ.get("FEDERATED_ISO_ROOT", "").strip()
+    if module_name == "test_federated_auth.py" and iso_root:
+        case_root = Path(iso_root) / "cases" / request.node.name
+        case_root.mkdir(parents=True, exist_ok=True)
+        db_path = case_root / "auth.json"
+        inventory_db = case_root / "inventory.db"
+        suppliers_path = case_root / "suppliers.json"
+        incident_data = case_root / "incident-data"
+        incident_data.mkdir(parents=True, exist_ok=True)
+    else:
+        db_path = tmp_path / "auth.json"
+        inventory_db = tmp_path / "inventory.db"
+        suppliers_path = tmp_path / "suppliers.json"
+        incident_data = tmp_path / "incident-data"
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-32chars!!!!")
     monkeypatch.setenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
     monkeypatch.setenv("JWT_ALGORITHM", "HS256")
@@ -96,6 +126,15 @@ def isolated_identity_store(
     monkeypatch.setenv("CELERY_TASK_ALWAYS_EAGER", "1")
     monkeypatch.delenv("PLATFORM_SEED_PASSWORD", raising=False)
     monkeypatch.delenv("RFP_DEMONSTRATION_PASSWORD", raising=False)
+    if module_name == "test_federated_auth.py":
+        monkeypatch.setenv("FEDERATED_OIDC_MODE", "synthetic")
+        monkeypatch.setenv("MICROSOFT_CLIENT_ID", "test-client")
+        monkeypatch.setenv("MICROSOFT_CLIENT_SECRET", "test-secret")
+        monkeypatch.setenv("MICROSOFT_TENANT_ID", "test-tenant")
+        monkeypatch.setenv(
+            "OAUTH_REDIRECT_URI",
+            "http://localhost:3000/auth/callback/microsoft",
+        )
     get_settings.cache_clear()
     reset_engine_for_tests()
     reset_db_for_tests()
