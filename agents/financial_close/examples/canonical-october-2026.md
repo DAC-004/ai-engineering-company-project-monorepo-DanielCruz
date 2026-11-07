@@ -2,7 +2,7 @@
 
 Period: **2026-10**. Load date: **2026-11-06**. Status: **Incomplete**.
 
-Fictional aggregate test data. Generation evidence: Actual existing local Qwen2.5-3B-Instruct planner and guarded writer; both raw-model hypotheses verified. Review state: awaiting Tom Callahan. Internal outbox only; no external distribution.
+Fictional aggregate test data. Generation evidence: Actual local Qwen2.5-3B planner and guarded writer; both model hypotheses verified. Review state: awaiting Tom Callahan. Internal outbox only; no external distribution.
 
 ## 1. Executive summary
 

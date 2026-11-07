@@ -13,6 +13,12 @@ from app.core.config import get_settings
 # libpass is the installed package; it exposes the passlib API surface.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Linking requires this claim to equal AUTH_METHOD_PASSWORD. Missing/unknown
+# values are not treated as traditional and do not revoke ordinary access.
+AUTH_METHOD_CLAIM = "auth_method"
+AUTH_METHOD_PASSWORD = "password"
+AUTH_METHOD_MICROSOFT = "microsoft"
+
 
 def hash_password(plain_password: str) -> str:
     """Hash a plaintext password with bcrypt. Never persist the plaintext."""
@@ -41,6 +47,9 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 
 __all__ = [
+    "AUTH_METHOD_CLAIM",
+    "AUTH_METHOD_MICROSOFT",
+    "AUTH_METHOD_PASSWORD",
     "JWTError",
     "create_access_token",
     "decode_access_token",

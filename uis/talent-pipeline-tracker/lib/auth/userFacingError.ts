@@ -112,6 +112,18 @@ const SAFE_API_DETAILS = new Set([
   "The knowledge assistant could not generate an answer right now.",
   "Stock cannot be modified directly. Record an inbound or outbound order.",
   "stock and current_stock cannot be written. Record an inbound or outbound order.",
+  "Unsupported identity provider",
+  "OAuth redirect_uri is not allowlisted",
+  "OAuth state is invalid",
+  "Microsoft tenant is not allowed",
+  "Microsoft identity is not configured",
+  "Cannot unlink the last remaining access method",
+  "Federated authentication is not available for this account",
+  "Microsoft can be linked only after IT provisions this account",
+  "That Microsoft identity is already linked",
+  "Unsupported federated purpose",
+  "This Microsoft account is not linked to a HealthCore user",
+  "Microsoft is not linked",
 ]);
 
 /** `services/api/app/schemas/incident.py` + `main.py` manager validation labels. */

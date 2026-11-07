@@ -11,7 +11,7 @@
   },
   "fx_rate": "1.27",
   "fx_source": "briefing:reference_exchange_rate:1 GBP = 1.27 USD",
-  "executive_summary": "Close for 2026-10 is incomplete. Consolidated USD uses verified amounts only and does not treat missing software as zero. Medicare/Medicaid and US laboratory are the relevant deviations when those lines are complete. UK clinical software licences have no ledger entries. Uncertain ledger records are listed by entry_id only.",
+  "executive_summary": "Close for 2026-10 is incomplete. Consolidated USD uses verified amounts only; missing amounts are not zero-filled. Relevant deviations: us_medicare_medicaid_revenue, us_laboratory. Missing source files: operations.csv. Uncertain ledger records, when present, are listed by entry_id only.",
   "consolidated_usd": {
     "status": "incomplete",
     "budget_status": "complete",

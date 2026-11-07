@@ -641,10 +641,12 @@ def build_report(
             )
     summary = summary_lines or [
         f"Close for {facts.period} is {'incomplete' if facts.incomplete else 'complete'}.",
-        "Consolidated USD uses verified amounts only and does not treat missing software as zero.",
-        "Medicare/Medicaid and US laboratory are the relevant deviations when those lines are complete.",
-        "UK clinical software licences have no ledger entries.",
-        "Uncertain ledger records are listed by entry_id only.",
+        "Consolidated USD uses verified amounts only; missing amounts are not zero-filled.",
+        ("Relevant deviations: " + ", ".join(line_id for line_id, fact in facts.lines.items() if fact.relevant) + ".")
+        if any(fact.relevant for fact in facts.lines.values()) else "No complete line has a relevant deviation.",
+        ("Missing source files: " + ", ".join(facts.missing_files) + ".") if facts.missing_files
+        else (("Missing line data: " + ", ".join(facts.missing_lines) + ".") if facts.missing_lines else "No missing source files or line data detected."),
+        "Uncertain ledger records, when present, are listed by entry_id only.",
     ]
     if len(summary) > 5:
         summary = summary[:5]

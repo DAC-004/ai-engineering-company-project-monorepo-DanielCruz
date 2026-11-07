@@ -8,7 +8,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.agent.decision_log import append_decision
 from app.access.catalog import department_name
 from app.access.permissions import capability_values, require_authenticated
-from app.core.security import create_access_token, verify_password
+from app.core.security import (
+    AUTH_METHOD_CLAIM,
+    AUTH_METHOD_PASSWORD,
+    create_access_token,
+    verify_password,
+)
 from app.schemas.auth import (
     AuthMeResponse,
     ChangePasswordRequest,
@@ -59,7 +64,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(subject=user.id)
+    access_token = create_access_token(
+        subject=user.id,
+        extra_claims={AUTH_METHOD_CLAIM: AUTH_METHOD_PASSWORD},
+    )
     return Token(access_token=access_token)
 
 

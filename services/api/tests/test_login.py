@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from jose import jwt
 
+from app.core.security import AUTH_METHOD_CLAIM, AUTH_METHOD_PASSWORD
 from conftest import TEST_EMAIL, TEST_PASSWORD
 
 
@@ -18,9 +19,10 @@ def test_login_issues_jwt_with_user_sub_and_exp(client, seeded_user) -> None:
     token = response.json()["access_token"]
     assert token
 
-    claims = jwt.get_unverified_claims(token)
+    claims = jwt.decode(token, "test-secret-key-32chars!!!!", algorithms=["HS256"])
     assert claims["sub"] == seeded_user.id
     assert "exp" in claims
+    assert claims[AUTH_METHOD_CLAIM] == AUTH_METHOD_PASSWORD
 
 
 def test_login_accepts_mixed_case_email(client, seeded_user) -> None:

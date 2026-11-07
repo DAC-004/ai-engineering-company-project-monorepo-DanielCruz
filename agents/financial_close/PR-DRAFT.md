@@ -1,11 +1,27 @@
-# Task 5: source-grounded monthly financial close
+# Task 5: traceable monthly financial close
 
-A monthly financial-close workflow now ingests the supplied fictional CSVs, performs Decimal calculations through model-selected tools, and presents a seven-section report with producing-record traceability. Missing or sensitive rows remain incomplete and are excluded before generation. The writer preserves exact labeled evidence and validates source-backed causes instead of accepting invented numbers or unsupported efficiency/volume explanations.
+The financial-close agent ingests the briefing’s fictional CSVs, uses model-selected Decimal tools, and produces the seven-section report with producing-record lookup. Missing software and quarantined patient-name rows remain incomplete. The fallback summary derives missing inputs and relevant deviations from the actual facts.
 
-The normal Tom review flow rejects a draft, retains comments on its successor and approves the exact version/hash/nonce. Approval creates seven unique internal notices. Durable claims and legacy-reference reconciliation keep queued replay on the approved successor after a process restart.
+Tom receives an internal version/hash-bound review request before distribution. Initial and revised draft delivery is atomic with persistence; rejected comments carry into a new version. Named Tom approval atomically queues exactly seven internal notices. Replays cannot duplicate drafts or notices. No external communications occur.
 
-Validation: 89 non-live tests; six UI behavior tests; scoped lint, production TypeScript and an isolated production build; real local model plan/writer/FX; real worker/beat/restart/replay; normal browser source lookup/reject/revise/approve and ordinary-employee denial. Exact recipients, source hashes, privacy scans and zero duplicate report notices were checked.
+## Report structure
 
-Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 69/69 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Canonical and extra-incomplete report examples, raw fixture manifest, source compliance and sanitized evidence are included under agents/financial_close and data/raw/healthcore-financial-close.
+Executive summary (at most five lines); consolidated USD actual/budget revenue, expenses and result; revenue by country/payer in local currency; country expenses; relevant deviations with evidence-backed hypotheses; missing/uncertain data; traceability annex. Missing amounts are never treated as zero.
 
-Fictional test data and internal outbox only; no external email/SMS. Human leadership and Daniel's review are pending. Draft for review; do not merge without Daniel's later approval.
+## Calculation tools
+
+`ingest_and_normalize`, `aggregate_lines`, `actual_versus_budget`, `convert_gbp_usd`, `select_relevant_deviations`, `completeness`, `lookup_sources`. Arithmetic and inclusive absolute 5% selection are deterministic. The single agent plans tools and writes guarded hypotheses; it does not calculate numbers.
+
+## Examples and source review
+
+- [Canonical closing report](examples/canonical-october-2026.md), with its JSON figure/source graph.
+- [Incomplete operations report](examples/missing-operations-october-2026.md), explicitly deterministic fallback.
+- [Requirement matrix](SOURCE-COMPLIANCE.md) and [current validation](review-validation.json).
+
+## Verification
+
+93 financial-close tests; 32 federation and 60 auth/onboarding compatibility tests; full UI TypeScript, full ESLint, 78 Jest tests and isolated production build. Actual existing local GGUF tool plan, used FX results and both source-grounded hypotheses pass. Fresh real worker/beat verifies review/rejection/version-2 approval and seven recipients without duplicates. All are source-bound isolated runs; overlapping historical counts are not added. Historical browser proof is labelled in README and is not a current-code rerun. No existing services were stopped or redeployed.
+
+## Review gates
+
+Leadership sign-off and Daniel’s Task 5 merge approval remain pending. This is an open draft for review, not merge authorization. Synthetic aggregate data and internal notices only; no financial transaction or real email/SMS. Cursor did not commit.

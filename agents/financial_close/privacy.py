@@ -92,7 +92,7 @@ ALLOWED_FIGURE_IDS = frozenset(
 ISSUE_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{2,60}$")
 EMAIL_RE = re.compile(r"^[a-z0-9._+-]+@healthcore\.example$")
 NOTICE_KEY_RE = re.compile(
-    r"^(?:privacy:[0-9]{4}-(?:0[1-9]|1[0-2]):[1-9][0-9]*:LED-[0-9]{6}-(?:[0-9]{3}|PHI[0-9]+)|report:[0-9]{4}-(?:0[1-9]|1[0-2]):[1-9][0-9]*:[0-9a-f]{32}:[a-z0-9._+-]+@healthcore\.example)$"
+    r"^(?:privacy:[0-9]{4}-(?:0[1-9]|1[0-2]):[1-9][0-9]*:LED-[0-9]{6}-(?:[0-9]{3}|PHI[0-9]+)|(?:report|review):[0-9]{4}-(?:0[1-9]|1[0-2]):[1-9][0-9]*:[0-9a-f]{32}:[a-z0-9._+-]+@healthcore\.example)$"
 )
 MONTH_NAMES = (
     "January",

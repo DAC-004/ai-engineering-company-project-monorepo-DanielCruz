@@ -36,6 +36,7 @@ from app.routers import (  # noqa: E402
     access,
     agent,
     auth,
+    federated,
     departments,
     incident_manager,
     incidents,
@@ -44,10 +45,12 @@ from app.routers import (  # noqa: E402
     chat,
     financial_close,
     knowledge,
+    onboarding,
     profiles,
     rfp_intake,
     roles,
     suppliers,
+    supplier_contracts,
     tasks,
     telemetry,
     users,
@@ -117,6 +120,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(federated.router)
 app.include_router(users.router)
 app.include_router(profiles.router)
 app.include_router(access.router)
@@ -132,10 +136,12 @@ app.include_router(tasks.router)
 app.include_router(reporting_router)
 app.include_router(rfp_intake.router)
 app.include_router(suppliers.router)
+app.include_router(supplier_contracts.router)
 app.include_router(knowledge.router)
 app.include_router(agent.router)
 app.include_router(chat.router)
 app.include_router(financial_close.router)
+app.include_router(onboarding.router)
 
 
 def _is_manager_write_request(request: Request) -> bool:

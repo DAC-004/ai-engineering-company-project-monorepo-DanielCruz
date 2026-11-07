@@ -299,6 +299,7 @@ class CloseStore:
                 "UPDATE run_claims SET draft_id=? WHERE period=? AND facts_digest=?",
                 (successor["draft_id"], successor["period"], successor["report"]["facts_digest"]),
             )
+            self._enqueue_review(conn, successor)
             conn.commit()
         return successor
 
@@ -361,6 +362,22 @@ class CloseStore:
             )
             conn.commit()
             return updated
+
+    def _enqueue_review(self, conn: sqlite3.Connection, draft: dict[str, Any]) -> None:
+        """Commit Tom's internal review delivery with the exact draft version."""
+        from agents.financial_close.identity import TOM_EMAIL
+
+        item = {
+            "notice_key": f"review:{draft['period']}:{draft['version']}:{draft['draft_id']}:{TOM_EMAIL}",
+            "period": draft["period"],
+            "version": int(draft["version"]),
+            "recipient_email": TOM_EMAIL,
+            "kind": "review_request",
+            "payload": {"draft_id": draft["draft_id"], "content_sha256": draft["content_sha256"]},
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        assert_clean_mapping(item)
+        self._insert_outbox(conn, item)
 
     def _insert_outbox(self, conn: sqlite3.Connection, item: dict[str, Any]) -> None:
         conn.execute(
@@ -718,6 +735,7 @@ class CloseStore:
                 """,
                 (draft["draft_id"], owner, draft["period"], facts_digest),
             )
+            self._enqueue_review(conn, draft)
             conn.commit()
         return draft
 

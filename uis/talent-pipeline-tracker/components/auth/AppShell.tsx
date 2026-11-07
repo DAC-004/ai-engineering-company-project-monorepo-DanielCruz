@@ -149,6 +149,16 @@ export const AppShell = ({ children }: AppShellProps) => {
             Supplier directory
           </Link>
           <Link
+            href="/backoffice/supplier-contracts"
+            className={
+              pathname.startsWith("/backoffice/supplier-contracts")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            Supplier contracts
+          </Link>
+          <Link
             href="/backoffice/rfp"
             className={
               pathname.startsWith("/backoffice/rfp")
@@ -188,15 +198,24 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Internal reports
           </Link>
+          <Link href="/backoffice/financial-close" className={pathname.startsWith("/backoffice/financial-close") ? "app-nav__link is-active" : "app-nav__link"}>Financial close</Link>
           <Link
-            href="/backoffice/financial-close"
+            href="/onboarding"
             className={
-              pathname.startsWith("/backoffice/financial-close")
+              pathname === "/onboarding" ? "app-nav__link is-active" : "app-nav__link"
+            }
+          >
+            Onboarding board
+          </Link>
+          <Link
+            href="/onboarding/me"
+            className={
+              pathname.startsWith("/onboarding/me")
                 ? "app-nav__link is-active"
                 : "app-nav__link"
             }
           >
-            Financial close
+            My onboarding
           </Link>
           {isAccessAdmin ? (
           <Link

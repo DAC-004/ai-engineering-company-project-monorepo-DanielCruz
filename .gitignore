@@ -28,10 +28,12 @@ data/process/nltk_data/
 data/process/rfp_checkpoints/
 data/process/qdrant_storage/
 data/process/agent_checkpoints/
+data/process/onboarding/
 data/process/agent_traces/
 data/process/agent_memory/
 data/process/agent_decisions/
 data/process/mcp_invocations/
+data/process/supplier-contracts/
 docs/nist/review-package/
 services/api/*.db
 *.gguf

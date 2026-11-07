@@ -1,0 +1,639 @@
+{
+  "company": {
+    "stage": 2,
+    "threshold": 0.8,
+    "notify_after_failures": "manager",
+    "banks": {
+      "a": [
+        {
+          "id": "c2a1",
+          "prompt": "In which year was HealthCore founded, and in which city?",
+          "choices": ["2011 in Austin, Texas", "2001 in London", "2015 in Houston, Texas", "2011 in Manchester"],
+          "answer": 0,
+          "topic": "history",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2a2",
+          "prompt": "How many clinics does HealthCore operate, and how are they split?",
+          "choices": ["8 clinics, all in the US", "12 clinics: 9 in the US and 3 in the UK", "12 clinics: 3 in the US and 9 in the UK", "15 clinics in Texas only"],
+          "answer": 1,
+          "topic": "network",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2a3",
+          "prompt": "Which service lines are listed for HealthCore clinics?",
+          "choices": ["Only emergency surgery", "Primary care, specialist consultations, chronic disease management, and preventive health programmes", "Inpatient surgery only", "Dental and veterinary care"],
+          "answer": 1,
+          "topic": "service-lines",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2a4",
+          "prompt": "What is the documented value proposition new hires must be able to explain?",
+          "choices": ["Lowest price in every market", "Accessibility, same-day appointments, and bilingual care in US markets", "Same-week specialist surgery guarantees", "A single shared EHR already in production"],
+          "answer": 1,
+          "topic": "value-proposition",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2a5",
+          "prompt": "Which staff are in scope for this corporate onboarding path?",
+          "choices": ["Physicians and nurses in clinics", "Non-clinical corporate staff in Austin or London", "Every contractor worldwide", "Only the six-person Austin technology team"],
+          "answer": 1,
+          "topic": "scope",
+          "source_document": "stage-02-the-company"
+        }
+      ],
+      "b": [
+        {
+          "id": "c2b1",
+          "prompt": "Who founded HealthCore after working inside large hospital systems?",
+          "choices": ["Diane Foster", "James Osei", "Dr. Sandra Okonkwo", "Tom Callahan"],
+          "answer": 2,
+          "topic": "history",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2b2",
+          "prompt": "Which US states and UK cities are named in the 12-clinic network?",
+          "choices": ["California and Paris", "Texas, Florida, Georgia, and London and Manchester", "New York and Edinburgh", "Arizona and Dublin"],
+          "answer": 1,
+          "topic": "network",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2b3",
+          "prompt": "About how many people does HealthCore employ, and what is the stated annual revenue?",
+          "choices": ["50 people and 5 million dollars", "200 people and around 28 million dollars", "2,000 people and 280 million dollars", "12 people and 1 million dollars"],
+          "answer": 1,
+          "topic": "network",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2b4",
+          "prompt": "Same-day bookings and bilingual staff are documented as part of which idea?",
+          "choices": ["A UK-only NHS contract", "The accessibility value proposition", "A completed shared data layer", "Clinical licensure onboarding"],
+          "answer": 1,
+          "topic": "value-proposition",
+          "source_document": "stage-02-the-company"
+        },
+        {
+          "id": "c2b5",
+          "prompt": "Which two regulatory frameworks does the company briefing name?",
+          "choices": ["SOX and PCI only", "HIPAA in the United States and UK GDPR in the United Kingdom", "FERPA and COPPA", "HIPAA only, worldwide"],
+          "answer": 1,
+          "topic": "regulatory-setting",
+          "source_document": "stage-02-the-company"
+        }
+      ]
+    }
+  },
+  "operations": {
+    "stage": 3,
+    "threshold": 0.8,
+    "notify_after_failures": "manager",
+    "banks": {
+      "a": [
+        {
+          "id": "c3a1",
+          "prompt": "What is the documented order of the patient journey?",
+          "choices": ["Billing then booking then visit", "Booking, visit, clinical documentation, billing, follow-up", "Follow-up, billing, visit", "Documentation only"],
+          "answer": 1,
+          "topic": "patient-journey",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3a2",
+          "prompt": "What is the documented no-show rate and approximate annual loss?",
+          "choices": ["5 percent and 100 thousand dollars", "22 percent and approximately 1.8 million dollars", "14 percent and 28 million dollars", "50 percent with no dollar figure"],
+          "answer": 1,
+          "topic": "no-shows",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3a3",
+          "prompt": "What is the documented US claims denial rate?",
+          "choices": ["3 percent", "14 percent, more than double a 5 to 8 percent industry average", "22 percent", "Zero, because NHS pays automatically"],
+          "answer": 1,
+          "topic": "billing-denials",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3a4",
+          "prompt": "How do US and UK clinics store records today?",
+          "choices": ["One shared EHR that already syncs both countries", "Different EHR platforms that do not speak to each other", "Paper charts only", "A single UK spreadsheet for all clinics"],
+          "answer": 1,
+          "topic": "visit-and-documentation",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3a5",
+          "prompt": "How do patients currently book in the US versus the UK?",
+          "choices": ["A shared mobile app in both countries", "US patients book by phone; UK patients call a front desk", "Walk-in only", "All bookings go through NHS 111"],
+          "answer": 1,
+          "topic": "booking",
+          "source_document": "stage-03-how-we-operate"
+        }
+      ],
+      "b": [
+        {
+          "id": "c3b1",
+          "prompt": "About how many minutes per day do clinical staff spend on documentation tasks?",
+          "choices": ["5 minutes", "35 minutes", "3 hours", "Documentation is fully automated"],
+          "answer": 1,
+          "topic": "visit-and-documentation",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3b2",
+          "prompt": "UK billing in the official material is described as which mix?",
+          "choices": ["Medicare only", "Private pay and a small NHS contract, managed separately from US billing", "A single global invoice file", "Barter only"],
+          "answer": 1,
+          "topic": "billing-denials",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3b3",
+          "prompt": "If a booked morning slot is unused because the appointment was missed, what does the generic example say?",
+          "choices": ["The clinic can always refill the slot after the fact", "The clinic cannot fill that slot after the fact", "Billing automatically credits the slot", "The example names a real patient"],
+          "answer": 1,
+          "topic": "generic-example",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3b4",
+          "prompt": "Is there a proactive outreach system for at-risk appointments today?",
+          "choices": ["Yes, SMS for every clinic", "No proactive outreach system exists today", "Yes, but only in Manchester", "Yes, run by NHS"],
+          "answer": 1,
+          "topic": "no-shows",
+          "source_document": "stage-03-how-we-operate"
+        },
+        {
+          "id": "c3b5",
+          "prompt": "When a person moves between locations or across the US-UK boundary, what happens to history?",
+          "choices": ["It follows automatically in one record", "History does not automatically follow", "Only billing history follows", "Only UK history follows"],
+          "answer": 1,
+          "topic": "visit-and-documentation",
+          "source_document": "stage-03-how-we-operate"
+        }
+      ]
+    }
+  },
+  "compliance_hipaa": {
+    "stage": 4,
+    "threshold": 1.0,
+    "notify_after_failures": "claire",
+    "banks": {
+      "a": [
+        {
+          "id": "c4ha1",
+          "prompt": "When may a new hire receive access to a system with patient information?",
+          "choices": ["On day one if the manager is in a hurry", "Only after this compliance stage is passed and Claire Whitfield has approved it", "After the company quiz only", "Whenever Digital needs a production credential"],
+          "answer": 1,
+          "topic": "access-gate",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4ha2",
+          "prompt": "What does minimum necessary mean in this material?",
+          "choices": ["Download the full clinic database for convenience", "Access only the data required for the assigned task", "Share logins to save time", "Open charts in case they are useful later"],
+          "answer": 1,
+          "topic": "minimum-necessary",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4ha3",
+          "prompt": "What US incident-notification window does this onboarding material document?",
+          "choices": ["72 hours", "60 days", "One year", "No notification is required"],
+          "answer": 1,
+          "topic": "incident-notification",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4ha4",
+          "prompt": "How must access to patient-information systems be recorded?",
+          "choices": ["Shared team passwords are enough", "Access must be attributable; undocumented look-ups are not allowed", "Only paper sign-out sheets", "No logging until stage 7"],
+          "answer": 1,
+          "topic": "access-logging",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4ha5",
+          "prompt": "Where are uncovered compliance questions routed?",
+          "choices": ["Diane Foster only", "Claire Whitfield", "The public website chatbot", "Any Technology admin"],
+          "answer": 1,
+          "topic": "uncovered-questions",
+          "source_document": "stage-04-compliance-hipaa"
+        }
+      ],
+      "b": [
+        {
+          "id": "c4hb1",
+          "prompt": "Skipping the compliance stage is described as what?",
+          "choices": ["An acceptable manager shortcut", "A legal risk, not an administrative shortcut", "Optional for Digital engineers", "Required only in London"],
+          "answer": 1,
+          "topic": "access-gate",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4hb2",
+          "prompt": "Which US states are named as the HIPAA clinic environment in this document?",
+          "choices": ["Texas, Florida, and Georgia", "California only", "All 50 states plus UK clinics", "New York and New Jersey"],
+          "answer": 0,
+          "topic": "hipaa-setting",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4hb3",
+          "prompt": "Curiosity or 'I might need it later' is a permitted reason to open a patient-information system?",
+          "choices": ["Yes, for engineers", "No", "Yes, after hours", "Yes, if Slack-approved"],
+          "answer": 1,
+          "topic": "minimum-necessary",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4hb4",
+          "prompt": "Who must evaluate a suspected US incident according to this page?",
+          "choices": ["Escalate through Compliance rather than an untracked channel", "Post in a public Slack channel", "Email the patient directly", "Wait until day 10"],
+          "answer": 0,
+          "topic": "incident-notification",
+          "source_document": "stage-04-compliance-hipaa"
+        },
+        {
+          "id": "c4hb5",
+          "prompt": "Do incomplete EHR audit trails relax the rule for new access?",
+          "choices": ["Yes, new access needs no logging", "No; new access still requires logging and Claire's approval before it is issued", "Yes, for Revenue Cycle only", "Only UK clinics log access"],
+          "answer": 1,
+          "topic": "access-logging",
+          "source_document": "stage-04-compliance-hipaa"
+        }
+      ]
+    }
+  },
+  "compliance_uk_gdpr": {
+    "stage": 4,
+    "threshold": 1.0,
+    "notify_after_failures": "claire",
+    "banks": {
+      "a": [
+        {
+          "id": "c4ua1",
+          "prompt": "When may a London corporate hire receive patient-information system access?",
+          "choices": ["Immediately after paperwork", "Only after this compliance stage is passed and Claire Whitfield has approved it", "When the UK manager texts approval", "After the company quiz only"],
+          "answer": 1,
+          "topic": "access-gate",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ua2",
+          "prompt": "Health information under this UK material is described as what?",
+          "choices": ["Public marketing data", "Special-category data", "Unregulated logs", "Optional cookies"],
+          "answer": 1,
+          "topic": "uk-gdpr-setting",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ua3",
+          "prompt": "What UK incident-notification window does this onboarding material document?",
+          "choices": ["60 days", "72 hours", "30 days", "Next fiscal year"],
+          "answer": 1,
+          "topic": "incident-notification",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ua4",
+          "prompt": "May a hire copy records between the US and UK as a self-service step?",
+          "choices": ["Yes, because both are HealthCore", "No; UK and US clinics do not share one EHR, so copying records between countries is not a self-service step", "Yes, via Slack", "Yes, after stage 2"],
+          "answer": 1,
+          "topic": "minimum-necessary",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ua5",
+          "prompt": "Uncovered compliance questions on this page go to whom?",
+          "choices": ["Diane Foster", "Claire Whitfield", "Any Admin role", "The new hire's Slack channel"],
+          "answer": 1,
+          "topic": "uncovered-questions",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        }
+      ],
+      "b": [
+        {
+          "id": "c4ub1",
+          "prompt": "Which UK cities are named for HealthCore clinics in this document?",
+          "choices": ["London and Manchester", "Edinburgh and Cardiff", "Birmingham only", "Austin and London"],
+          "answer": 0,
+          "topic": "uk-gdpr-setting",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ub2",
+          "prompt": "Does this page invent an Article 6 lawful basis for the agent to recite?",
+          "choices": ["Yes, consent is always the basis", "No. The agent will not invent an Article 6 basis that is not written here", "Yes, vital interests", "Yes, legitimate interests for all health data"],
+          "answer": 1,
+          "topic": "uk-gdpr-setting",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ub3",
+          "prompt": "Minimum necessary in the UK variant requires what?",
+          "choices": ["Access only the information required for the assigned corporate task", "Export every clinic database", "Share a department login", "Wait until Diane approves stage 1 only"],
+          "answer": 0,
+          "topic": "minimum-necessary",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ub4",
+          "prompt": "Incomplete audit trails in existing EHRs mean new UK access can skip logging?",
+          "choices": ["Yes", "No; they do not relax the rule for new access", "Yes for analysts", "Only if Jira is down"],
+          "answer": 1,
+          "topic": "access-logging",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        },
+        {
+          "id": "c4ub5",
+          "prompt": "A suspected UK personal-data breach should be escalated how?",
+          "choices": ["Through Compliance", "By posting patient names in Slack", "By waiting 60 days", "By emailing the ICO from a personal inbox without Compliance"],
+          "answer": 0,
+          "topic": "incident-notification",
+          "source_document": "stage-04-compliance-uk-gdpr"
+        }
+      ]
+    }
+  },
+  "role_digital_engineer": {
+    "stage": 5,
+    "threshold": 0.8,
+    "notify_after_failures": "manager",
+    "banks": {
+      "a": [
+        {
+          "id": "c5da1",
+          "prompt": "Who created HealthCore Digital, and who is the Technology line lead named here?",
+          "choices": ["Diane Foster and Tom Callahan", "Dr. Sandra Okonkwo created it; engineers report to CTO James Osei", "Claire Whitfield and Priya Nair", "Marcus Reid only"],
+          "answer": 1,
+          "topic": "where-you-sit",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5da2",
+          "prompt": "What must happen before a Digital engineer requests patient-information access?",
+          "choices": ["Nothing; engineers are exempt", "Complete onboarding including compliance with Claire's approval", "A Jira ticket is enough", "Stage 2 only"],
+          "answer": 1,
+          "topic": "90-day-goals",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5da3",
+          "prompt": "The technology estate is described as what?",
+          "choices": ["A finished shared data layer", "A patchwork of two EHRs, split billing, and manual or phone scheduling", "A single UK spreadsheet for all countries", "Fully automated clinic robots"],
+          "answer": 1,
+          "topic": "what-the-role-is-for",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5da4",
+          "prompt": "Who approves the role stage?",
+          "choices": ["The orchestrator", "The assigned direct manager, after the check is passed", "Any Admin in another department", "Claire only"],
+          "answer": 1,
+          "topic": "direct-manager-approval",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5da5",
+          "prompt": "How many people are in the Austin technology team in the company briefing cited here?",
+          "choices": ["Six", "Two hundred", "Twelve", "One"],
+          "answer": 0,
+          "topic": "where-you-sit",
+          "source_document": "stage-05-role-digital-engineer"
+        }
+      ],
+      "b": [
+        {
+          "id": "c5db1",
+          "prompt": "Which tools are listed as approved for assigned internal systems in the 90-day goals?",
+          "choices": ["Jira, Notion, Slack, Microsoft 365", "Personal Gmail only", "Any SaaS trial", "Clinic EHR day one"],
+          "answer": 0,
+          "topic": "90-day-goals",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5db2",
+          "prompt": "Who must be involved before any patient-information system is in scope?",
+          "choices": ["Marketing", "Claire Whitfield (Compliance)", "A clinic volunteer", "The public website vendor"],
+          "answer": 1,
+          "topic": "who-you-work-with",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5db3",
+          "prompt": "Can the orchestrator approve the role stage?",
+          "choices": ["Yes", "No. The orchestrator cannot approve the role stage", "Yes if the score is 100 percent", "Yes for Digital only"],
+          "answer": 1,
+          "topic": "direct-manager-approval",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5db4",
+          "prompt": "Working language for this Digital programme is?",
+          "choices": ["Spanish only", "English", "Welsh", "On-the-fly translation of missing policies"],
+          "answer": 1,
+          "topic": "where-you-sit",
+          "source_document": "stage-05-role-digital-engineer"
+        },
+        {
+          "id": "c5db5",
+          "prompt": "Uncovered company facts should be handled how?",
+          "choices": ["Guess from general healthcare knowledge", "Route uncovered questions instead of guessing", "Ask a public LLM and paste the answer", "Skip the question"],
+          "answer": 1,
+          "topic": "90-day-goals",
+          "source_document": "stage-05-role-digital-engineer"
+        }
+      ]
+    }
+  },
+  "role_revenue_cycle_analyst": {
+    "stage": 5,
+    "threshold": 0.8,
+    "notify_after_failures": "manager",
+    "banks": {
+      "a": [
+        {
+          "id": "c5ra1",
+          "prompt": "Who leads Revenue Cycle and Billing in this material?",
+          "choices": ["James Osei", "Tom Callahan", "Priya Nair", "Dr. Marcus Reid"],
+          "answer": 1,
+          "topic": "where-you-sit",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5ra2",
+          "prompt": "What US denial rate is documented for this role?",
+          "choices": ["14 percent, more than double a 5 to 8 percent industry average", "2 percent", "22 percent no-shows", "Zero"],
+          "answer": 0,
+          "topic": "what-the-role-is-for",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5ra3",
+          "prompt": "When may this analyst request billing or EHR systems that hold patient information?",
+          "choices": ["On the start date", "After compliance at 100 percent with Claire's approval", "When Tom is out of office", "After stage 2"],
+          "answer": 1,
+          "topic": "90-day-goals",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5ra4",
+          "prompt": "Can another department's manager close this role stage?",
+          "choices": ["Yes, any supervisor", "No. Another department's manager cannot close this stage", "Yes, any Admin", "Yes, Diane always can"],
+          "answer": 1,
+          "topic": "direct-manager-approval",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5ra5",
+          "prompt": "US Revenue Cycle work in this document includes which payers?",
+          "choices": ["Commercial insurance, Medicare, and Medicaid", "NHS only", "Cash-only retail", "Veterinary plans"],
+          "answer": 0,
+          "topic": "where-you-sit",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        }
+      ],
+      "b": [
+        {
+          "id": "c5rb1",
+          "prompt": "UK billing for this role is described as what?",
+          "choices": ["The same file as US Medicare", "Private pay and a small NHS contract, managed separately", "Not in scope for HealthCore", "Only specialist consultations"],
+          "answer": 1,
+          "topic": "where-you-sit",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5rb2",
+          "prompt": "Which data must never be stored in tickets or prompts according to the 90-day goals?",
+          "choices": ["Jira issue keys", "Salary, bank, tax identifiers, or background-check details", "Department names", "Tool names"],
+          "answer": 1,
+          "topic": "90-day-goals",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5rb3",
+          "prompt": "Who is the typical direct manager for this variant?",
+          "choices": ["James Osei", "Tom Callahan", "Claire Whitfield", "Priya Nair"],
+          "answer": 1,
+          "topic": "who-you-work-with",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5rb4",
+          "prompt": "Is there a unified collection view today?",
+          "choices": ["Yes, a live executive dashboard", "No. There is no unified collection view", "Yes, for UK only", "Yes, after stage 1"],
+          "answer": 1,
+          "topic": "what-the-role-is-for",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        },
+        {
+          "id": "c5rb5",
+          "prompt": "The role stage completes when which two things are true?",
+          "choices": ["The hire opens the document", "The comprehension check is passed and the assigned direct manager approves", "An Admin in Technology clicks complete", "Stage 7 happens first"],
+          "answer": 1,
+          "topic": "direct-manager-approval",
+          "source_document": "stage-05-role-revenue-cycle-analyst"
+        }
+      ]
+    }
+  },
+  "how_we_work": {
+    "stage": 6,
+    "threshold": 0.8,
+    "notify_after_failures": "manager",
+    "banks": {
+      "a": [
+        {
+          "id": "c6a1",
+          "prompt": "Which corporate tools does this programme list?",
+          "choices": ["Jira, Notion, Slack, and Microsoft 365", "Only a clinic EHR", "Personal WhatsApp", "GitHub Issues only"],
+          "answer": 0,
+          "topic": "corporate-tools",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6a2",
+          "prompt": "If a system would store or display patient information, who must evaluate it before approval?",
+          "choices": ["Marketing", "Claire Whitfield / Compliance under HIPAA and/or UK GDPR", "Any Digital engineer", "The new hire"],
+          "answer": 1,
+          "topic": "system-approval",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6a3",
+          "prompt": "Austin versus London in this material means what for data rules?",
+          "choices": ["The same US HIPAA rule in both offices", "Austin is HIPAA; London is UK GDPR", "Neither office has rules", "London uses HIPAA only"],
+          "answer": 1,
+          "topic": "austin-and-london",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6a4",
+          "prompt": "May a Digital engineer connect a new vendor to an EHR as a self-service step?",
+          "choices": ["Yes", "No", "Yes after stage 2", "Yes on Slack approval"],
+          "answer": 1,
+          "topic": "system-approval",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6a5",
+          "prompt": "Who approves onboarding closure in stage 7 according to this page?",
+          "choices": ["James Osei", "Diane Foster", "Any supervisor", "The orchestrator"],
+          "answer": 1,
+          "topic": "after-this-stage",
+          "source_document": "stage-06-how-we-work"
+        }
+      ],
+      "b": [
+        {
+          "id": "c6b1",
+          "prompt": "Why should Austin-London hand-offs be written in Jira or Notion?",
+          "choices": ["So the other office does not depend on a same-hour Slack ping", "Because Slack is forbidden forever", "Because Microsoft 365 is banned", "Because English is not used"],
+          "answer": 0,
+          "topic": "austin-and-london",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6b2",
+          "prompt": "Who reviews whether an integration fits the existing estate?",
+          "choices": ["Patient Experience interns", "Technology (James Osei's line)", "A public chatbot", "Any clinic volunteer"],
+          "answer": 1,
+          "topic": "system-approval",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6b3",
+          "prompt": "Spanish official material in this English programme is?",
+          "choices": ["Required and auto-translated by the agent", "Not provided, so policies must not be machine-translated on the fly", "A substitute for HIPAA", "The only language in London"],
+          "answer": 1,
+          "topic": "austin-and-london",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6b4",
+          "prompt": "Do Jira and Slack replace EHR access?",
+          "choices": ["Yes, they store patient charts", "No. These tools are not a substitute for systems that store patient information", "Yes after day 2", "Only Notion does"],
+          "answer": 1,
+          "topic": "corporate-tools",
+          "source_document": "stage-06-how-we-work"
+        },
+        {
+          "id": "c6b5",
+          "prompt": "Patient-information access at stage 7 still requires what?",
+          "choices": ["Stage 4 to have been approved", "Only Diane's calendar invite", "A Technology Admin role", "Nothing further"],
+          "answer": 0,
+          "topic": "after-this-stage",
+          "source_document": "stage-06-how-we-work"
+        }
+      ]
+    }
+  }
+}

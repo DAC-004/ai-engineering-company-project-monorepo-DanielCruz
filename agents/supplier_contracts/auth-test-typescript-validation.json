@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-06",
+  "branch": "feature/supplier-contracts",
+  "fixture_sha256": "7ffe18c4135135ab82bf43c2459eeb1378d69ce37c256b2e0a95e6661746bf94",
+  "root_cause": "Partial Response assertion in non-JSON error fixture triggered TS2352. Replaced with real text/plain 503 Response; existing assertions unchanged.",
+  "production_changes": false,
+  "exits": {
+    "full_types": 0,
+    "lint": 0,
+    "regression": 0,
+    "build": 0
+  },
+  "tests_passed": 63,
+  "tests_failed": 0,
+  "suites_passed": 7,
+  "source_changed_during_checks": []
+}

@@ -15,3 +15,5 @@
 
 13. Rejection advances the durable period/source draft reference in the same transaction as the successor. Replay reconciles legacy stale references against the latest awaiting/approved revision with the exact facts digest; rejected parents cannot be returned as the current report.
 14. The writer targets 3-8 words per explanation with a hard cap of 12 and a separate 8-word summary cap. A filled output template keeps evidence/status fixed. UI source lookup displays producing source_figure_id values, allowing reviewers to follow derived figures to their records.
+
+15. Initial and revised awaiting drafts enqueue a Tom-only review_request with period/version/draft ID/content hash in the same SQLite transaction. A notice failure rolls back the draft. Review notices are distinct from the seven approved-report notices; replay cannot duplicate either. Fallback executive summaries derive missing files/lines and relevant deviations from CloseFacts.

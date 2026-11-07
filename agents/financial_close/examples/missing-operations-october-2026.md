@@ -2,11 +2,11 @@
 
 Period: **2026-10**. Load date: **2026-11-06**. Status: **Incomplete**.
 
-Fictional aggregate test data. Generation evidence: Explicit deterministic missing-data example; not live-model evidence. Review state: awaiting Tom Callahan. Internal outbox only; no external distribution.
+Fictional aggregate test data. Generation evidence: Explicit deterministic fallback; operations.csv absent; not live-model evidence. Review state: awaiting Tom Callahan. Internal outbox only; no external distribution.
 
 ## 1. Executive summary
 
-Close for 2026-10 is incomplete. Consolidated USD uses verified amounts only and does not treat missing software as zero. Medicare/Medicaid and US laboratory are the relevant deviations when those lines are complete. UK clinical software licences have no ledger entries. Uncertain ledger records are listed by entry_id only.
+Close for 2026-10 is incomplete. Consolidated USD uses verified amounts only; missing amounts are not zero-filled. Relevant deviations: us_medicare_medicaid_revenue, us_laboratory. Missing source files: operations.csv. Uncertain ledger records, when present, are listed by entry_id only.
 
 ## 2. Consolidated result in USD
 
