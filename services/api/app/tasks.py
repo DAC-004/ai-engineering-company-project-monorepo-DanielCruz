@@ -1,6 +1,7 @@
 """Celery tasks for HealthCore incident analysis. Queue payloads are identifiers only."""
 
 from __future__ import annotations
+from app.audit.process import audited_process
 
 import logging
 import time
@@ -44,6 +45,7 @@ def record_dead_letter(task_id: str, attempt: int, error_message: str) -> dict[s
     reject_on_worker_lost=True,
     time_limit=120,
 )
+@audited_process("process:incident-analysis", "technology")
 def analyze_incidents_task(self, upload_id: str) -> dict:
     """
     Analyze a previously stored incident CSV referenced only by upload_id.

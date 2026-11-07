@@ -1,0 +1,6 @@
+{
+  "identical_to_tested_main": "c525e59444edda0f10ccae4f381f926d8ae48589",
+  "ui_source_unchanged": true,
+  "applicable_record": "docs/audit-log-evidence/integrated-ui-result.json",
+  "jest_tests": 80
+}

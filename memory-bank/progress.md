@@ -427,6 +427,31 @@ Integrated approved main 2993531 (Task 2/3) into supplier feature worktree; pres
 
 Integrated approved main bbc8810 (Tasks 2–4) preserving routes/navigation and all three Celery schedules. Corrected fact-derived fallback summaries and atomic Tom review delivery for initial/revised drafts. 93 Task5 tests, 32 federation +60 auth/onboarding, full UI types/lint/78tests/build, actual local GGUF and fresh real worker/beat proofs verified; exact evidence and all20 implementation requirements/eight evaluation mappings in agents/financial_close/review-validation.json and SOURCE-COMPLIANCE.md. Current canonical/incomplete examples regenerated. Historical browser proof is not current-code rerun; existing services preserved. Leadership sign-off and Daniel Task5 merge approval pending. Cursor cannot commit.
 
+## Strengthen Task2 source-bound WebSocket review, 2026-11-07
+
+Read all three supplied files and confirmed original PR36 was already merged. Prepared existing feature/websocket-chat in its own worktree at main b93a51c. Reproduced and corrected snapshot-send subscription event loss, and unpublished retry replacement of shared history; no agent logic/tools/memory policy or protected UI source changed. Current deterministic95, actual local-model4 and separate SSE9 pass with zero skips/failures/errors. Existing UI78Jest/types/lint/build pass. The model proof substitutes public compliance retrieval context, not live Qdrant; single-process in-memory reconnect scope is explicit. Full source/evidence mapping and design answers are in docs/websocket-chat.md. Supervisor prepares commit/push and PR; Daniel review/merge approval pending. Submitted Enhance PRs45/46/47 are closed without merging, branches preserved. PR44 stays held. Existing WIP/services preserved; no repository cleanup or external email.
+
+
+## Strengthen Task2 immediate reconnect redirect correction,2026-11-07
+
+Independent built-UI review reproduced redirect loss while an existing generation continued after reconnect. Daniel explicitly approved KnowledgeQueryForm.tsx. Snapshot now carries existing generating state; UI restores it and treats submitted/echoed turns as busy before first token, with synchronous interrupt-ref updates. Current96 focused tests,4 real-model tests,78UIJest/types/lint/build pass. Actual built React DOM with a controlled socket/API fixture verifies immediate reconnect redirect, interrupted partial preservation, new redirected turn, incremental rendering, idle completion, progressive backoff, same session and snapshot gating. Before/after JSON/screenshots and reusable tests/ui script are recorded. No new agent logic/tools or other protected UI source changed. Updating PR48; no merge or cleanup, PR44 remains held.
+
+## Enhance Your Platform 3: Audit Log, 2026-11-07 (in progress)
+
+Created feature/audit-log in an isolated worktree from main b93a51c, preserving original WIP, services and held PR44. Read the supplied Task3 markdown source set and implemented a dedicated metadata-only append-only SQLite ledger, hash-chain/head verification, scoped read API, HTTP sensitive-action capture, direct user-service and real worker entry-point hooks, and eighteen synthetic patient sample events. Focused17 tests pass; initial fullAPI174pass/3fail exposed a corrected direct-call signature regression and two RFP cases still being baseline-compared. No completion claim: protected tracker viewer approval, full source/evidence review, broader checks and actual runtime verification remain pending. No Audit commit/push/PR yet. Async/Security and Strengthen not started. See docs/audit-log.md for scope and limitations.
+
+Audit continuation: all five supplied Task3 files including the screenshot reviewed and hashed in docs/audit-log-source-manifest.json. Corrected direct-call regression;24 audit/register tests pass. full-api-02:177pass/2fail; baseline-rfp-02 reproduces both failures identically on unchanged main. Final reporting-prefix/background-chat capture verified by focused-06:44pass (21Audit/23chat). Protected tracker viewer remains approval-gated; live worker/browser checks pending. No claim of complete compliance, no Audit commit/push/PR.
+
+Audit Log final verification: explicitly approved viewer implemented; full TypeScript/lint/80Jest/productionbuild pass. Browser Admin integrity/filter, Supervisor scope and Employee hidden/direct denial pass. Separate real Celery worker captures process attribution on a controlled cached-result branch. Final API179pass/2unchanged-main RFPfail; focused44pass. Evidence and evaluation mapping in docs/audit-log.md and docs/audit-log-evidence. No unrelated work/PR44 changes; no CTO signoff/merge implied. Preparing supervisor-owned commit/push and review PR.
+
+RFP baseline investigation: both failures come from LookupError in readability scoring because test_rfp_intake_api.py overwrote the configured NLTK_DATA with a missing worktree directory. Updated only the fixture to honor configured offline assets; no evaluator/threshold/assertion changes. All three full API suites are being rerun. Held PR44 remains unchanged.
+
+Final Audit API rerun after tokenizer-fixture correction and short owned Windows test paths:181passed,0failures/errors/skips. The original two RFP cases now pass with actual readability scoring. Current clean result and diagnosis are in docs/audit-log-evidence. PR45 will receive this scoped test/evidence follow-up; no app/permission/UI behavior change and no PR44 modification.
+
+
+## Audit Log integration with approved WebSocket main,2026-11-07
+
+Reconciled only append-only progress history, preserving both branches. Integrated main e3a2f83 (approved PR48). Combined fullAPI181, separate root chat/streaming/SSE105, UI80Jest/types/lint/build pass. The first attempted mixed API/root collection had a conftest-name collision; rerunning in the established separate processes passed without changing app code. Current results are in docs/audit-log-evidence/integrated-*-result.json. Preparing the approved PR45 merge; branches/WIP/services preserved. PR44 remains held for final integration checks. Cross-branch preview identified a later PR47 audit/rate-limit/auth behavior conflict for review; no security conflict resolution was performed here.
 
 ## Enhance Task 4, 2026-11-07 (in progress)
 
@@ -439,3 +464,8 @@ Final Task4 focused-review11pass, including Admin/Employee status boundaries and
 RFP baseline investigation: both failures come from LookupError in readability scoring because test_rfp_intake_api.py overwrote the configured NLTK_DATA with a missing worktree directory. Updated only the fixture to honor configured offline assets; no evaluator/threshold/assertion changes. All three full API suites are being rerun. Held PR44 remains unchanged.
 
 Final Task4 API168pass,0failures/errors/skips. Resolved NLTKfixture override and isolated the outbox fixture SQL engine/seed flags after reproducing stale owner-binding cross-test pollution. Combined8outbox+approval regression9pass. Production owner binding/security logic and all assertions unchanged. PR46 follow-up contains only fixtures/progress/evidence; PR44 held, no merge.
+
+
+## Async Processing integration with Audit/WebSocket main,2026-11-07
+
+Preserved all append-only history and retained both audit_log/email_jobs router imports; no business behavior was selected or discarded. Integrated approved main c525e59. Full combinedAPI189 and separate root chat/streaming/SSE105 pass with zero failures/errors/skips. UI source is byte-identical in Git to tested main, whose80Jest/types/lint/build passed; no needless UI rerun claimed. Evidence is in docs/async-processing-evidence/integrated-*. Preparing approved PR46 merge. PR47's behavioral audit/rate-limit/auth conflict remains stopped for review; PR44 remains held pending complete integration and end-to-end checks. Original WIP/services preserved.

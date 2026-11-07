@@ -131,7 +131,9 @@ export const KnowledgeQueryForm = () => {
         reconnectAttemptRef.current = 0;
         setConnectionLabel("Connected");
         setErrorMessage(null);
-        setStreaming(false);
+        const generating = data.generating === true;
+        streamingRef.current = generating;
+        setStreaming(generating);
         return;
       }
 
@@ -141,6 +143,8 @@ export const KnowledgeQueryForm = () => {
           return;
         }
         continueRestoredAssistant = false;
+        streamingRef.current = true;
+        setStreaming(true);
         userSequenceRef.current += 1;
         const messageId = `user-${userSequenceRef.current}`;
         setMessages((current) => [
@@ -155,6 +159,7 @@ export const KnowledgeQueryForm = () => {
         if (!token) {
           return;
         }
+        streamingRef.current = true;
         setStreaming(true);
         setMessages((current) => {
           const last = current.at(-1);
@@ -173,12 +178,14 @@ export const KnowledgeQueryForm = () => {
       }
 
       if (eventName === "generation_completed") {
+        streamingRef.current = false;
         setStreaming(false);
         setMessages((current) => finishAssistant(current, readString(data.message_id), false));
         return;
       }
 
       if (eventName === "generation_failed") {
+        streamingRef.current = false;
         setStreaming(false);
         setErrorMessage(readString(data.message) || "The knowledge assistant could not complete this turn.");
         setMessages((current) => {
@@ -192,6 +199,7 @@ export const KnowledgeQueryForm = () => {
       }
 
       if (eventName === "generation_interrupted") {
+        streamingRef.current = false;
         setStreaming(false);
         setMessages((current) => finishAssistant(current, readString(data.message_id), true));
       }
@@ -240,6 +248,7 @@ export const KnowledgeQueryForm = () => {
         if (disposed || !wasCurrent) {
           return;
         }
+        streamingRef.current = false;
         setStreaming(false);
         if (closeEvent.code === 1008) {
           setConnectionLabel("Rejected");
@@ -293,6 +302,8 @@ export const KnowledgeQueryForm = () => {
             },
       ),
     );
+    streamingRef.current = true;
+    setStreaming(true);
     setQuestion("");
     setErrorMessage(null);
   };

@@ -15,6 +15,8 @@ DeptScope = str | None
 # department_scope is a briefing department id, "rfp_mapped" for RFP section
 # filtering, or None when the route is not department-scoped.
 ENDPOINT_INVENTORY: tuple[dict[str, str | None], ...] = (
+    {"method": "GET", "path": "/audit-log", "auth": "authenticated", "min_capability": "read_audit_log", "department_scope": "caller_or_admin"},
+    {"method": "GET", "path": "/audit-log/integrity", "auth": "authenticated", "min_capability": "manage_access", "department_scope": None},
     {"method": "GET", "path": "/health", "auth": "public", "min_capability": None, "department_scope": None},
     {"method": "POST", "path": "/auth/login", "auth": "public", "min_capability": None, "department_scope": None},
     {"method": "POST", "path": "/auth/forgot-password", "auth": "public", "min_capability": None, "department_scope": None},
