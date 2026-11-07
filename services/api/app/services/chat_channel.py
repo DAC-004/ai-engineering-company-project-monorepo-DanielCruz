@@ -141,7 +141,11 @@ class SessionHub:
             messages.append(payload)
         return {
             "event": "session_snapshot",
-            "data": {"session_id": session.session_id, "messages": messages},
+            "data": {
+                "session_id": session.session_id,
+                "messages": messages,
+                "generating": session.generating,
+            },
         }
 
     def active_watch(self, session_id: str) -> LocalGenerationWatch | None:

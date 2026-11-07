@@ -39,3 +39,14 @@ def test_subscribe_before_sending_snapshot(monkeypatch):
             reset_chat_hub_for_tests()
 
     asyncio.run(scenario())
+
+
+def test_snapshot_exposes_active_generation_for_reconnect():
+    from app.services.chat_channel import SessionHub
+    hub = SessionHub()
+    session = hub.open_session("chat_busy_restore", "fictional-staff")
+    assert session is not None
+    session.generating = True
+    assert hub.snapshot_event(session)["data"]["generating"] is True
+    session.generating = False
+    assert hub.snapshot_event(session)["data"]["generating"] is False

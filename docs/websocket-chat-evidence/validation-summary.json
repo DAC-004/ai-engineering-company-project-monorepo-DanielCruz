@@ -1,7 +1,7 @@
 {
   "baseline": "b93a51ca7d9290330f94a08785578cf86dfedb3c",
   "deterministic": {
-    "tests": 95,
+    "tests": 96,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -19,8 +19,6 @@
     "skipped": 0
   },
   "ui": {
-    "install-incidents": 0,
-    "install-ui": 0,
     "types": 0,
     "lint": 0,
     "jest": 0,
@@ -30,6 +28,21 @@
   "limitations": [
     "Live model tests substitute public compliance retrieval context; live Qdrant retrieval is not established.",
     "Session history/pub-sub is in-memory for a single API process; process-restart or multi-worker recovery is not claimed.",
-    "No fresh browser demonstration is claimed; existing UI passed types/lint/Jest/build and was reviewed against the event contract."
-  ]
+    "Built UI browser checks use a controlled WebSocket/API fixture; actual model/socket behavior is verified separately by the live-model suite."
+  ],
+  "browser_interaction": {
+    "case": "redirect immediately after reconnect while generation remains active",
+    "expected": "interrupt_requested",
+    "actual": "interrupt_requested",
+    "passed": true,
+    "same_session": true,
+    "partial_visible": "YOU\n\nWhat does the compliance policy require?\n\nASSISTANT\n\nThe policy requires ",
+    "partial_preserved_and_marked": true,
+    "redirect_is_new_turn": true,
+    "incremental_rendering": true,
+    "completion_returns_to_idle": true,
+    "progressive_reconnect_backoff": true,
+    "tokens_wait_for_snapshot": true,
+    "redirect_before_first_token": true
+  }
 }
