@@ -6,6 +6,8 @@ subscribe to ``chat.<session_id>`` and do not call the model themselves.
 
 from __future__ import annotations
 
+from app.audit.process import audited_process
+
 import asyncio
 import logging
 import threading
@@ -141,7 +143,11 @@ class SessionHub:
             messages.append(payload)
         return {
             "event": "session_snapshot",
-            "data": {"session_id": session.session_id, "messages": messages},
+            "data": {
+                "session_id": session.session_id,
+                "messages": messages,
+                "generating": session.generating,
+            },
         }
 
     def active_watch(self, session_id: str) -> LocalGenerationWatch | None:
@@ -357,8 +363,15 @@ def _finalize_successful_generation(
             return False
     else:
         reconciled = _reconcile_streamed_answer(streamed, outcome_answer)
-        if reconciled != assistant.text:
-            assistant.text = reconciled
+        blocked = watch.replacement_unpublished or watch.replaced_kept_text or any(
+            item.gate_stopped or item.withheld_text or item.interrupted
+            for item in watch.observations
+        )
+        # Already published text belongs to every subscriber and the transcript.
+        # A safe extension must use that same gate and publication callback;
+        # an unpublished retry or withheld suffix cannot silently replace it.
+        if not blocked and reconciled.startswith(streamed) and len(reconciled) > len(streamed):
+            _publish_through_release_gate(watch, reconciled[len(streamed):])
     session.last_generation = _generation_report(watch)
     if outcome_answer != assistant.text:
         session.last_generation["unpublished_agent_answer"] = outcome_answer
@@ -390,6 +403,7 @@ def request_interrupt(session_id: str, new_input: str) -> None:
         watch.request_stop()
 
 
+@audited_process("process:support-agent", None)
 def _generate_turn(session_id: str, question: str) -> None:
     hub = get_chat_hub()
     session = hub.get_session(session_id)

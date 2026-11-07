@@ -68,7 +68,7 @@ def test_reset_token_row_stores_hash_only(isolated_client: TestClient) -> None:
 def test_forgot_password_mocks_resend(isolated_client: TestClient) -> None:
     email = "mock-send@example.com"
     _register(isolated_client, email, "password-one-1")
-    with patch("app.services.email_service.send_password_reset_email") as send_email:
+    with patch("app.services.email_service.send_password_reset_email", return_value="synthetic-provider-id") as send_email:
         response = isolated_client.post("/auth/forgot-password", json={"email": email})
     assert response.status_code == 200
     send_email.assert_called_once()
@@ -84,8 +84,9 @@ def test_expired_and_reused_tokens_rejected(isolated_client: TestClient) -> None
 
     captured_url: list[str] = []
 
-    def capture_send(*, to_email: str, reset_url: str) -> None:
+    def capture_send(*, to_email: str, reset_url: str, idempotency_key: str | None = None) -> str:
         captured_url.append(reset_url)
+        return "synthetic-provider-id"
 
     with patch("app.services.email_service.send_password_reset_email", side_effect=capture_send):
         assert isolated_client.post("/auth/forgot-password", json={"email": email}).status_code == 200

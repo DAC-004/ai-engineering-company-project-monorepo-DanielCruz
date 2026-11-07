@@ -91,3 +91,8 @@ No additional unmet implementation requirement is established by the recorded ch
 The three primary application findings S1-S3 already satisfy the source's minimum of three. No additional fault or verification method is introduced as an acceptance criterion. The assignment permits screenshots, logs or automated tests for before/after evidence; the retained required evidence is linked above.
 
 This PR is prepared for Daniel's review and submission from recorded results. CTO signoff and separate merge approval remain pending. No 100% compliance certification, merge or closure is implied. No deployment, real credential rotation or service interruption was performed; these are not additional assignment requirements.
+
+
+## Approved Audit/Async/WebSocket integration
+
+Integrated main0be67f3 while preserving all task histories and configuration examples. Daniel explicitly approved preserving both the known-user audit target and exactly one real-or-dummy password verification, with audit middleware outside the rate limiter so classified429 responses remain audited. The new HTTP-boundary composition regression verifies known401 target attribution and auditable429 rejection. Current combined fullAPI196, separate chat/streaming/SSE105, and tracker80Jest/types/lint/productionbuild pass. The new test fixture was corrected to an accepted fictional email domain, a100-row ledger page and its own audit file; no application assertion was weakened. Results are in integrated-*-result.json and composition-result.json. This is an integration check, not a newly invented finding. No previously excluded optional operation was retried. Final end-to-end verification and conditional PR44 merge remain pending.

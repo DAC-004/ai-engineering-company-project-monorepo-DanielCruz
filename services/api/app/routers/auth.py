@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+from app.audit.capture import identify, target
 from app.agent.decision_log import append_decision
 from app.access.catalog import department_name
 from app.access.permissions import capability_values, require_authenticated
@@ -35,7 +36,7 @@ _DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
     """
     Validate credentials and return a signed JWT access token.
 
@@ -43,6 +44,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
     For this API, `username` is the account email address.
     """
     user = user_service.get_user_by_email(form_data.username)
+    if user is not None:
+        target(request, "user", user.id, user.department_id)
     valid_password = verify_password(form_data.password, user.hashed_password if user else _DUMMY_PASSWORD_HASH)
     if user is None or not valid_password:
         # The durable line records the rejection. It does not record the account or the secret.
@@ -70,6 +73,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    identify(request, user)
+    target(request, "user", user.id, user.department_id)
     access_token = create_access_token(
         subject=user.id,
         extra_claims={AUTH_METHOD_CLAIM: AUTH_METHOD_PASSWORD},

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.318" timestamp="2026-11-07T14:22:26.163963-05:00" hostname="Cruzer"><testcase classname="tests.services.test_chat_snapshot_order" name="test_snapshot_exposes_active_generation_for_reconnect" time="0.003"><failure message="KeyError: 'generating'">..\..\tests\services\test_chat_snapshot_order.py:50: in test_snapshot_exposes_active_generation_for_reconnect
+    assert hub.snapshot_event(session)["data"]["generating"] is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'generating'</failure></testcase></testsuite></testsuites>

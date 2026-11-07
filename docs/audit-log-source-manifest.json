@@ -1,0 +1,25 @@
+{
+  "baseline": "b93a51ca7d9290330f94a08785578cf86dfedb3c",
+  "sources": [
+    {
+      "name": "healthcore-appointment-policy.en.md",
+      "sha256": "ff731a77a1ec3430aac50eb316dbb9da2a28374f738c3af1ee01fdf6b25a70fd"
+    },
+    {
+      "name": "healthcore-BRIEFING-Audit Log.md",
+      "sha256": "498ed80f63e7d2d58c0f30e79a8ebed9239bdce4003c3bfd5384413e8e7d448d"
+    },
+    {
+      "name": "healthcore-BRIEFING.en.md",
+      "sha256": "b8f036c3e0eddd731f6591e3ddac40cdb1a5ac9170fc943e89e14204cd97764c"
+    },
+    {
+      "name": "Platform \u2013 Audit Log.png",
+      "sha256": "07b2719d5d1b63c663627e3dd377cf94b321bd82c8e9508502fc4b103862eb34"
+    },
+    {
+      "name": "project_specs.md",
+      "sha256": "8d0f9c25edf278dbf8e4fbcbe501d57133bca3e0d9205f1f6b3121af1fe8cf7d"
+    }
+  ]
+}

@@ -15,6 +15,7 @@ from app.db.tinydb import reset_db_for_tests
 @pytest.fixture
 def security_client(tmp_path, monkeypatch):
     monkeypatch.setenv("TINYDB_PATH", str(tmp_path / "auth.json"))
+    monkeypatch.setenv("AUDIT_DB_PATH", str(tmp_path / "audit.sqlite3"))
     monkeypatch.setenv("DATABASE_URL", "sqlite:///" + (tmp_path / "inventory.db").as_posix())
     monkeypatch.setenv("SECRET_KEY", "fictional-security-test-only-secret")
     monkeypatch.setenv("CELERY_TASK_ALWAYS_EAGER", "1")
@@ -139,3 +140,20 @@ def test_jwt_rotation_accepts_overlap_and_rejects_retired_key(security_client, m
     with pytest.raises(JWTError):
         decode_access_token(old_token)
     assert decode_access_token(new_token)["sub"] == "new-subject"
+
+
+def test_rate_rejected_logins_are_audited_and_known_targets_retained(security_client, monkeypatch):
+    from app.routers import auth
+    from app.audit.capture import configured_store
+    from app.schemas.user import UserCreate, UserRole
+    from app.services import user_service
+    from shared.healthcore_audit.store import opaque_ref
+
+    user = user_service.create_user(UserCreate(email="combined-auth@security.example", password="FictionalPassword1!"), role=UserRole.employee)
+    # Password-verifier cost is covered separately; this checks real middleware composition.
+    monkeypatch.setattr(auth, "verify_password", lambda *_args: False)
+    responses = [security_client.post("/auth/login", data={"username": user.email, "password": "wrong"}) for _ in range(12)]
+    assert [r.status_code for r in responses] == [401] * 10 + [429] * 2
+    rows = configured_store().query(action="auth.login", limit=100)["items"]
+    assert any(r["outcome"] == "denied" and r["status_code"] == 429 for r in rows)
+    assert any(r["outcome"] == "denied" and r["status_code"] == 401 and r["resource_ref"] == opaque_ref(user.id) for r in rows)

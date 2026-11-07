@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="1.674" timestamp="2026-11-07T14:10:52.008735-05:00" hostname="Cruzer"><testcase classname="tests.services.test_chat_transcript_consistency" name="test_unpublished_retry_cannot_replace_shared_transcript[replacement_unpublished]" time="0.003"><failure message="AssertionError: assert 'The policy a... subscribers.' == 'The policy a...this request.'&#10;  &#10;  - The policy applies to this request.&#10;  + The policy applies to this request. This additional statement was never sent to subscribers.">..\..\tests\services\test_chat_transcript_consistency.py:22: in test_unpublished_retry_cannot_replace_shared_transcript
+    assert assistant.text == original
+E   AssertionError: assert 'The policy a... subscribers.' == 'The policy a...this request.'
+E     
+E     - The policy applies to this request.
+E     + The policy applies to this request. This additional statement was never sent to subscribers.</failure></testcase><testcase classname="tests.services.test_chat_transcript_consistency" name="test_unpublished_retry_cannot_replace_shared_transcript[replaced_kept_text]" time="0.003"><failure message="AssertionError: assert 'The policy a... subscribers.' == 'The policy a...this request.'&#10;  &#10;  - The policy applies to this request.&#10;  + The policy applies to this request. This additional statement was never sent to subscribers.">..\..\tests\services\test_chat_transcript_consistency.py:22: in test_unpublished_retry_cannot_replace_shared_transcript
+    assert assistant.text == original
+E   AssertionError: assert 'The policy a... subscribers.' == 'The policy a...this request.'
+E     
+E     - The policy applies to this request.
+E     + The policy applies to this request. This additional statement was never sent to subscribers.</failure></testcase><testcase classname="tests.services.test_chat_transcript_consistency" name="test_safe_extension_reaches_subscribers_before_becoming_history" time="0.002"><failure message="AssertionError: assert 'The policy a...nted process.' == 'The policy applies.'&#10;  &#10;  - The policy applies.&#10;  + The policy applies. Follow the documented process.">..\..\tests\services\test_chat_transcript_consistency.py:43: in test_safe_extension_reaches_subscribers_before_becoming_history
+    assert assistant.text == original + "".join(released) == full
+E   AssertionError: assert 'The policy a...nted process.' == 'The policy applies.'
+E     
+E     - The policy applies.
+E     + The policy applies. Follow the documented process.</failure></testcase></testsuite></testsuites>

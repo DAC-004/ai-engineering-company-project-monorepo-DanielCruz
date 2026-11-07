@@ -63,9 +63,10 @@ celery_app.conf.update(
     task_send_sent_event=True,
     task_queues=(
         Queue(DEFAULT_QUEUE),
+        Queue("email"),
         Queue(DEAD_LETTER_QUEUE),
     ),
-    imports=("app.tasks", "app.onboarding_tasks", "app.tasks_supplier_contracts", "app.tasks_financial_close"),
+    imports=("app.tasks", "app.onboarding_tasks", "app.tasks_supplier_contracts", "app.tasks_financial_close", "app.email_tasks"),
     beat_schedule=celery_beat_schedule(),
     timezone="America/Chicago",
     enable_utc=True,
@@ -116,3 +117,6 @@ def _init_worker_databases(**_kwargs: object) -> None:
     from app.db.database import init_databases
 
     init_databases()
+
+# Durable outbox reconciliation survives broker publication failures and stale leases.
+celery_app.conf.beat_schedule["dispatch-pending-email"] = {"task": "app.email_tasks.dispatch_pending_email", "schedule": 15.0, "options": {"queue": "email"}}

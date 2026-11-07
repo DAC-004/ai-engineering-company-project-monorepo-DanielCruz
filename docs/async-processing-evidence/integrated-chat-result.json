@@ -1,0 +1,11 @@
+{
+  "exit": 0,
+  "seconds": 30.78,
+  "junit": {
+    "tests": 105,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "case": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\healthcore-async-processing-verification\\integrated-chat"
+}

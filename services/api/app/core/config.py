@@ -84,6 +84,8 @@ class Settings(BaseSettings):
 
     # Task 2 federated auth. Live Microsoft values stay optional so isolated
     # synthetic tests run without an Entra app. Do not log these fields.
+    audit_db_path: Path | None = Field(default=None, alias="AUDIT_DB_PATH")
+
     microsoft_client_id: str | None = Field(default=None, alias="MICROSOFT_CLIENT_ID")
     microsoft_client_secret: str | None = Field(
         default=None, alias="MICROSOFT_CLIENT_SECRET"
@@ -114,6 +116,11 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_oauth_redirect_uri(cls, value: str) -> str:
         return value.strip()
+
+    @field_validator("audit_db_path", mode="before")
+    @classmethod
+    def normalize_audit_path(cls, value):
+        return None if value is None or value == "" else value
 
     @field_validator("federated_oidc_mode")
     @classmethod

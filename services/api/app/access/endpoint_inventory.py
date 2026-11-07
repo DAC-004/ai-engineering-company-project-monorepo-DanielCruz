@@ -15,6 +15,8 @@ DeptScope = str | None
 # department_scope is a briefing department id, "rfp_mapped" for RFP section
 # filtering, or None when the route is not department-scoped.
 ENDPOINT_INVENTORY: tuple[dict[str, str | None], ...] = (
+    {"method": "GET", "path": "/audit-log", "auth": "authenticated", "min_capability": "read_audit_log", "department_scope": "caller_or_admin"},
+    {"method": "GET", "path": "/audit-log/integrity", "auth": "authenticated", "min_capability": "manage_access", "department_scope": None},
     {"method": "GET", "path": "/health", "auth": "public", "min_capability": None, "department_scope": None},
     {"method": "POST", "path": "/auth/login", "auth": "public", "min_capability": None, "department_scope": None},
     {"method": "POST", "path": "/auth/forgot-password", "auth": "public", "min_capability": None, "department_scope": None},
@@ -68,6 +70,8 @@ ENDPOINT_INVENTORY: tuple[dict[str, str | None], ...] = (
     {"method": "GET", "path": "/inventory/orders", "auth": "authenticated", "min_capability": "authenticated", "department_scope": "caller_or_admin"},
     {"method": "POST", "path": "/telemetry/events", "auth": "public", "min_capability": None, "department_scope": None},
     {"method": "GET", "path": "/telemetry/report", "auth": "authenticated", "min_capability": "read_department_data", "department_scope": "technology"},
+    {"method": "GET", "path": "/tasks/email/dead-letters", "auth": "authenticated", "min_capability": "manage_users", "department_scope": None},
+    {"method": "GET", "path": "/tasks/email/{operation_id}", "auth": "authenticated", "min_capability": "manage_users", "department_scope": None},
     {"method": "GET", "path": "/tasks/{task_id}", "auth": "authenticated", "min_capability": "authenticated", "department_scope": None},
     {"method": "GET", "path": "/reporting/monthly-clinic-supply-performance", "auth": "authenticated", "min_capability": "read_department_data", "department_scope": "clinical_operations"},
     {"method": "GET", "path": "/reporting/pipeline-runs/latest", "auth": "authenticated", "min_capability": "read_department_data", "department_scope": "technology"},

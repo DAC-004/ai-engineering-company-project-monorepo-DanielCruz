@@ -1,0 +1,11 @@
+{
+  "exit": 1,
+  "seconds": 6.53,
+  "junit": {
+    "tests": 1,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  "case": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\healthcore-websocket-chat-verification\\snapshot-before"
+}

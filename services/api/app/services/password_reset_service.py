@@ -21,8 +21,7 @@ from app.core.security import verify_password
 from app.db.tinydb import password_reset_tokens_table, identity_mutation_lock
 from functools import wraps
 from app.schemas.user import UserInDB, UserUpdate
-from app.services import email_service, user_service
-from app.services.email_service import EmailDeliveryError
+from app.services import user_service
 
 logger = logging.getLogger(__name__)
 
@@ -109,16 +108,9 @@ def request_password_reset(email: str) -> None:
 
     raw_token = create_reset_token_for_user(user)
     reset_url = build_reset_url(raw_token)
-    try:
-        email_service.send_password_reset_email(
-            to_email=user.email,
-            reset_url=reset_url,
-        )
-    except EmailDeliveryError:
-        # Keep outward behavior identical for registered vs unregistered emails.
-        logger.exception(
-            "Password-reset email could not be delivered for a registered account"
-        )
+    from app.services.email_outbox import enqueue_reset_email
+    enqueue_reset_email(user_id=user.id, to_email=user.email, reset_url=reset_url)
+
 
 
 def _load_valid_token_row(raw_token: str) -> dict:
