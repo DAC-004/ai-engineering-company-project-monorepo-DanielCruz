@@ -201,9 +201,14 @@ class IncidentManagerStack:
         )
         self._start_api()
         self.http = httpx.Client(base_url=self.api_base_url, timeout=30.0)
+        assert self.http.post("/users", json={"email": self.username, "password": self.password}).status_code == 401
+        admin_login = self.http.post("/auth/login", data={"username": "james.admin@healthcore.example", "password": "Phase4AdminFixture1!"})
+        assert admin_login.status_code == 200
         created = self.http.post(
             "/users",
-            json={"email": self.username, "password": self.password},
+            headers={"Authorization": "Bearer " + admin_login.json()["access_token"]},
+            json={"email": self.username, "password": self.password,
+                  "role_id": "supervisor", "department_id": "clinical_operations"},
         )
         if created.status_code not in (200, 201):
             raise RuntimeError(f"Could not register API user: {created.status_code} {created.text}")
@@ -279,6 +284,7 @@ class IncidentManagerStack:
         env = os.environ.copy()
         env["SECRET_KEY"] = "phase4-mcp-secret-key-32b"
         env["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
+        env["PLATFORM_SEED_PASSWORD"] = "Phase4AdminFixture1!"
         env["JWT_ALGORITHM"] = "HS256"
         env["TINYDB_PATH"] = str(self.temp_dir / "incidents.json")
         env["DATABASE_URL"] = f"sqlite:///{(self.temp_dir / 'inventory.db').as_posix()}"

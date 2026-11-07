@@ -472,6 +472,7 @@ class ApiProcess:
         env = os.environ.copy()
         env["SECRET_KEY"] = "mcp-acceptance-secret-key-32"
         env["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
+        env["PLATFORM_SEED_PASSWORD"] = "McpAdminFixture1!"
         env["JWT_ALGORITHM"] = "HS256"
         env["TINYDB_PATH"] = str(self.temp_dir / "auth.json")
         env["DATABASE_URL"] = f"sqlite:///{(self.temp_dir / 'inventory.db').resolve().as_posix()}"
@@ -592,6 +593,43 @@ class ApiProcess:
             raise error
 
 
+def _provision_api_fixture_user(http: httpx.Client, *, seed_stock: bool = False) -> httpx.Response:
+    """Provision only this disposable stack through normal authenticated APIs."""
+    assert http.post("/users", json={"email": TEST_API_EMAIL, "password": TEST_API_PASSWORD}).status_code == 401
+    login = http.post("/auth/login", data={"username": "james.admin@healthcore.example", "password": "McpAdminFixture1!"})
+    assert login.status_code == 200
+    created = http.post("/users", headers={"Authorization": "Bearer " + login.json()["access_token"]},
+                        json={"email": TEST_API_EMAIL, "password": TEST_API_PASSWORD,
+                              "role_id": "supervisor", "department_id": "clinical_operations"})
+    assert created.status_code == 201
+    if seed_stock:
+        # Unattended product startup intentionally cannot invent the approved
+        # inventory actor. These are explicit authenticated fixture writes.
+        # Read literal fixture tuples without importing SQL/API dependencies
+        # into the separate MCP environment.
+        import ast
+        module = ast.parse((API_DIR / "app/services/inventory_seed.py").read_text(encoding="utf-8"))
+        fixtures = {node.target.id: ast.literal_eval(node.value) for node in module.body
+                    if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+                    and node.target.id in {"SEED_DELIVERIES", "SEED_CONSUMPTIONS"}}
+        SEED_DELIVERIES = fixtures["SEED_DELIVERIES"]
+        SEED_CONSUMPTIONS = fixtures["SEED_CONSUMPTIONS"]
+        signed_in = http.post("/auth/login", data={"username": TEST_API_EMAIL, "password": TEST_API_PASSWORD})
+        assert signed_in.status_code == 200
+        headers = {"Authorization": "Bearer " + signed_in.json()["access_token"]}
+        products = http.get("/inventory/products", headers=headers).json()
+        ids = {item["sku"]: item["id"] for item in products}
+        for sku, quantity, vendor, clinic in SEED_DELIVERIES:
+            response = http.post("/inventory/orders/inbound", headers=headers,
+                                 json={"supply_id": ids[sku], "quantity": quantity, "vendor_name": vendor, "clinic_id": clinic})
+            assert response.status_code in (200, 201)
+        for sku, quantity, kind, clinic, department in SEED_CONSUMPTIONS:
+            response = http.post("/inventory/orders/outbound", headers=headers,
+                                 json={"supply_id": ids[sku], "quantity": quantity, "consumption_type": kind, "clinic_id": clinic, "department": department})
+            assert response.status_code in (200, 201)
+    return created
+
+
 class AcceptanceStack:
     def __init__(self) -> None:
         self.oidc = None
@@ -601,15 +639,12 @@ class AcceptanceStack:
         self.requests: list[tuple[str, str]] = []
         try:
             self.oidc = start_oidc_issuer(_free_port())
-            self.api = ApiProcess()
+            self.api = ApiProcess(extra_env={"PLATFORM_SEED_PASSWORD": "McpAdminFixture1!"})
             mcp_port = _free_port()
             self.resource_url = f"http://127.0.0.1:{mcp_port}/mcp"
             self.api_http = httpx.Client(base_url=self.api.base_url, timeout=30.0)
             self.api_http.event_hooks["request"].append(self._record_request)
-            created = self.api_http.post(
-                "/users",
-                json={"email": TEST_API_EMAIL, "password": TEST_API_PASSWORD},
-            )
+            created = _provision_api_fixture_user(self.api_http, seed_stock=True)
             if created.status_code not in (200, 201):
                 raise RuntimeError(
                     f"Could not register API user: {created.status_code} {created.text}"
@@ -1093,10 +1128,7 @@ def test_agent_reads_the_ticket_through_mcp(
             }
         )
         api_http = httpx.Client(base_url=api.base_url, timeout=30.0)
-        created_user = api_http.post(
-            "/users",
-            json={"email": TEST_API_EMAIL, "password": TEST_API_PASSWORD},
-        )
+        created_user = _provision_api_fixture_user(api_http)
         assert created_user.status_code in (200, 201)
         settings = Settings(
             MCP_AUTH_ISSUER=oidc.issuer,

@@ -111,7 +111,7 @@ def person_from_email(email: str) -> str | None:
 
 
 def trusted_named_person(actor: ActorIdentity) -> str | None:
-    """Active named staff whose email, role, and home department all match."""
+    """Active named staff with an allowed role and matching home department."""
     if not actor.is_active or not actor.user_id:
         return None
     person = person_from_email(actor.email)
@@ -119,7 +119,14 @@ def trusted_named_person(actor: ActorIdentity) -> str | None:
         return None
     if actor.department_id != HOME_DEPARTMENT.get(person):
         return None
-    if actor.role != EXPECTED_ROLE.get(person):
+    # Claire's source seed remains Employee. An authorized promotion to
+    # Compliance Supervisor is needed for Task 4 approvals and must not remove
+    # her Task 5 recipient access. This grants no approval capability: Tom's
+    # exact-role review gate below and generic employee restrictions stay intact.
+    allowed_roles = {EXPECTED_ROLE.get(person)}
+    if person == CLAIRE:
+        allowed_roles.add("supervisor")
+    if actor.role not in allowed_roles:
         return None
     return person
 
