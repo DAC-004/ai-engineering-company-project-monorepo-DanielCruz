@@ -31,6 +31,7 @@ class Capability(str, Enum):
     delete_sensitive_record = "delete_sensitive_record"
     manage_users = "manage_users"
     manage_access = "manage_access"
+    read_audit_log = "read_audit_log"
 
 
 DEPARTMENTS: tuple[dict[str, str], ...] = (
@@ -89,6 +90,7 @@ _EMPLOYEE_CAPABILITIES: frozenset[Capability] = frozenset(
 _SUPERVISOR_CAPABILITIES: frozenset[Capability] = _EMPLOYEE_CAPABILITIES | frozenset(
     {
         Capability.update_department_record,
+        Capability.read_audit_log,
         Capability.approve_department_record,
     }
 )

@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from tinydb import Query
 
+from app.audit.capture import audited_user_change
 from app.access.catalog import is_known_department, normalize_role
 from app.core.security import hash_password
 from app.db.tinydb import identity_mutation_lock, users_table
@@ -45,6 +46,7 @@ def _row_to_user(row: dict) -> UserInDB:
     return user
 
 
+@audited_user_change("user.create")
 def create_user(
     payload: UserCreate,
     *,
@@ -92,6 +94,7 @@ def list_users() -> list[UserInDB]:
     return [_row_to_user(row) for row in users_table().all()]
 
 
+@audited_user_change("user.update")
 def update_user(user_id: str, payload: UserUpdate) -> UserInDB | None:
     table = users_table()
     User = Query()
@@ -127,6 +130,7 @@ def update_user(user_id: str, payload: UserUpdate) -> UserInDB | None:
         return _row_to_user(refreshed) if refreshed else None
 
 
+@audited_user_change("user.delete")
 def delete_user(user_id: str) -> bool:
     removed = users_table().remove(Query().id == user_id)
     return bool(removed)

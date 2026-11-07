@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "worker_pid": 20828,
+  "operation_id": "eae372fe-f8f3-4bdf-b939-c2d35f23d61e",
+  "captured_entries": 2,
+  "outcomes": [
+    "attempted",
+    "success"
+  ],
+  "actor": "process:incident-analysis",
+  "execution": "actual Celery worker; controlled cached-result branch; no model or patient data"
+}
