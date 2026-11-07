@@ -12,6 +12,11 @@ from app.db.tinydb import reset_db_for_tests
 @pytest.fixture
 def isolated_email(tmp_path, monkeypatch):
     monkeypatch.setenv("TINYDB_PATH", str(tmp_path / "auth.json"))
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///" + (tmp_path / "inventory.db").as_posix())
+    monkeypatch.delenv("RFP_DEMONSTRATION_PASSWORD", raising=False)
+    monkeypatch.delenv("PLATFORM_SEED_PASSWORD", raising=False)
+    from app.db.database import reset_engine_for_tests
+    reset_engine_for_tests()
     monkeypatch.setenv("SECRET_KEY", "fictional-outbox-test-key-32-characters")
     monkeypatch.setenv("CELERY_TASK_ALWAYS_EAGER", "1")
     get_settings.cache_clear()
@@ -19,6 +24,7 @@ def isolated_email(tmp_path, monkeypatch):
     from app.services import email_outbox
 
     yield email_outbox
+    reset_engine_for_tests()
     get_settings.cache_clear()
     reset_db_for_tests()
 

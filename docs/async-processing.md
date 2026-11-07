@@ -39,7 +39,7 @@ The dispatch-pending-email schedule runs every 15 seconds on the email queue, re
 - Dead-letter visibility: the exhausted job remains queryable with attempts3 and a safe provider_unavailable code.
 - Idempotency: the controlled provider deliberately accepted an effect before returning503; retry made one effect per key. Subsequent duplicate broker delivery caused no extra provider request. Concurrent claim unit test also passes.
 - Broker recovery: a durable unpublished job was picked up by the real 15-second beat dispatcher and completed independently.
-- Unit/API tests:11 focused tests pass, including Admin-only status/dead-letter privacy and invalidated-reset delivery rejection. Full API163passed/2RFPfailures; both failures reproduce unchanged on main and are disclosed rather than weakened.
+- Unit/API tests:11 focused tests pass, including Admin-only status/dead-letter privacy and invalidated-reset delivery rejection. Final full API168passed with zero failures/errors/skips. The initial two RFP failures came from a fixture overriding configured offline NLTK assets; honoring that configuration resolved them without weakening evaluator thresholds or assertions. The new outbox fixture also now owns/reset its SQL engine and seed flags; its combined approval-regression check passes9tests.
 
 Machine-readable results are in async-processing-evidence/. The worker proof uses a controlled local provider and synthetic accounts, not a new real Resend message. It does not claim live delivery of this changed worker; no additional external email was authorized or sent. Existing real email delivery was established separately, before this branch.
 

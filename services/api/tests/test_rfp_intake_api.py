@@ -26,7 +26,8 @@ os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["TINYDB_PATH"] = str(Path(_tmpdir) / "auth.json")
 os.environ["DATABASE_URL"] = f"sqlite:///{_sqlite_path}"
-os.environ["NLTK_DATA"] = str(REPO_ROOT / "data" / "process" / "nltk_data")
+# Honor the explicitly configured offline tokenizer assets in isolated worktrees.
+os.environ.setdefault("NLTK_DATA", str(REPO_ROOT / "data" / "process" / "nltk_data"))
 os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
 os.environ.pop("PLATFORM_SEED_PASSWORD", None)
 
