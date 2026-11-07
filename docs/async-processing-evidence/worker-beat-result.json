@@ -1,0 +1,42 @@
+{
+  "jobs": [
+    {
+      "id": "6337782f-15ca-4b59-a0c3-4f04c4edb87d",
+      "state": "completed",
+      "attempts": 2
+    },
+    {
+      "id": "e1bef277-7216-43d2-b440-751616e82c4c",
+      "state": "failed",
+      "attempts": 3
+    },
+    {
+      "id": "f6d0501f-22fb-4c0a-b2b4-c9b612dd373b",
+      "state": "completed",
+      "attempts": 2
+    }
+  ],
+  "dead_letters": 1,
+  "provider": {
+    "healthcore-reset-6337782f-15ca-4b59-a0c3-4f04c4edb87d": {
+      "requests": 2,
+      "effects": 1
+    },
+    "healthcore-reset-e1bef277-7216-43d2-b440-751616e82c4c": {
+      "requests": 3,
+      "effects": 0
+    },
+    "healthcore-reset-f6d0501f-22fb-4c0a-b2b4-c9b612dd373b": {
+      "requests": 2,
+      "effects": 1
+    }
+  },
+  "request_seconds": [
+    0.11582359997555614,
+    0.014419300016015768
+  ],
+  "separate_worker_pid": 46960,
+  "beat_pid": 29316,
+  "duplicate_delivery_no_extra_provider_call": true,
+  "status": "PASS"
+}

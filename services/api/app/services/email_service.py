@@ -15,7 +15,7 @@ class EmailDeliveryError(RuntimeError):
     """Raised when Resend cannot accept or send a message."""
 
 
-def send_password_reset_email(*, to_email: str, reset_url: str) -> None:
+def send_password_reset_email(*, to_email: str, reset_url: str, idempotency_key: str | None = None) -> str | None:
     """
     Send a mobile-readable password-reset email containing the reset link.
 
@@ -41,14 +41,19 @@ def send_password_reset_email(*, to_email: str, reset_url: str) -> None:
     )
 
     try:
-        resend.Emails.send(
+        result = resend.Emails.send(
             {
                 "from": settings.resend_from_email,
                 "to": [to_email],
                 "subject": "Reset your HealthCore password",
                 "text": text_body,
-            }
+            },
+            {"idempotency_key": idempotency_key} if idempotency_key else {},
         )
-    except Exception as exc:  # noqa: BLE001 — normalize provider failures
-        logger.exception("Resend failed to send password-reset email")
-        raise EmailDeliveryError("Failed to send password-reset email") from exc
+        provider_id = result.get("id") if isinstance(result, dict) else None
+        if not isinstance(provider_id, str) or not provider_id:
+            raise EmailDeliveryError("Provider acknowledgement unavailable")
+        return provider_id
+    except Exception:  # noqa: BLE001 — normalize provider failures
+        logger.warning("Resend password-reset delivery unavailable")
+        raise EmailDeliveryError("Failed to send password-reset email") from None

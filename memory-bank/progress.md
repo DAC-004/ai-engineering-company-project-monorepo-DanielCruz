@@ -426,3 +426,12 @@ Integrated approved main 2993531 (Task 2/3) into supplier feature worktree; pres
 ## Task 5 current source audit, 2026-11-07
 
 Integrated approved main bbc8810 (Tasks 2–4) preserving routes/navigation and all three Celery schedules. Corrected fact-derived fallback summaries and atomic Tom review delivery for initial/revised drafts. 93 Task5 tests, 32 federation +60 auth/onboarding, full UI types/lint/78tests/build, actual local GGUF and fresh real worker/beat proofs verified; exact evidence and all20 implementation requirements/eight evaluation mappings in agents/financial_close/review-validation.json and SOURCE-COMPLIANCE.md. Current canonical/incomplete examples regenerated. Historical browser proof is not current-code rerun; existing services preserved. Leadership sign-off and Daniel Task5 merge approval pending. Cursor cannot commit.
+
+
+## Enhance Task 4, 2026-11-07 (in progress)
+
+Isolated branch/worktree created from main b93a51c under Daniel's instruction to complete Enhance3/4/5 before submission links. Original WIP/services and PR44 preserved. No merge or PR closure authorized. Password-reset email migrated to UUID-only Celery messages with encrypted durable outbox, independent worker, bounded backoff, idempotency and metadata-only Admin status/DLQ. First eight focused tests pass. Actual independent worker proof, full regression and source compliance documentation remain pending.
+
+Task4 verification: independent real worker/beat proof passes, including uncertain-success idempotency,3-attempt durable DLQ and unpublished-job reconciliation. Fixed a reproduced dispatcher queue-routing error. Request durations0.116/0.014s. Focused9pass; expanded Admin-status/invalidated-reset checks executing. FullAPI163pass/2unchanged baselineRFPfail. docs/async-processing.md maps every source requirement and includes runbook/privacy/retention limitations. Preparing supervisor-owned review commit; no merge, no external email, no PR44 change.
+
+Final Task4 focused-review11pass, including Admin/Employee status boundaries and invalidated-token rejection. Required worker/retry/idempotency/observability evidence is complete; known baselineRFPfailures disclosed. Supervisor-owned review commit/push being prepared; no signoff/merge implied.
