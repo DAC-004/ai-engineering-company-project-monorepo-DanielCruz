@@ -43,7 +43,15 @@ def create_access_token(*, subject: str, extra_claims: dict[str, Any] | None = N
 def decode_access_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT; raises JWTError on failure."""
     settings = get_settings()
-    return jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
+    # Sign only with the active key; accept bounded retired keys during a
+    # rolling rotation window. No unsigned claim influences key selection.
+    keys = [settings.secret_key] + [key.strip() for key in settings.jwt_previous_secret_keys.split(",") if key.strip()]
+    for key in keys[:4]:
+        try:
+            return jwt.decode(token, key, algorithms=[settings.jwt_algorithm])
+        except JWTError:
+            continue
+    raise JWTError("Invalid or expired access token")
 
 
 __all__ = [

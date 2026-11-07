@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "canonical_registry_count": 7,
+  "unrelated_department_denied": true,
+  "actual_supervisor_http_request": true,
+  "response_keys": [
+    "actor_id",
+    "alerts",
+    "answer",
+    "block_reason",
+    "blocked",
+    "citations",
+    "consultation_count",
+    "contracts",
+    "draft",
+    "pricing",
+    "required_approvers"
+  ]
+}

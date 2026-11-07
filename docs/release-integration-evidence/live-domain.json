@@ -1,0 +1,15 @@
+{
+  "exit": 0,
+  "seconds": 117.85,
+  "junit": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "selection": [
+    "tests\\pipelines\\test_financial_close_live_generation.py::test_live_configured_transport_parses_plan_fx_and_both_hypotheses",
+    "tests\\pipelines\\test_supplier_contracts_live_generation.py::test_supervisor_live_model_plan_and_fact_selection"
+  ]
+}

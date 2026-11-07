@@ -1,0 +1,15 @@
+{
+  "exit": 1,
+  "seconds": 7.02,
+  "junit": {
+    "tests": 2,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "selection": [
+    "services\\api\\tests\\test_email_outbox.py::test_reset_delivery_has_distinct_process_audit_identity",
+    "services\\api\\tests\\test_email_outbox.py::test_pending_delivery_survives_configured_key_rotation_overlap"
+  ]
+}

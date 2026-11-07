@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { canViewAudit } from "@/lib/audit";
 import { logout } from "@/lib/auth/session";
 import { useCurrentUser } from "@/lib/auth/CurrentUserContext";
 import {
@@ -40,6 +41,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           </Link>
         </div>
         <nav className="app-nav" aria-label="Workspace">
+          {canViewAudit(currentUser) ? <Link href="/backoffice/audit-log" className={pathname.startsWith("/backoffice/audit-log") ? "app-nav__link is-active" : "app-nav__link"}>Audit Log</Link> : null}
           <Link
             href="/"
             className={pathname === "/" ? "app-nav__link is-active" : "app-nav__link"}

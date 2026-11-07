@@ -1,0 +1,116 @@
+{
+  "exit": 0,
+  "seconds": 124.97,
+  "junit": {
+    "tests": 624,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 8
+  },
+  "skips": [
+    {
+      "test": "test_knowledge_eval_uses_real_retrieval_and_local_generation",
+      "reason": "Set PART2_LIVE_RAG_EVAL=1 to run real Qdrant retrieval and local GGUF generation. The default Part 2 eval skips this test and does not download a model."
+    },
+    {
+      "test": "test_live_configured_transport_parses_plan_fx_and_both_hypotheses",
+      "reason": "live generation is isolated from the default suite"
+    },
+    {
+      "test": "test_live_socket_streams_and_interrupt_stops_the_model",
+      "reason": "Set PART2_LIVE_CHAT_WS=1 for the live chat socket"
+    },
+    {
+      "test": "test_live_no_retry_streams_before_the_iterator_finishes",
+      "reason": "Set PART2_LIVE_CHAT_WS=1 for the live no-retry socket"
+    },
+    {
+      "test": "test_live_retry_is_not_concatenated_onto_the_streamed_attempt",
+      "reason": "Set PART2_LIVE_CHAT_WS=1 for the live retry publication check"
+    },
+    {
+      "test": "test_explicit_llama_close_succeeds_and_unchecked_del_does_not",
+      "reason": "Set PART2_LIVE_CHAT_WS=1 for the model lifecycle check"
+    },
+    {
+      "test": "test_real_model_releases_during_sampling_and_interrupt_stops_it",
+      "reason": "Set PART2_LIVE_GATED_GENERATION=1 for the local GGUF stream"
+    },
+    {
+      "test": "test_supervisor_live_model_plan_and_fact_selection",
+      "reason": "Set SUPPLIER_CONTRACTS_LIVE_GENERATION=1 for the local GGUF Supervisor proof"
+    }
+  ],
+  "selection": [
+    "tests\\pipelines\\test_agent_evals.py",
+    "tests\\pipelines\\test_agent_graph.py",
+    "tests\\pipelines\\test_agent_guardrails.py",
+    "tests\\pipelines\\test_agent_memory.py",
+    "tests\\pipelines\\test_agent_phase4_evals.py",
+    "tests\\pipelines\\test_checkpointer_lock.py",
+    "tests\\pipelines\\test_cross_task_compliance_identity.py",
+    "tests\\pipelines\\test_error_path_privacy.py",
+    "tests\\pipelines\\test_financial_close_agent.py",
+    "tests\\pipelines\\test_financial_close_calendar_contract.py",
+    "tests\\pipelines\\test_financial_close_consistency_contract.py",
+    "tests\\pipelines\\test_financial_close_current_review.py",
+    "tests\\pipelines\\test_financial_close_distribution_contract.py",
+    "tests\\pipelines\\test_financial_close_grounding_contract.py",
+    "tests\\pipelines\\test_financial_close_live_generation.py",
+    "tests\\pipelines\\test_financial_close_model_boundary.py",
+    "tests\\pipelines\\test_financial_close_revision_replay_contract.py",
+    "tests\\pipelines\\test_financial_close_schema.py",
+    "tests\\pipelines\\test_financial_close_source_contract.py",
+    "tests\\pipelines\\test_financial_close_tools.py",
+    "tests\\pipelines\\test_financial_close_traceability_contract.py",
+    "tests\\pipelines\\test_financial_close_workflow.py",
+    "tests\\pipelines\\test_gated_generation_stream.py",
+    "tests\\pipelines\\test_live_chat_websocket.py",
+    "tests\\pipelines\\test_live_gated_generation.py",
+    "tests\\pipelines\\test_nist_protections.py",
+    "tests\\pipelines\\test_onboarding_access_gate.py",
+    "tests\\pipelines\\test_onboarding_approvals.py",
+    "tests\\pipelines\\test_onboarding_comprehension.py",
+    "tests\\pipelines\\test_onboarding_nondisclosure.py",
+    "tests\\pipelines\\test_onboarding_qa_routing.py",
+    "tests\\pipelines\\test_onboarding_restart_concurrency.py",
+    "tests\\pipelines\\test_onboarding_timing.py",
+    "tests\\pipelines\\test_phi_surfaces.py",
+    "tests\\pipelines\\test_pipeline.py",
+    "tests\\pipelines\\test_qdrant_persistence.py",
+    "tests\\pipelines\\test_rag.py",
+    "tests\\pipelines\\test_rfp_approval.py",
+    "tests\\pipelines\\test_rfp_approval_e2e.py",
+    "tests\\pipelines\\test_rfp_arbitration.py",
+    "tests\\pipelines\\test_rfp_classifier.py",
+    "tests\\pipelines\\test_rfp_evaluator.py",
+    "tests\\pipelines\\test_rfp_generator.py",
+    "tests\\pipelines\\test_rfp_grounding.py",
+    "tests\\pipelines\\test_rfp_json_transport.py",
+    "tests\\pipelines\\test_rfp_phi.py",
+    "tests\\pipelines\\test_rfp_response_loop.py",
+    "tests\\pipelines\\test_rfp_response_readiness.py",
+    "tests\\pipelines\\test_rfp_sanitize_length.py",
+    "tests\\pipelines\\test_rfp_worker.py",
+    "tests\\pipelines\\test_runtime_data_path.py",
+    "tests\\pipelines\\test_source_fidelity.py",
+    "tests\\pipelines\\test_supplier_contracts_alerts.py",
+    "tests\\pipelines\\test_supplier_contracts_annual_value.py",
+    "tests\\pipelines\\test_supplier_contracts_ask_tick_guard.py",
+    "tests\\pipelines\\test_supplier_contracts_auth_api.py",
+    "tests\\pipelines\\test_supplier_contracts_draft_payload.py",
+    "tests\\pipelines\\test_supplier_contracts_live_generation.py",
+    "tests\\pipelines\\test_supplier_contracts_model_boundary.py",
+    "tests\\pipelines\\test_supplier_contracts_privacy.py",
+    "tests\\pipelines\\test_supplier_contracts_questions.py",
+    "tests\\pipelines\\test_supplier_contracts_source_review.py",
+    "tests\\pipelines\\test_supplier_contracts_supervisor_dpa.py",
+    "tests\\pipelines\\test_supplier_contracts_worker.py",
+    "tests\\services\\test_chat_finalization_consistency.py",
+    "tests\\services\\test_chat_snapshot_order.py",
+    "tests\\services\\test_chat_transcript_consistency.py",
+    "tests\\services\\test_chat_websocket.py",
+    "tests\\services\\test_rfp_sse_notifications.py",
+    "tests\\services\\test_streaming_release_gate.py"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "initial_failure": "readability LookupError due to test fixture replacing configured NLTK_DATA with absent worktree resources",
+  "other_criteria": "relevance and compliance passed",
+  "fix": "honor configured offline tokenizer assets with setdefault",
+  "application_logic_or_threshold_changes": false,
+  "current_full_api": {
+    "tests": 181,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

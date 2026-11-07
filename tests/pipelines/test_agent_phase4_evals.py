@@ -355,9 +355,12 @@ class IncidentManagerStack:
         log_path: Path,
         label: str,
     ) -> None:
-        deadline = time.time() + 40
+        # Cold Windows API/MCP imports can exceed 40s after the complete
+        # graph suite. This bounds fixture startup only; HTTP assertions and
+        # application latency requirements remain unchanged.
+        deadline = time.monotonic() + 120
         last_error = "no response"
-        while time.time() < deadline:
+        while time.monotonic() < deadline:
             if process is not None and process.poll() is not None:
                 break
             try:

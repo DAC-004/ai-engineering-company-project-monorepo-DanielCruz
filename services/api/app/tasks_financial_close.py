@@ -1,11 +1,13 @@
 """Celery tick and queued close jobs. Internal outbox only."""
 
 from __future__ import annotations
+from app.audit.process import audited_process
 
 from app.celery_app import celery_app
 
 
 @celery_app.task(name="app.tasks_financial_close.tick_financial_close")
+@audited_process("process:financial-close", "revenue_cycle")
 def tick_financial_close() -> dict:
     from app.services.financial_close_service import tick
 
@@ -13,6 +15,7 @@ def tick_financial_close() -> dict:
 
 
 @celery_app.task(bind=True, name="app.tasks_financial_close.run_financial_close_job")
+@audited_process("process:financial-close", "revenue_cycle")
 def run_financial_close_job(self, job_id: str) -> dict:
     from app.services.financial_close_service import execute_queued_job
 

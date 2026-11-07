@@ -1,0 +1,20 @@
+{
+  "exit": 0,
+  "seconds": 312.01,
+  "junit": {
+    "tests": 208,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "selection": [
+    "services\\api\\tests"
+  ],
+  "auth_coverage": {
+    "app/core/deps.py": 94.11764705882354,
+    "app/core/security.py": 100.0,
+    "app/routers/auth.py": 91.66666666666667
+  },
+  "auth_coverage_gate": true
+}

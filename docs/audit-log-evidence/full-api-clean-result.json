@@ -1,0 +1,11 @@
+{
+  "exit": 0,
+  "seconds": 189.87,
+  "junit": {
+    "tests": 181,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "case": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\healthcore-audit-log-verification\\final-api"
+}

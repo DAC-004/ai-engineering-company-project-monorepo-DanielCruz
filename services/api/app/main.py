@@ -34,6 +34,8 @@ from app.db.database import get_engine, init_databases  # noqa: E402
 from app.storage import ensure_runtime_dirs  # noqa: E402
 from app.routers import (  # noqa: E402
     access,
+    audit_log,
+    email_jobs,
     agent,
     auth,
     federated,
@@ -119,6 +121,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(audit_log.router)
 app.include_router(auth.router)
 app.include_router(federated.router)
 app.include_router(users.router)
@@ -132,6 +135,7 @@ app.include_router(incidents.router)
 app.include_router(incident_manager.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
+app.include_router(email_jobs.router)
 app.include_router(tasks.router)
 app.include_router(reporting_router)
 app.include_router(rfp_intake.router)
@@ -248,3 +252,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 def health() -> dict[str, str]:
     """Public liveness probe — intentionally unauthenticated."""
     return {"status": "ok"}
+
+from app.core.sensitive_rate_limit import SensitiveRateLimitMiddleware
+from app.audit.middleware import AuditMiddleware  # noqa: E402
+# Audit is the outer layer, so classified rate-rejected requests remain auditable.
+app.add_middleware(SensitiveRateLimitMiddleware)
+app.add_middleware(AuditMiddleware, route_templates=app.openapi()["paths"])

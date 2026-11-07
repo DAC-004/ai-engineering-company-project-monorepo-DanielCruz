@@ -1,0 +1,18 @@
+{
+  "exit": 0,
+  "seconds": 22.14,
+  "junit": {
+    "tests": 46,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "selection": [
+    "tests\\pipelines\\test_rfp_json_transport.py",
+    "tests\\pipelines\\test_rfp_classifier.py",
+    "tests\\pipelines\\test_rfp_worker.py",
+    "tests\\pipelines\\test_rfp_grounding.py",
+    "services\\api\\tests\\test_rfp_intake_api.py"
+  ]
+}

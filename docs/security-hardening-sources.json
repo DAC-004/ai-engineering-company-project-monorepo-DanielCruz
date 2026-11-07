@@ -1,0 +1,13 @@
+{
+  "baseline": "b93a51ca7d9290330f94a08785578cf86dfedb3c",
+  "sources": [
+    {
+      "name": "Platform \u2013 Security Hardening.png",
+      "sha256": "4ce6bb47070e1e1a20e4eb9cdb362d047f49433dc19648120054250087fa37f0"
+    },
+    {
+      "name": "project_specs.md",
+      "sha256": "1e640b17699bf1942bc5b889160386f34f1058f3f8052e55f3dabd8dbd26435e"
+    }
+  ]
+}

@@ -18,10 +18,10 @@ from tinydb import Query
 
 from app.core.config import get_settings
 from app.core.security import verify_password
-from app.db.tinydb import password_reset_tokens_table
+from app.db.tinydb import password_reset_tokens_table, identity_mutation_lock
+from functools import wraps
 from app.schemas.user import UserInDB, UserUpdate
-from app.services import email_service, user_service
-from app.services.email_service import EmailDeliveryError
+from app.services import user_service
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,17 @@ def _parse_expiry(value: str | datetime) -> datetime:
     return expires.astimezone(UTC)
 
 
+def _serialized_reset(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        # Supported TinyDB runtime is a single API process, with concurrent
+        # request threads. Serialize validation, mutation and consumption.
+        with identity_mutation_lock():
+            return fn(*args, **kwargs)
+    return wrapped
+
+
+@_serialized_reset
 def create_reset_token_for_user(user: UserInDB) -> str:
     """
     Create a one-time reset credential for the user and persist only its hash.
@@ -97,16 +108,9 @@ def request_password_reset(email: str) -> None:
 
     raw_token = create_reset_token_for_user(user)
     reset_url = build_reset_url(raw_token)
-    try:
-        email_service.send_password_reset_email(
-            to_email=user.email,
-            reset_url=reset_url,
-        )
-    except EmailDeliveryError:
-        # Keep outward behavior identical for registered vs unregistered emails.
-        logger.exception(
-            "Password-reset email could not be delivered for a registered account"
-        )
+    from app.services.email_outbox import enqueue_reset_email
+    enqueue_reset_email(user_id=user.id, to_email=user.email, reset_url=reset_url)
+
 
 
 def _load_valid_token_row(raw_token: str) -> dict:
@@ -130,6 +134,7 @@ def _load_valid_token_row(raw_token: str) -> dict:
     return row
 
 
+@_serialized_reset
 def reset_password_with_token(*, token: str, new_password: str) -> None:
     """Validate the reset credential, update the password hash, and consume the token."""
     row = _load_valid_token_row(token)

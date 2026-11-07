@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "actual_independent_worker": true,
+  "success_task": "e57046dd-5b71-4300-a233-36f28cff5298",
+  "success_states": [
+    "success"
+  ],
+  "enqueue_ms": 48.3,
+  "enqueue_under_200ms": true,
+  "failure_task": "581327fe-6148-4fa2-a3d0-427024090ee8",
+  "failure_states": [
+    "started",
+    "pending",
+    "failure"
+  ],
+  "terminal_attempt": 3,
+  "dlq_added": 1
+}

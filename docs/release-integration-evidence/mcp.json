@@ -1,0 +1,14 @@
+{
+  "exit": 0,
+  "seconds": 70.25,
+  "junit": {
+    "tests": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "selection": [
+    "mcps\\healthcore-tools\\tests"
+  ]
+}

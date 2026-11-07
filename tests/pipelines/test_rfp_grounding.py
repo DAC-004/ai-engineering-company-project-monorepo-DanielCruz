@@ -426,7 +426,8 @@ def test_truncated_synthesizer_json_mid_string_is_rejected() -> None:
 def test_synthesizer_requests_higher_local_completion_budget(monkeypatch: pytest.MonkeyPatch) -> None:
     seen: dict[str, int] = {}
 
-    def fake_complete(messages: list[dict[str, str]], *, max_tokens: int = 320) -> str:
+    def fake_complete(messages: list[dict[str, str]], *, max_tokens: int = 320, json_output: bool = False) -> str:
+        seen["json_output"] = json_output
         seen["max_tokens"] = max_tokens
         return (
             '{"summary": "Ask Tom Callahan about pricing. Ask Dr. Marcus Reid about volume. '
@@ -448,6 +449,7 @@ def test_synthesizer_requests_higher_local_completion_budget(monkeypatch: pytest
         None,
     )
 
+    assert seen["json_output"] is True
     assert seen["max_tokens"] >= 1024
     assert "Tom Callahan" in result["summary"]
 

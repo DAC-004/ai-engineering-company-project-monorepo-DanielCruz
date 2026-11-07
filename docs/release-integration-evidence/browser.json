@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "checks": {
+    "real_ui_password_login": true,
+    "ui_inventory_writes_and_clinic_partition": true,
+    "telemetry_actual_delivery": true,
+    "admin_audit_view_and_integrity": true,
+    "ui_logout_clears_session": true,
+    "employee_audit_hidden_and_api_denied": true
+  },
+  "receipts": {
+    "inbound_submit_started": true,
+    "inbound_id": 1,
+    "outbound_submit_started": true,
+    "outbound_id": 1
+  },
+  "stock": {
+    "before": 0,
+    "after": 8
+  },
+  "telemetry": [
+    {
+      "status": 200,
+      "types": [
+        "page_load_completed",
+        "page_viewed",
+        "api_request_completed",
+        "user_login_succeeded",
+        "page_viewed"
+      ]
+    },
+    {
+      "status": 200,
+      "types": [
+        "page_load_completed",
+        "page_viewed"
+      ]
+    }
+  ],
+  "telemetry_database": {
+    "api_request_completed": 3,
+    "inbound_order_created": 1,
+    "outbound_order_created": 1,
+    "page_load_completed": 4,
+    "page_viewed": 5,
+    "stock_threshold_triggered": 1,
+    "user_login_succeeded": 1
+  }
+}

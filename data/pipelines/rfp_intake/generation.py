@@ -54,6 +54,7 @@ def complete_local(
     *,
     max_tokens: int = 320,
     temperature: float = 0.0,
+    json_output: bool = False,
 ) -> str:
     """Run one local chat completion. Tests pass their own callable instead.
 
@@ -83,10 +84,12 @@ def complete_local(
                 chat_format="chatml",
             )
         try:
+            options = {"response_format": {"type": "json_object"}} if json_output else {}
             completion = _local_llm.create_chat_completion(
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                **options,
             )
             content = completion["choices"][0]["message"]["content"]
         except PipelineFailure:

@@ -1,0 +1,15 @@
+{
+  "ticket_id": "d4d83a5b-f577-4dae-81bc-18d1b97d5e71",
+  "source_ticket_id": "5b20fadf-8b76-4f51-9e06-21b0cd298380",
+  "completed_section_hashes": {
+    "clinical": "e7aa6a1b8f25fe3bae35f1187baf11c135a4c50e29e980b4a8a00bcf34c47776",
+    "revenue": "6e10b41d594a6676a88b82c68ca4e07d878ee05bcb8c278039ead71a9cf4c613"
+  },
+  "fixture_only": true,
+  "status": "PASS",
+  "prior_fixture_timestamp_claim_status": 409,
+  "accepted_status": 202,
+  "preserved_completed_sections": true,
+  "same_ticket_completed": true,
+  "verification": "Owned SQL completion and hashes; revenue HTTP response correctly filters other departments"
+}
