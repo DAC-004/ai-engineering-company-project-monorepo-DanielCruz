@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="8.511" timestamp="2026-11-07T12:13:40.425146-05:00" hostname="Cruzer"><testcase classname="tests.test_security_hardening" name="test_login_brute_force_gets_explicit_429" time="7.156"><failure message="assert False&#10; +  where False = any(&lt;generator object test_login_brute_force_gets_explicit_429.&lt;locals&gt;.&lt;genexpr&gt; at 0x000001B6C7A35700&gt;)">tests\test_security_hardening.py:28: in test_login_brute_force_gets_explicit_429
+    assert any(response.status_code == 429 for response in statuses)
+E   assert False
+E    +  where False = any(&lt;generator object test_login_brute_force_gets_explicit_429.&lt;locals&gt;.&lt;genexpr&gt; at 0x000001B6C7A35700&gt;)</failure></testcase><testcase classname="tests.test_security_hardening" name="test_unknown_account_does_not_skip_password_verification" time="0.006"><failure message="assert 0 == 1&#10; +  where 0 = len([])">tests\test_security_hardening.py:41: in test_unknown_account_does_not_skip_password_verification
+    assert len(calls) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="tests.test_security_hardening" name="test_reset_token_cannot_be_reused_concurrently" time="0.389"><failure message="AssertionError: assert 2 == 1&#10; +  where 2 = &lt;built-in method count of list object at 0x000001B6C7B2E0C0&gt;('accepted')&#10; +    where &lt;built-in method count of list object at 0x000001B6C7B2E0C0&gt; = ['accepted', 'accepted'].count">tests\test_security_hardening.py:67: in test_reset_token_cannot_be_reused_concurrently
+    assert outcomes.count("accepted") == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = &lt;built-in method count of list object at 0x000001B6C7B2E0C0&gt;('accepted')
+E    +    where &lt;built-in method count of list object at 0x000001B6C7B2E0C0&gt; = ['accepted', 'accepted'].count</failure></testcase></testsuite></testsuites>

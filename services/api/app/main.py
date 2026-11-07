@@ -248,3 +248,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 def health() -> dict[str, str]:
     """Public liveness probe — intentionally unauthenticated."""
     return {"status": "ok"}
+
+from app.core.sensitive_rate_limit import SensitiveRateLimitMiddleware
+app.add_middleware(SensitiveRateLimitMiddleware)

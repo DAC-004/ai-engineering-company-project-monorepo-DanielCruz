@@ -28,6 +28,11 @@ from app.services.password_reset_service import InvalidResetTokenError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# An unknown account performs the same bcrypt work as a known account.
+import secrets
+from app.core.security import hash_password
+_DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
+
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
@@ -38,7 +43,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
     For this API, `username` is the account email address.
     """
     user = user_service.get_user_by_email(form_data.username)
-    if user is None or not verify_password(form_data.password, user.hashed_password):
+    valid_password = verify_password(form_data.password, user.hashed_password if user else _DUMMY_PASSWORD_HASH)
+    if user is None or not valid_password:
         # The durable line records the rejection. It does not record the account or the secret.
         append_decision(
             flow="auth",

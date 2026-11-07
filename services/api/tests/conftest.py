@@ -177,3 +177,9 @@ def inactive_user(seeded_user):
     updated = user_service.update_user(seeded_user.id, UserUpdate(is_active=False))
     assert updated is not None
     return updated
+
+
+@pytest.fixture(autouse=True)
+def isolated_sensitive_rate_limit_storage(tmp_path, monkeypatch):
+    """Each test keeps its real limiter budget without cross-case counter leaks."""
+    monkeypatch.setenv("SECURITY_RATE_LIMIT_DB_PATH", str(tmp_path / "rate-limits.sqlite3"))

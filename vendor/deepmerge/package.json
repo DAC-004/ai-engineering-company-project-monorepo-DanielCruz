@@ -1,0 +1,9 @@
+{
+  "name": "deepmerge",
+  "version": "4.3.2-healthcore.1",
+  "private": true,
+  "description": "HealthCore local security patch of deepmerge4.3.1; not an upstream release",
+  "main": "dist/cjs.js",
+  "types": "index.d.ts",
+  "license": "MIT"
+}
