@@ -253,6 +253,8 @@ def health() -> dict[str, str]:
     """Public liveness probe — intentionally unauthenticated."""
     return {"status": "ok"}
 
-# Audit wraps only classified business routes; health/docs remain independent.
+from app.core.sensitive_rate_limit import SensitiveRateLimitMiddleware
 from app.audit.middleware import AuditMiddleware  # noqa: E402
+# Audit is the outer layer, so classified rate-rejected requests remain auditable.
+app.add_middleware(SensitiveRateLimitMiddleware)
 app.add_middleware(AuditMiddleware, route_templates=app.openapi()["paths"])

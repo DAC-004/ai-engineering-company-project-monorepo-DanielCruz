@@ -1,0 +1,11 @@
+{
+  "exit": 0,
+  "seconds": 18.27,
+  "junit": {
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "case": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\healthcore-security-hardening-verification\\after-01"
+}

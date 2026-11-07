@@ -21,6 +21,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    jwt_previous_secret_keys: str = Field(default="", alias="JWT_PREVIOUS_SECRET_KEYS")
     secret_key: str = Field(..., alias="SECRET_KEY", min_length=16)
     access_token_expire_minutes: int = Field(
         default=30,

@@ -1,0 +1,54 @@
+{
+  "target": "isolated synthetic runtime8054",
+  "requests": [
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 401,
+      "retry_after": null
+    },
+    {
+      "status": 429,
+      "retry_after": "32"
+    },
+    {
+      "status": 429,
+      "retry_after": "32"
+    }
+  ],
+  "status": "PASS"
+}

@@ -1,0 +1,15 @@
+{
+  "scope": "recorded in-scope root compatibility checks",
+  "results": {
+    "install": 0,
+    "vercel-version": 0,
+    "vercel-build": 0,
+    "vercel-deploy": 0,
+    "vercel-dev": 0,
+    "vercel-env": 0,
+    "vercel-project": 0,
+    "esbuild": 0,
+    "milestone2": 0,
+    "audit": 0
+  }
+}

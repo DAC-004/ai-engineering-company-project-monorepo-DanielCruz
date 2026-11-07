@@ -1,0 +1,50 @@
+{
+  "status": "recorded in-scope checks passed; prepared for CTO review and submission",
+  "api": {
+    "tests": 166,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "ui": {
+    "jest_suites": 10,
+    "jest_tests": 78,
+    "types_exit": 0,
+    "lint_exit": 0,
+    "production_build_exit": 0
+  },
+  "root": {
+    "install": 0,
+    "vercel-version": 0,
+    "vercel-build": 0,
+    "vercel-deploy": 0,
+    "vercel-dev": 0,
+    "vercel-env": 0,
+    "vercel-project": 0,
+    "esbuild": 0,
+    "milestone2": 0,
+    "audit": 0
+  },
+  "npm_advisories": {
+    "root": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "tracker": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "limitations": [
+    "Secret-history scan is bounded to its recorded snapshot/signatures.",
+    "No deployment or real credential rotation is claimed; CTO review/signoff remains pending."
+  ]
+}

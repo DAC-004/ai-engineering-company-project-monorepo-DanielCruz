@@ -1,0 +1,26 @@
+{
+  "root": {
+    "exit": 1,
+    "vulnerabilities": {
+      "info": 0,
+      "low": 1,
+      "moderate": 11,
+      "high": 39,
+      "critical": 1,
+      "total": 52
+    },
+    "error": null
+  },
+  "tracker": {
+    "exit": 1,
+    "vulnerabilities": {
+      "info": 0,
+      "low": 4,
+      "moderate": 17,
+      "high": 8,
+      "critical": 2,
+      "total": 31
+    },
+    "error": null
+  }
+}
