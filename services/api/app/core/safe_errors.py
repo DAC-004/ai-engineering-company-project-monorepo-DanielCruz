@@ -72,6 +72,14 @@ _SAFE_LOC_SEGMENTS = frozenset(
         "field",
         "message",
         "detail",
+        "draft_id",
+        "version",
+        "content_sha256",
+        "approval_nonce",
+        "comments",
+        "job_id",
+        "figure_id",
+        "decision",
     }
 )
 

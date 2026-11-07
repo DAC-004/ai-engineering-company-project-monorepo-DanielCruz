@@ -1,0 +1,245 @@
+{
+  "current_review": "../review-validation.json",
+  "model": {
+    "passed": true,
+    "exit_code": 0,
+    "source_changed": [],
+    "child": {
+      "passed": true,
+      "backend": "Qwen2.5-3B-Instruct",
+      "trace": [
+        {
+          "stage": "planner",
+          "prompt_tokens": 110,
+          "max_context": 2048,
+          "completion_reserve": 320,
+          "input_sha256": "2ba7e99ad5b2f18b1a6d3b14c0d645d9fefbeb67c40561aa9699f136e6624d48",
+          "output_sha256": "68b75ee4b1a9a4d842a2eb708d9a3afe1a7372c3392ee6fd5e2716bdca2ed1cf",
+          "output_characters": 160,
+          "output_tokens": 43,
+          "parsed_model_selected_tools": [
+            "ingest_and_normalize",
+            "aggregate_lines",
+            "actual_versus_budget",
+            "convert_gbp_usd",
+            "select_relevant_deviations",
+            "completeness",
+            "lookup_sources"
+          ]
+        },
+        {
+          "stage": "writer",
+          "prompt_tokens": 456,
+          "max_context": 2048,
+          "completion_reserve": 320,
+          "input_sha256": "1d26c0c5082c1795c295d3076152232fd9c40c7a2c7dbf6cd813dde316ff0db6",
+          "output_sha256": "6ce991dced417ccd15d94d2af2e6b21335f3ede746ef4b3d1c6368e9928175c4",
+          "output_characters": 388,
+          "output_tokens": 143,
+          "starts_code_fence": false,
+          "ends_code_fence": false,
+          "ends_json_object": true,
+          "direct_json_valid": true,
+          "root_type": "dict",
+          "hypotheses_type": "dict",
+          "summary_type": "str",
+          "known_hypothesis_keys": [
+            "us_laboratory",
+            "us_medicare_medicaid_revenue"
+          ],
+          "hypothesis_value_types": {
+            "us_laboratory": "dict",
+            "us_medicare_medicaid_revenue": "dict"
+          },
+          "known_nested_fields": {
+            "us_laboratory": [
+              "evidence",
+              "hypothesis"
+            ],
+            "us_medicare_medicaid_revenue": [
+              "evidence",
+              "hypothesis"
+            ]
+          },
+          "nested_validation": {
+            "us_laboratory": {
+              "keys_exact": true,
+              "evidence_type": "str",
+              "hypothesis_type": "str",
+              "evidence_matches": true,
+              "evidence_grounded": true,
+              "evidence_word_count": 11,
+              "hypothesis_word_count": 1,
+              "hypothesis_bounded_explanation": false,
+              "source_driver_matches": false,
+              "raw_hypothesis_has_tentative_marker": false,
+              "hypothesis_starts_evidence": false,
+              "hypothesis_starts_may": false,
+              "hypothesis_grounded": true
+            },
+            "us_medicare_medicaid_revenue": {
+              "keys_exact": true,
+              "evidence_type": "str",
+              "hypothesis_type": "str",
+              "evidence_matches": true,
+              "evidence_grounded": true,
+              "evidence_word_count": 10,
+              "hypothesis_word_count": 1,
+              "hypothesis_bounded_explanation": false,
+              "source_driver_matches": false,
+              "raw_hypothesis_has_tentative_marker": false,
+              "hypothesis_starts_evidence": false,
+              "hypothesis_starts_may": false,
+              "hypothesis_grounded": true
+            }
+          },
+          "privacy_safe_hypothesis_ids": [],
+          "grounded_hypothesis_ids": [],
+          "numeric_diagnostics": {},
+          "accepted_hypothesis_ids": [],
+          "accepted_summary_lines": 1,
+          "full_writer_response_accepted": false
+        },
+        {
+          "stage": "writer",
+          "prompt_tokens": 382,
+          "max_context": 2048,
+          "completion_reserve": 320,
+          "input_sha256": "1a64ce84f6bff1778b6bea7bf0e4296c968c5f0ee708b557465c08fda145a447",
+          "output_sha256": "9250bf5541a113b4525e9c48a1a16363994f14870d583ec777fa210337846705",
+          "output_characters": 452,
+          "output_tokens": 150,
+          "starts_code_fence": false,
+          "ends_code_fence": false,
+          "ends_json_object": true,
+          "direct_json_valid": true,
+          "root_type": "dict",
+          "hypotheses_type": "dict",
+          "summary_type": "str",
+          "known_hypothesis_keys": [
+            "us_laboratory",
+            "us_medicare_medicaid_revenue"
+          ],
+          "hypothesis_value_types": {
+            "us_laboratory": "dict",
+            "us_medicare_medicaid_revenue": "dict"
+          },
+          "known_nested_fields": {
+            "us_laboratory": [
+              "evidence",
+              "hypothesis"
+            ],
+            "us_medicare_medicaid_revenue": [
+              "evidence",
+              "hypothesis"
+            ]
+          },
+          "nested_validation": {
+            "us_laboratory": {
+              "keys_exact": true,
+              "evidence_type": "str",
+              "hypothesis_type": "str",
+              "evidence_matches": true,
+              "evidence_grounded": true,
+              "evidence_word_count": 11,
+              "hypothesis_word_count": 9,
+              "hypothesis_bounded_explanation": true,
+              "source_driver_matches": true,
+              "raw_hypothesis_has_tentative_marker": false,
+              "hypothesis_starts_evidence": false,
+              "hypothesis_starts_may": false,
+              "hypothesis_grounded": true
+            },
+            "us_medicare_medicaid_revenue": {
+              "keys_exact": true,
+              "evidence_type": "str",
+              "hypothesis_type": "str",
+              "evidence_matches": true,
+              "evidence_grounded": true,
+              "evidence_word_count": 10,
+              "hypothesis_word_count": 8,
+              "hypothesis_bounded_explanation": true,
+              "source_driver_matches": true,
+              "raw_hypothesis_has_tentative_marker": false,
+              "hypothesis_starts_evidence": false,
+              "hypothesis_starts_may": false,
+              "hypothesis_grounded": true
+            }
+          },
+          "privacy_safe_hypothesis_ids": [
+            "us_laboratory",
+            "us_medicare_medicaid_revenue"
+          ],
+          "grounded_hypothesis_ids": [
+            "us_laboratory",
+            "us_medicare_medicaid_revenue"
+          ],
+          "numeric_diagnostics": {},
+          "accepted_hypothesis_ids": [
+            "us_laboratory",
+            "us_medicare_medicaid_revenue"
+          ],
+          "accepted_summary_lines": 1,
+          "full_writer_response_accepted": true
+        }
+      ],
+      "actual_conversions_checked": true,
+      "both_hypotheses_from_model": true,
+      "source_csv_unchanged": true,
+      "sensitive_fixture_name_absent": true
+    },
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task5-live-model-review-fdpprbos",
+    "runner_sha256": "86e21c03960134090998dcfbb2f30b8a4c76d8edb78c5c931cb594d7bd43553d"
+  },
+  "non_live": {
+    "scope": "reviewed_non_live_selection",
+    "exit_code": 0,
+    "source_changed": [],
+    "junit": {
+      "tests": 93,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "passed": true,
+    "live_model": false,
+    "real_broker": false,
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task5-api-review-h25g_kpg",
+    "runner_sha256": "810f4320365177b20b7ab9caeaddcf8b9f6f0d1420e3b834f0bec85cb31bac85"
+  },
+  "incomplete_example": {
+    "mode": "explicit deterministic fallback for missing-data example; not live-model evidence",
+    "missing_source": "operations.csv",
+    "source_changed": [],
+    "source_sha256": {
+      "agent.py": "87c2f73d06291d45c1c26ea772b552c718b1ba3191e3b7595ffc17a54fd78155",
+      "audit.py": "1fe056521cb93118e0b2d34d1ee2000f65699c4b2cc0cb83089128d3c25c9fbf",
+      "calendar.py": "997aacc870df88cd1db59b50e941d2f2756d50c6ddf133269332dc41d8aaf478",
+      "constants.py": "d813c1f1f6c3f85442225c2b0f93b24ac0ff122b39b9c608ae098b986312b8ff",
+      "distribution.py": "380be915503d5684f25d96fabc37a6009414550c886b775609717fea736a160a",
+      "generation.py": "cb65c07aad81a6e801cfb3e71f50480497b537f5945e17a3fa2d27cd5e5dc6dd",
+      "identity.py": "487699af7170fe75841ac2b706e6c53086daa180a63bd79f1613378dc6c7d13f",
+      "ingest.py": "0b4b6244ac8e19d8f1d46782ceb5911966f18f8dea84ae62406a03e3e35a64a8",
+      "money.py": "c2f6ec29775dc16452d8171ac947bb3ab3aa0620dd00ca68604ca2a12b42d133",
+      "privacy.py": "9894995d45bfcd50d19675d874d8a27afc0d4fd78718629134d9421253176fc3",
+      "review.py": "8df9075ca1f1fe2e65848536d46e3e6130dec48dde7f2f595837a9fe5d2445bf",
+      "runtime.py": "692bf72f2d93666c2c1241da8665a722a923b1376c1ea7ccee48384727cfc34e",
+      "schedule.py": "ed01c2950b564da5b9c48a7e2848d6a27379fae1dbf007393d2e1364daaa4581",
+      "seed.py": "be608628a32233c53b76ebf71538b02dc99358bdf0815055be01c4223dcfae8c",
+      "serialize.py": "b0edc79d2d1273ccf4773c568cf155d156423b6e3a9d43b1f8f3ea09c3de6000",
+      "store.py": "dac9624f74075cf1f826e36cba39d6468cf769d30f6bf4dee11861d49efcb824",
+      "tools.py": "5019ac8533db49496e5a74d75a8fcab0f31bc509a6e38c9b6be1140a781f66fa",
+      "types.py": "9d13a023f4f21ff510fc1beed0c439690dab4e0cb3107d5e22ceb2898111560d",
+      "__init__.py": "827ff3b65a3e44b72295db17ce4c54c9c509ff6d08003fa7c632e30c570801a3"
+    },
+    "input_sha256": {
+      "budget.csv": "df2fe7f5845384ba659ca62007b864186848a040ac1eb359d88e7ca0227cfdc3",
+      "ledger.csv": "7f78ffd040dd3f862f1c01764a07f9a4d311cf8770dc741ab6e7cf9bf42c1361"
+    },
+    "fictional_data_only": true,
+    "external_distribution": false,
+    "review_state": "awaiting_tom"
+  },
+  "human_leadership_review": "pending",
+  "external_distribution": false
+}

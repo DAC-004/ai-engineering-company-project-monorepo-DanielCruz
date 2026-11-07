@@ -1,0 +1,26 @@
+{
+  "fictional_test_data_only": true,
+  "intentional_negative_privacy_fixture": true,
+  "load_date": "2026-11-06",
+  "period": "2026-10",
+  "files_sha256": {
+    "budget.csv": "df2fe7f5845384ba659ca62007b864186848a040ac1eb359d88e7ca0227cfdc3",
+    "ledger.csv": "7f78ffd040dd3f862f1c01764a07f9a4d311cf8770dc741ab6e7cf9bf42c1361",
+    "operations.csv": "039e6686defd607ed36f188328e941ecc48d05d053eb51456bd2171887682883"
+  },
+  "seed_sha256": "be608628a32233c53b76ebf71538b02dc99358bdf0815055be01c4223dcfae8c",
+  "specs_sha256": {
+    "Agentic Engineering \u2013 Monthly Financial Close.png": "24f2c79ef0b81e89d2523b4f54e080d8b412227ca092ea910e000c37791cf99e",
+    "healthcore-BRIEFING.en.md": "386105dbe349629491e9d4d196294bb054f9abb8f9c38cc1b458ae4c7e2b6cf4",
+    "project_specs.md": "6bb0a1e481d37a617e8ae3235ce87d853deb8bcbffa95388b41a2750fac13012"
+  },
+  "checks": [
+    "all13rawactuals_exact",
+    "all8operations_exact",
+    "software_missing",
+    "quarantined_rent_excluded",
+    "two_required_deviations",
+    "source_files_readonly"
+  ],
+  "source_changed": []
+}

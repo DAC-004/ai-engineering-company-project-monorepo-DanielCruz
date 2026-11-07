@@ -1,0 +1,44 @@
+entry_id,date,country,payer,category,description,currency,amount,source_ref
+LED-202610-001,2026-10-03,United States,commercial insurance,revenue,Austin North clinic commercial insurance aggregate,USD,180000,ledger.csv:1
+LED-202610-002,2026-10-04,United States,commercial insurance,revenue,Austin South clinic commercial insurance aggregate,USD,160000,ledger.csv:2
+LED-202610-003,2026-10-05,United States,commercial insurance,revenue,Houston clinic commercial insurance aggregate,USD,140000,ledger.csv:3
+LED-202610-004,2026-10-06,United States,commercial insurance,revenue,Dallas clinic commercial insurance aggregate,USD,130000,ledger.csv:4
+LED-202610-005,2026-10-07,United States,commercial insurance,revenue,San Antonio clinic commercial insurance aggregate,USD,120000,ledger.csv:5
+LED-202610-006,2026-10-08,United States,commercial insurance,revenue,Miami clinic commercial insurance aggregate,USD,110000,ledger.csv:6
+LED-202610-007,2026-10-09,United States,commercial insurance,revenue,Orlando clinic commercial insurance aggregate,USD,100000,ledger.csv:7
+LED-202610-008,2026-10-10,United States,commercial insurance,revenue,Atlanta clinic commercial insurance aggregate,USD,90000,ledger.csv:8
+LED-202610-009,2026-10-11,United States,commercial insurance,revenue,Savannah clinic commercial insurance aggregate,USD,90000,ledger.csv:9
+LED-202610-010,2026-10-03,United States,Medicare / Medicaid,revenue,Austin North clinic Medicare Medicaid aggregate,USD,80000,ledger.csv:10
+LED-202610-011,2026-10-04,United States,Medicare / Medicaid,revenue,Austin South clinic Medicare Medicaid aggregate,USD,70000,ledger.csv:11
+LED-202610-012,2026-10-05,United States,Medicare / Medicaid,revenue,Houston clinic Medicare Medicaid aggregate,USD,60000,ledger.csv:12
+LED-202610-013,2026-10-06,United States,Medicare / Medicaid,revenue,Dallas clinic Medicare Medicaid aggregate,USD,55000,ledger.csv:13
+LED-202610-014,2026-10-07,United States,Medicare / Medicaid,revenue,San Antonio clinic Medicare Medicaid aggregate,USD,50000,ledger.csv:14
+LED-202610-015,2026-10-08,United States,Medicare / Medicaid,revenue,Miami clinic Medicare Medicaid aggregate,USD,45000,ledger.csv:15
+LED-202610-016,2026-10-09,United States,Medicare / Medicaid,revenue,Orlando clinic Medicare Medicaid aggregate,USD,40000,ledger.csv:16
+LED-202610-017,2026-10-10,United States,Medicare / Medicaid,revenue,Atlanta clinic Medicare Medicaid aggregate,USD,38000,ledger.csv:17
+LED-202610-018,2026-10-11,United States,Medicare / Medicaid,revenue,Savannah clinic Medicare Medicaid aggregate,USD,30000,ledger.csv:18
+LED-202610-019,2026-10-12,United Kingdom,private,revenue,London Central clinic private pay aggregate,GBP,120000,ledger.csv:19
+LED-202610-020,2026-10-13,United Kingdom,private,revenue,London East clinic private pay aggregate,GBP,90000,ledger.csv:20
+LED-202610-021,2026-10-14,United Kingdom,private,revenue,Manchester clinic private pay aggregate,GBP,61000,ledger.csv:21
+LED-202610-022,2026-10-12,United Kingdom,NHS contract,revenue,London Central clinic NHS contract aggregate,GBP,30000,ledger.csv:22
+LED-202610-023,2026-10-13,United Kingdom,NHS contract,revenue,London East clinic NHS contract aggregate,GBP,25000,ledger.csv:23
+LED-202610-024,2026-10-14,United Kingdom,NHS contract,revenue,Manchester clinic NHS contract aggregate,GBP,20000,ledger.csv:24
+LED-202610-025,2026-10-15,United States,n/a,clinical consumables,MedSupply Partners disposable consultation kit unit_price=3.344 quantity=8000,USD,-26752,ledger.csv:25
+LED-202610-026,2026-10-16,United States,n/a,clinical consumables,MedSupply Partners disposable consultation kit unit_price=3.344 quantity=6000,USD,-20064,ledger.csv:26
+LED-202610-027,2026-10-15,United States,n/a,laboratory,ClearPath Labs basic metabolic panel unit_price=19.26 quantity=1500,USD,-28890,ledger.csv:27
+LED-202610-028,2026-10-16,United States,n/a,laboratory,ClearPath Labs basic metabolic panel unit_price=19.26 quantity=1000,USD,-19260,ledger.csv:28
+LED-202610-029,2026-10-17,United States,n/a,medical interpreting,LinguaCare Interpreting medical interpreting unit_price=1.95 quantity=5000,USD,-9750,ledger.csv:29
+LED-202610-030,2026-10-18,United States,n/a,medical interpreting,LinguaCare Interpreting medical interpreting unit_price=1.95 quantity=4000,USD,-7800,ledger.csv:30
+LED-202610-031,2026-10-20,United States,n/a,payroll,United States payroll aggregate October 2026,USD,-600000,ledger.csv:31
+LED-202610-032,2026-10-21,United States,n/a,payroll,United States payroll aggregate remainder October 2026,USD,-460000,ledger.csv:32
+LED-202610-033,2026-10-31,United States,n/a,clinic rent,United States clinic rent Austin group,USD,-120000,ledger.csv:33
+LED-202610-034,2026-10-06,United States,n/a,clinic rent,United States clinic rent remaining locations,USD,-59000,ledger.csv:34
+LED-202610-PHI1,2026-10-18,United States,n/a,clinic rent,Mis-posted refund for patient Jordan Hale Austin North,USD,-1000,ledger.csv:35
+LED-202610-035,2026-10-15,United Kingdom,n/a,clinical consumables,BritMed Supplies disposable consultation kit unit_price=2.70 quantity=2000,GBP,-5400,ledger.csv:36
+LED-202610-036,2026-10-16,United Kingdom,n/a,clinical consumables,BritMed Supplies disposable consultation kit unit_price=2.70 quantity=1500,GBP,-4050,ledger.csv:37
+LED-202610-037,2026-10-15,United Kingdom,n/a,laboratory,Thames Pathology basic metabolic panel unit_price=14.79 quantity=400,GBP,-5916,ledger.csv:38
+LED-202610-038,2026-10-16,United Kingdom,n/a,laboratory,Thames Pathology basic metabolic panel unit_price=14.79 quantity=300,GBP,-4437,ledger.csv:39
+LED-202610-039,2026-10-20,United Kingdom,n/a,payroll,United Kingdom payroll aggregate October 2026,GBP,-120000,ledger.csv:40
+LED-202610-040,2026-10-21,United Kingdom,n/a,payroll,United Kingdom payroll aggregate remainder October 2026,GBP,-89000,ledger.csv:41
+LED-202610-041,2026-10-05,United Kingdom,n/a,clinic rent,United Kingdom clinic rent London,GBP,-32000,ledger.csv:42
+LED-202610-042,2026-10-06,United Kingdom,n/a,clinic rent,United Kingdom clinic rent Manchester,GBP,-20000,ledger.csv:43

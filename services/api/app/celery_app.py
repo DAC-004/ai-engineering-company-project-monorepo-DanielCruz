@@ -65,9 +65,29 @@ celery_app.conf.update(
         Queue(DEFAULT_QUEUE),
         Queue(DEAD_LETTER_QUEUE),
     ),
-    imports=("app.tasks", "app.onboarding_tasks", "app.tasks_supplier_contracts"),
+    imports=("app.tasks", "app.onboarding_tasks", "app.tasks_supplier_contracts", "app.tasks_financial_close"),
     beat_schedule=celery_beat_schedule(),
+    timezone="America/Chicago",
+    enable_utc=True,
 )
+
+_close_interval = int(os.environ.get("FINANCIAL_CLOSE_BEAT_SECONDS", "0") or "0")
+if _close_interval > 0:
+    celery_app.conf.beat_schedule.update({
+        "financial-close-sweep": {
+            "task": "app.tasks_financial_close.tick_financial_close",
+            "schedule": _close_interval,
+        }
+    })
+elif os.environ.get("FINANCIAL_CLOSE_ENABLE_CRONTAB", "").strip() in {"1", "true", "yes"}:
+    from celery.schedules import crontab
+
+    celery_app.conf.beat_schedule.update({
+        "financial-close-third-business-day": {
+            "task": "app.tasks_financial_close.tick_financial_close",
+            "schedule": crontab(hour=6, minute=0),
+        }
+    })
 
 
 _alert_interval = int(os.environ.get("SUPPLIER_CONTRACTS_ALERT_INTERVAL_SECONDS", "0") or "0")

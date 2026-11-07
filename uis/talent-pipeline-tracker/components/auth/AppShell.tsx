@@ -198,6 +198,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Internal reports
           </Link>
+          <Link href="/backoffice/financial-close" className={pathname.startsWith("/backoffice/financial-close") ? "app-nav__link is-active" : "app-nav__link"}>Financial close</Link>
           <Link
             href="/onboarding"
             className={

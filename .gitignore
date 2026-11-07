@@ -43,3 +43,4 @@ dist/
 services/api/*.egg-info/
 .uv/
 uis/web/config.local.js
+data/process/financial-close/

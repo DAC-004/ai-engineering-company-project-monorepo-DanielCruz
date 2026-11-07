@@ -1,0 +1,15 @@
+month,country,payer,category,currency,amount
+2026-10,United States,commercial insurance,revenue,USD,1150000
+2026-10,United States,Medicare / Medicaid,revenue,USD,520000
+2026-10,United Kingdom,private,revenue,GBP,260000
+2026-10,United Kingdom,NHS contract,revenue,GBP,75000
+2026-10,United States,n/a,clinical consumables,USD,44800
+2026-10,United States,n/a,laboratory,USD,45000
+2026-10,United States,n/a,medical interpreting,USD,17550
+2026-10,United States,n/a,payroll,USD,1050000
+2026-10,United States,n/a,clinic rent,USD,180000
+2026-10,United Kingdom,n/a,clinical consumables,GBP,9450
+2026-10,United Kingdom,n/a,laboratory,GBP,10150
+2026-10,United Kingdom,n/a,payroll,GBP,210000
+2026-10,United Kingdom,n/a,clinic rent,GBP,52000
+2026-10,United Kingdom,n/a,clinical software licences,GBP,8000
