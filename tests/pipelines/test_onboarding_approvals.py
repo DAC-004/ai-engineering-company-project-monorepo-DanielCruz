@@ -97,3 +97,30 @@ def test_wrong_department_manager_cannot_approve_role(tmp_path) -> None:
     approved = decide(runtime, record, ACTORS["manager_digital"], "approve")
     assert approved["role_approved"] is True
     assert approved["current_stage"] == 6
+
+
+
+def test_all_seven_stages_finish_only_after_diane_closure(tmp_path) -> None:
+    runtime = make_runtime(tmp_path)
+    record = _to_compliance_approval(runtime)
+    record = decide(runtime, record, ACTORS["claire"], "approve")
+    record = submit_answers(runtime, record, ACTORS["hire_austin"])
+    record = decide(runtime, record, ACTORS["manager_digital"], "approve")
+    assert record["current_stage"] == 6
+    record = submit_answers(runtime, record, ACTORS["hire_austin"])
+    assert record["current_stage"] == 7
+    assert record["pending_kind"] == "closure"
+    assert record["status"] != "complete"
+    for actor in [ACTORS["hire_austin"], ACTORS["manager_digital"], ACTORS["claire"]]:
+        with pytest.raises(OnboardingError) as error:
+            decide(runtime, record, actor, "approve")
+        assert error.value.code == "unauthorized_approver"
+    rejected = decide(runtime, record, ACTORS["diane"], "reject", "Review the access checklist")
+    assert rejected["current_stage"] == 7
+    assert rejected["status"] == "waiting_human"
+    assert runtime.hire_view("onb-austin", ACTORS["hire_austin"]["user_id"])["last_rejection_comment"] == "Review the access checklist"
+    completed = decide(runtime, rejected, ACTORS["diane"], "approve")
+    assert completed["status"] == "complete"
+    assert completed["closure_approved"] is True
+    assert completed["compliance_approved"] and completed["role_approved"]
+    assert completed["company_passed"] and completed["operations_passed"] and completed["how_we_work_passed"]

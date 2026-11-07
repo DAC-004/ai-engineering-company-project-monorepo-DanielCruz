@@ -1,74 +1,49 @@
-# Add persistent corporate onboarding with authorized human gates
+Corporate onboarding now persists one seven-stage LangGraph per fictional hire, runs graph work through Celery, and stops at authorized People, Compliance, manager and closure decisions. Company/operations/role/working-practice material is indexed official content, with jurisdiction-aware compliance, scored checks, citations and explicit human routing for uncovered questions.
 
-Local draft for developer Git review. Not published. Not a People-team signoff. Copied from `C:\Users\cruzd\Documents\Codex\2026-11-04\task\healthcore-task3-pr-draft.md` on 2026-11-06.
+The branch incorporates approved Task 2 main `677cce9`, preserves its federation/auth implementation, and resolves both tasks' shared test-isolation/progress conflicts. No merge of PR #40 into main is authorized.
 
-Corporate onboarding needs to survive multi-day waits and restarts while keeping compliance, manager and People approvals separate. This change adds one persistent seven-stage LangGraph orchestrator, Celery background execution, scoped People/hire views, comprehension checks, official-material Q&A, and deadline processing.
-
-The compliance check requires 100% plus Claire's approval before patient-system requests are accepted. The role stage requires the assigned manager; Diane closes onboarding. Rejections restart the stage and show the hire the comment. Other checks require 80%. Sensitive document details are excluded from the tested ingress, checkpoint, audit and response paths.
-
-## Scope
-
-- Task 3 worktree: `C:\4geeks\Projects\Capstone\healthcore-onboarding-orchestrator`, branch `feature/onboarding-orchestrator`.
-- Non-clinical corporate staff in Austin/London, with HIPAA/UK GDPR and two role variants.
-- Graph, architecture rationale and official content: `agents/onboarding_orchestrator/` and `data/raw/healthcore-onboarding/`.
-- API/worker integration and onboarding routes/components in the existing tracker.
-- Minimal existing-app registration/navigation, Celery configuration, test-isolation allowlist and onboarding content styles.
-
-## Graph and persistence
+## Stage graph and single-agent rationale
 
 ```mermaid
 flowchart TD
-  A[1 Paperwork: People confirms receipt and completion] --> B[2 Company: 80%]
-  B --> C[3 Operations: 80%]
-  C --> D[4 Compliance: 100% and Claire]
-  D --> E[5 Role: 80% and assigned manager]
-  E --> F[6 Working practices: 80%]
-  F --> G[7 Access requests and Diane closure]
+  A[1 Paperwork: People receipt and background completion, Day 2] --> B[2 Company: 80%, Day 3]
+  B --> C[3 Operations: 80%, Day 4]
+  C --> D[4 Compliance: 100% and Claire, Day 6]
+  D --> E[5 Role: 80% and assigned manager, Day 8]
+  E --> F[6 Ways of working: 80%, Day 9]
+  F --> G[7 Access and Diane closure, Day 10]
   G --> H[Complete]
 ```
 
-One agent owns the sequential responsibility for each hire. SQLite checkpoints preserve interrupted graph state; independent onboarding identifiers isolate hires. Projection updates and first initialization hold process/thread locks. The UI waits for a terminal successful worker job before refreshing and disables duplicate submission while pending.
+One agent owns the sequential next action for each hire; SQLite checkpoints and isolated thread IDs preserve multi-day waits and service restarts. This avoids multi-agent coordination for a single ordered process. Failed content checks reinforce official material and switch question banks; rejected human decisions return to the stage with a comment visible to the hire. Patient-information access requests before Claire's stage-4 approval are denied, audited and routed to Claire.
 
-## Executed evidence
+Five reproduced issues are corrected: duplicate queued decisions consuming one nonce, deadline sweeps overwriting a newer stage, punctuated compliance questions routed incorrectly, missed unlabeled identifier formats, and human notices that lacked the question. Decisions and deadline mutations now share the durable lock. Internal notices resolve the recipient user ID and carry privacy-checked uncovered questions without copying them to checkpoints/audit.
+
+## Executed verification
 
 | Check | Result |
 | --- | --- |
-| Final graph selection | 35 passed; JUnit clean |
-| Final API selection | 4 passed; JUnit clean |
-| Before/after source identity for those selections | Unchanged; both exits and runner exit 0 |
-| Client auth/delayed result/failure/timeout/cancellation | 6 passed; mocked client tests |
-| Tracker lint | Exit 0; one unused-import warning in test code |
-| Final production build/TypeScript | Exit 0; source unchanged; explicit isolated API origin |
-| Six simultaneous fresh-start projection writers | 240/240 records; all child exits 0 |
-| Separate-process checkpoint resume | Pending stage, attempts and nonce restored; successful continuation |
-| Real non-eager worker transport | HTTP 202 followed by SUCCESS and matching worker receipt/completion |
-| Autonomous Celery beat/worker | No HTTP; exactly three expected notices; no duplicate or compliance bypass; source unchanged |
-| Rendered Austin journey | All seven stages complete, including Claire rejection/comment/retry/approval, manager gate and Diane closure |
-| Department isolation | Unrelated Revenue manager saw no Austin approval item |
-| Patient-system request gate | Early EHR request denied; request accepted after compliance approval |
-| London Q&A | UK policy citation/wording, without US-only guidance |
-| Content layout | Page width equals viewport width at 1265 px after wrapping correction |
-| Shared Celery contract | Eight existing contract assertions passed with only obsolete fixture setup adapted in memory; original validator and production authorization unchanged |
+| Current agent regressions | 41 passed; includes complete seven-stage journey, Diane rejection/approval, race counterexamples, privacy, Q&A, thresholds, restart and timing/DST |
+| Current onboarding API | 5 passed; scoped views/authorization, early-access denial, async contract, no-echo/no-store-mutation privacy |
+| Task 2 compatibility | 32 federation and 60 mixed auth/onboarding tests passed before the final notice-payload-only change; the five affected onboarding API tests passed again afterward. Other 55 auth tests and main auth modules unchanged. Counts overlap. |
+| UI | Full TypeScript, full ESLint, all 72 Jest tests (9 suites) and disposable production build exit 0; no source drift |
+| Separate-process restart | Two child exits 0; exact pending stage/attempts/nonce restored, then successful continuation |
+| Current real Celery worker/beat | No HTTP; exactly hire reminder, manager overdue and Diane compliance-overdue notices, no duplicates or compliance bypass; only newly created proof children stopped |
+| Source/dependencies | Stable code hashes during checks, Python syntax/diff checks and offline `uv lock --check` pass; no dependency upgrades |
 
-The shared contract adapter creates its fictional user through the existing service because the old validator assumes unauthenticated `POST /users`. It invokes only `run_contract`; it does not invoke the validator's default runtime branch. This is separate from the actual worker-transport proof.
+## Source review and evidence
 
-## Unsupported-question example
+- [Every Task 3 requirement and source reconciliation](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/blob/feature/onboarding-orchestrator/agents/onboarding_orchestrator/SOURCE-COMPLIANCE.md)
+- [Machine-readable current validation, source hashes and counterexamples](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/blob/feature/onboarding-orchestrator/agents/onboarding_orchestrator/review-validation.json)
+- [Executed uncovered-question handoff example](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/blob/feature/onboarding-orchestrator/agents/onboarding_orchestrator/uncovered-question-example.json)
+- [Architecture and full graph](https://github.com/DAC-004/ai-engineering-company-project-monorepo-DanielCruz/blob/feature/onboarding-orchestrator/agents/onboarding_orchestrator/ARCHITECTURE.md)
 
-The rendered question about an undocumented HIPAA breach fine returned an uncovered answer routed to Claire, with no invented fine. A generic notification-window question from the London fixture cited `stage-04-compliance-uk-gdpr`.
+The example asks “Which HIPAA policy covers the fictional lunar office?” It is explicitly uncovered, routed to the configured Claire identity through the internal outbox, and is absent from checkpoint/audit. Unsupported-fine and framework-specific notification-window tests also reject guessing or cross-jurisdiction answers.
 
-## Evidence locations
-
-Detailed findings, corrections and run paths: `C:\Users\cruzd\Documents\Codex\2026-11-04\task\healthcore-task3-review-findings.md`.
-
-- Final graph/API JUnit: `%TEMP%\task3-onboarding-verify-20261106\run-20261106T021003592-a0f15471\junit\`.
-- Final UI build: `task3-ui-final-20261106T015037480\result.json` beside the detailed report.
-- Autonomous deadline proof: `task3-autonomous-deadline-76_8s15z\result.json` beside the report.
-- Shared contract: `task3-shared-contract-w6d0l25r\result.json` beside the report.
-- Live isolated stack: `%TEMP%\task3-onboarding-verify-20261106\worker-ui-20261106T012847765\`.
-- Current refresh identities/logs: its `refresh-20261106T022029504\` subdirectory.
+Detailed local history: `C:\Users\cruzd\Documents\Codex\2026-11-04\task\healthcore-task3-review-findings.md`. Earlier rendered Austin journey completed all seven stages, including Claire rejection/comment/retry/approval, assigned-manager approval, Diane closure and early/past-compliance access behavior. London Q&A cited UK GDPR material; unrelated managers saw no approval item. Those are historical browser results, not a newly recorded browser run for this backend correction. Current onboarding UI source is unchanged; shared UI integration has fresh build/type/lint/Jest checks. Earlier six-process 240/240 projection and shared Celery eight-contract proofs remain documented; current-code restart and autonomous worker proofs are recorded separately above.
 
 ## Review boundaries
 
-Notifications were verified through the internal outbox; no real communications were sent or external delivery integration claimed. Calendar defaults and the 60-second sweep cadence are explicit local test/operational settings, not approved HealthCore HR policy. The installed locked dependency tree reported audit findings; dependency upgrades were not part of this change.
+Only fictional non-clinical corporate fixtures are used; English material includes both compliance and the minimum two role variants. No real access provisioning, background-check outcomes, payroll documents or external email/Slack delivery. Calendar/holiday/cutoff/start-day choices and scheduler cadence are explicit operational/test settings, not approved HR policy. Existing long-lived services and original WIP were preserved and are not claimed to have been redeployed to this revision. Recorded installed dependency-audit findings are outside this functional change; no upgrade was hidden.
 
-The fictional Diane closure is test evidence, not real People-team signoff. Real People review/signoff and Daniel review before merge remain pending. Daniel authorized the supervisor to commit and push this scoped branch for review; Cursor must never commit. No merge is authorized.
+Real People-team signoff and Daniel's explicit review/merge approval remain pending. Fictional Diane closure is test evidence. Cursor never commits; the supervisor owns commits and pushes. Draft for review; do not merge without Daniel's later approval.

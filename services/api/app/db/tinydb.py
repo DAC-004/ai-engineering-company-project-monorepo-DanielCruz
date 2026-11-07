@@ -90,6 +90,21 @@ def internal_reports_table():
     return get_db().table("internal_reports")
 
 
+def federated_links_table():
+    """Microsoft staff links. Stores identity keys, not Microsoft tokens."""
+    return get_db().table("federated_links")
+
+
+def federated_audit_table():
+    """Federated link/login audit. user_id is omitted on rejected unknown logins."""
+    return get_db().table("federated_audit")
+
+
+def federated_oauth_tx_table():
+    """One-time OAuth transaction records. Stores binding hashes, not raw secrets."""
+    return get_db().table("federated_oauth_tx")
+
+
 def reset_db_for_tests() -> None:
     """Close and discard the cached DB handle (tests / isolated validation runs)."""
     global _db

@@ -86,3 +86,31 @@ def test_unscoped_notification_question_does_not_pick_a_conflicting_window() -> 
     result = answer_question("What is the incident notification window?")
     assert result.covered is False
     assert result.route_to == "claire"
+
+
+
+def test_punctuated_uncovered_compliance_question_routes_to_claire(tmp_path) -> None:
+    runtime = make_runtime(tmp_path)
+    start_three(runtime)
+    for question in ["HIPAA?", "GDPR?", "PHI?", "Compliance?"]:
+        answer = runtime.ask("onb-austin", question, ACTORS["hire_austin"]["user_id"])
+        assert answer["covered"] is False
+        assert answer["route_to"] == "claire"
+
+
+
+def test_uncovered_question_handoff_is_actionable_without_logging_the_question(tmp_path) -> None:
+    from tests.pipelines.onboarding_helpers import USER_IDS
+
+    runtime = make_runtime(tmp_path)
+    start_three(runtime)
+    question = "Which HIPAA policy covers the fictional lunar office?"
+    answer = runtime.ask("onb-austin", question, ACTORS["hire_austin"]["user_id"])
+    assert answer["covered"] is False
+    notice = runtime.outbox.lines()[-1]
+    assert notice["question"] == question
+    assert notice["recipient"] == "claire"
+    assert notice["recipient_user_id"] == USER_IDS["claire"]
+    assert notice["channel"] == "internal_outbox"
+    assert question not in runtime.paths.audit.read_text(encoding="utf-8")
+    assert question.encode() not in runtime.paths.checkpoint.read_bytes()

@@ -30,3 +30,8 @@ Stage 4 approval gates every patient-information system access request, includin
 ## Calendar policy (explicit fixture settings)
 
 The briefing sets a 10-business-day target and stage day numbers 2/3/4/6/8/9/10, plus a 24-hour reminder. It does not define a holiday calendar, timezone, cutoff hour, or whether the start date counts as Day 1. Those remain injectable `CalendarPolicy` fields. Tests must set them. The agent does not invent a real HealthCore holiday calendar or a local-office cutoff.
+
+
+## Durable mutation and human handoff
+
+Worker decisions validate the current actor/pending event/nonce under the same checkpoint lock that guards graph mutation. Deadline sweeps use that lock for projection and reminder/escalation flags, preventing stale stage overwrite. Uncovered questions pass privacy validation, then go to a resolved person through the internal outbox with the question attached; raw questions are not copied into checkpoints or audit logs.

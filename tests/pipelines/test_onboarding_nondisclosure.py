@@ -146,3 +146,13 @@ def test_unlabeled_ni_and_bank_formats_are_rejected_from_checkpoint_and_logs(tmp
         assert token not in audit
         assert token.encode("ascii") not in checkpoint
     assert DETERMINISTIC_DECISION_NONCE == runtime.current("onb-austin")["decision_nonce"]
+
+
+
+def test_unlabeled_fictional_passport_and_bank_identifiers_are_excluded() -> None:
+    import pytest
+    from agents.onboarding_orchestrator.sensitive import SensitiveDataError, scan_mapping
+
+    for value in ["ZZ0000000", "00000000", "000000000"]:
+        with pytest.raises(SensitiveDataError):
+            scan_mapping({"comment": f"Do not retain this fictional identifier {value}"})

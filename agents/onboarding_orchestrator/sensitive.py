@@ -43,6 +43,9 @@ _PATTERNS: tuple[re.Pattern[str], ...] = (
     # Unlabeled NI: two letters, six digits, suffix A-D, optional grouping spaces.
     re.compile(r"\b[A-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b", re.I),
     re.compile(r"\bpassport\b", re.I),
+    # Conservative unlabelled passport/bank/tax identifiers in free text.
+    re.compile(r"\b[A-Z]{1,2}\d{6,9}\b", re.I),
+    re.compile(r"\b\d{8,19}\b"),
     re.compile(r"\biban\b", re.I),
     re.compile(r"\b[A-Z]{2}\d{2}(?:\s[A-Z0-9]{4}){3,7}(?:\s[A-Z0-9]{1,4})?\b", re.I),
     re.compile(r"routing\s*number", re.I),

@@ -170,3 +170,24 @@ def test_unlabeled_ni_and_bank_questions_are_rejected_without_echo(onboarding_cl
     assert iban not in iban_response.text
     assert created["decision_nonce"]
     assert len(created["decision_nonce"]) == 32
+
+
+def test_unlabeled_fictional_identifiers_never_reach_response_or_stores(onboarding_client) -> None:
+    from app.services.onboarding_service import get_runtime
+
+    client, users = onboarding_client
+    created = _start_austin(client, users)
+    hire = _headers(client, HIRE_AUSTIN_EMAIL)
+    runtime = get_runtime()
+    stores_before = {path: path.read_bytes() for path in [runtime.paths.checkpoint, runtime.paths.store, runtime.paths.audit, runtime.paths.outbox] if path.exists()}
+    for sentinel in ["ZZ0000000", "00000000", "000000000"]:
+        response = client.post(
+            f"/onboarding/{created['onboarding_id']}/questions",
+            json={"question": f"Do not retain this fictional identifier {sentinel}"},
+            headers=hire,
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"] == "sensitive_data_excluded"
+        assert sentinel not in response.text
+        for path, original in stores_before.items():
+            assert path.read_bytes() == original

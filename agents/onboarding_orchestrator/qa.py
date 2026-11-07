@@ -90,7 +90,7 @@ def _tokenize(text: str) -> set[str]:
 
 
 def _is_compliance_question(question: str) -> bool:
-    tokens = set(question.lower().replace("-", " ").split())
+    tokens = _tokenize(question)
     return bool(tokens & _COMPLIANCE_MARKERS) or "minimum necessary" in question.lower()
 
 

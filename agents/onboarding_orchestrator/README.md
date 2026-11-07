@@ -8,7 +8,7 @@ Official material lives in `data/raw/healthcore-onboarding/`. Runtime checkpoint
 
 See `ARCHITECTURE.md` for the single-agent rationale and the stage graph.
 
-## Evidence (2026-11-06, not Git publication)
+## Historical rendered/worker evidence (2026-11-06)
 
 Source-stable reviewed runner `run-20261106T021003592-a0f15471`: graph 35 passed, API 4 passed, both JUnit clean, `CONTENT_IDENTITY_CHANGED=false`. Tracker client tests 6 passed; lint exit 0 with one unused-import warning in test code; final production build exit 0 with source unchanged. Rendered Austin seven-stage journey completed on isolated 3020/8020, including Claire rejection/comment/retry/approve, assigned-manager gate, Diane closure, early US EHR denial, and post-compliance access. London hire Q&A cited UK GDPR material; wrapping matched viewport width 1265. Autonomous Celery beat/worker proof `task3-autonomous-deadline-76_8s15z` passed with 0 HTTP, exactly three expected internal-outbox notices, no duplicate or compliance bypass. Shared Celery 8 contract checks passed via an in-memory fixture-only adapter; original validator and production authorization unchanged.
 
@@ -16,4 +16,9 @@ Guarded owned refresh `refresh-20261106T022029504`: API starter 10656 (listener 
 
 Local PR draft: [`PR-DRAFT.md`](PR-DRAFT.md). Detailed findings: `C:\Users\cruzd\Documents\Codex\2026-11-04\task\healthcore-task3-review-findings.md`.
 
-This is not real People-team signoff and not a Git commit, merge, or publication. Calendar sweep cadence is local operational config, not approved HR policy. Internal outbox only; no real communications.
+This historical fixture approval is not real People-team signoff. Draft PR #40 is published for Daniel review; no PR merge is approved. Calendar sweep cadence is local operational config, not approved HR policy. Internal outbox only; no real communications.
+
+
+## Current source review (2026-11-07)
+
+See [SOURCE-COMPLIANCE.md](SOURCE-COMPLIANCE.md), [review-validation.json](review-validation.json) and [uncovered-question-example.json](uncovered-question-example.json). Current agent suite 41 and onboarding API suite five pass; current-code restart/beat-worker and combined UI types/lint/72 Jest/build pass. Duplicate-decision, deadline projection, routing, privacy and actionable-handoff gaps are closed. The approved Task 2 main is integrated into this feature branch; Task 2 auth modules remain unchanged. People/Daniel approval is required before PR #40 merges.

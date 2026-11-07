@@ -248,9 +248,10 @@ class OnboardingRuntime:
         return record
 
     def apply_event(self, onboarding_id: str, event: dict[str, Any], actor: dict[str, Any]) -> dict[str, Any]:
-        self.assert_event_allowed(onboarding_id, event, actor)
-
         def run(saver: SqliteSaver) -> dict[str, Any]:
+            # Revalidate at worker execution time while holding the checkpoint
+            # lock. Two queued copies must not both consume one decision nonce.
+            self.assert_event_allowed(onboarding_id, event, actor)
             compiled = compile_onboarding_graph(saver)
             snapshot = self._snapshot(compiled, onboarding_id)
             if not snapshot.next:
@@ -268,7 +269,15 @@ class OnboardingRuntime:
 
         return with_checkpointer(self.paths.checkpoint, run)
 
-    def _notice(self, kind: str, recipient: str, onboarding_id: str, stage: int, template: str) -> dict[str, Any]:
+    def _notice(
+        self, kind: str, recipient: str, onboarding_id: str, stage: int, template: str,
+        *, question: str | None = None,
+    ) -> dict[str, Any]:
+        record = self.current(onboarding_id)
+        recipient_keys = {
+            "hire": "hire_user_id", "manager": "manager_user_id",
+            "claire": "claire_user_id", "diane": "diane_user_id",
+        }
         notice = new_notice(
             kind=kind,
             recipient=recipient,
@@ -276,6 +285,11 @@ class OnboardingRuntime:
             template=template,
             stage=stage,
         )
+        notice["recipient_user_id"] = record[recipient_keys[recipient]]
+        if question is not None:
+            # The question has passed ingress privacy checks; retain it only in
+            # the internal handoff, never in graph checkpoints or audit logs.
+            notice["question"] = question
         self.store.append_notice(notice)
         self.outbox.append(notice)
         self.audit.write(
@@ -389,6 +403,7 @@ class OnboardingRuntime:
                 onboarding_id,
                 record["current_stage"],
                 "uncovered_question",
+                question=question,
             )
         return payload
 
@@ -435,6 +450,14 @@ class OnboardingRuntime:
         return row
 
     def process_deadlines(self, onboarding_id: str) -> list[dict[str, Any]]:
+        # Deadline projection/notice flags share the graph mutation lock so a
+        # sweep cannot overwrite a newer stage or send the same reminder twice.
+        return with_checkpointer(
+            self.paths.checkpoint,
+            lambda _saver: self._process_deadlines_locked(onboarding_id),
+        )
+
+    def _process_deadlines_locked(self, onboarding_id: str) -> list[dict[str, Any]]:
         record = self.current(onboarding_id)
         if record["status"] == "complete":
             return []

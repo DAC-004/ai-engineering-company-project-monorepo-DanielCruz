@@ -1,0 +1,159 @@
+{
+  "date": "2026-11-07",
+  "reviewed_base_head": "6bbd35da673c814683f2437677c321cc5585b483",
+  "task2_source_files_sha256": {
+    "federated-auth-checklist.md": "8e1a9f2d07eade7c5838ed3f3bb971273ad358081a469bf1021f79537b2e94f4",
+    "healthcore-BRIEFING-FederatedAuthentication.md": "9a7c800b7f68a4545d36b0e588c0c54bc1c95268143d65c0f7089c88dd64afc2",
+    "healthcore-BRIEFING.en.md": "b8f036c3e0eddd731f6591e3ddac40cdb1a5ac9170fc943e89e14204cd97764c",
+    "Task 2-Platform \u2013 Federated Authentication.png": "4de7bdd8f69ce75846c883740c4d1bc97819dc479e562566cfaba8fd1fe2b9bd"
+  },
+  "api": {
+    "mode": "full",
+    "runs": [
+      {
+        "selection": [
+          "tests/test_federated_auth.py"
+        ],
+        "exit": 0,
+        "junit": {
+          "tests": 32,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      {
+        "selection": [
+          "tests/test_login.py",
+          "tests/test_me.py",
+          "tests/test_token.py",
+          "tests/test_roles_permissions.py",
+          "tests/test_password_reset.py"
+        ],
+        "exit": 0,
+        "junit": {
+          "tests": 55,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      }
+    ],
+    "source_changed": [],
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task2-audit-regression-8tsc4328",
+    "passed": true
+  },
+  "ui": {
+    "passed": true,
+    "results": [
+      {
+        "branch": "feature/federated-auth",
+        "pull_request": 41,
+        "exits": {
+          "full_types": 0,
+          "lint": 0,
+          "regression": 0,
+          "build": 0
+        },
+        "source_changed": [],
+        "tests_passed": 66,
+        "tests_failed": 0,
+        "suites_passed": 8,
+        "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task2-full-ui-review-owtbg8yn\\41",
+        "passed": true
+      }
+    ],
+    "run_dir": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\task2-full-ui-review-owtbg8yn",
+    "runner_sha256": "02cea61e4f5051a9c14a586936ff8c145f84d40342a8e78467bae933b74504ac"
+  },
+  "syntax_and_diff_check": "passed",
+  "uv_lock_check_offline_exit": 0,
+  "concurrency_before_fix": {
+    "attempts": 40,
+    "events_saved": 11,
+    "junit": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "concurrency_after_fix": {
+    "attempts": 40,
+    "events_saved": 40,
+    "covered_in_federation_suite": true
+  },
+  "source_sha256": {
+    "services/api/app/services/federated_auth.py": "7a7346e918bb33631a2703f422d449b57fbd18c018f43c7da8f624964396f8d6",
+    "services/api/tests/test_federated_auth.py": "fc4ff457d2790603dcd8dd1de4761a8342c8a0dc13dd315705c05717e655ece9"
+  },
+  "session_parity": "Both password and Microsoft sessions issue the same configured 30-minute lifetime; both expired tokens and active tokens for a deactivated user are rejected by /auth/me.",
+  "live_provider_retested": false,
+  "ui_modified": false,
+  "existing_services_modified": false,
+  "historical_initial_audit_closure": {
+    "date": "2026-11-07",
+    "assignment_requirement": "Log every linking, unlinking, and rejected federated login attempt in the audit system.",
+    "sources": [
+      "Downloads/Tasks/Task 2/Task 2-Platform - Federated Authentication.png",
+      "Downloads/Tasks/Task 2/healthcore-BRIEFING-FederatedAuthentication.md"
+    ],
+    "scope": "Early federated-login rejections now emit exactly one sanitized audit event for invalid/expired state, transaction binding/expiry/replay/redirect failures, and rejected provider/nonce/tenant/signature/issuer/audience/token validation. Login authorization-start provider/redirect rejections are also audited. Early events have null user_id and provider_user_id; only microsoft or the fixed unsupported provider category and fixed reason categories are stored. No request code, state, nonce, transaction identifiers, binding secret, redirect, token, email or unverified claims are copied. Signed link-purpose early failures use federated_link_rejected; an invalid state cannot establish purpose and is recorded as an unattributed login rejection. Existing verified-identity rejection events remain unchanged.",
+    "regression_before_fix": [
+      {
+        "selection": [
+          "tests/test_federated_auth.py",
+          "-k",
+          "early_login_rejections"
+        ],
+        "exit": 1,
+        "junit": {
+          "tests": 15,
+          "failures": 15,
+          "errors": 0,
+          "skipped": 0
+        }
+      }
+    ],
+    "verification_after_fix": [
+      {
+        "selection": [
+          "tests/test_federated_auth.py"
+        ],
+        "exit": 0,
+        "junit": {
+          "tests": 28,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      {
+        "selection": [
+          "tests/test_login.py",
+          "tests/test_me.py",
+          "tests/test_token.py",
+          "tests/test_roles_permissions.py",
+          "tests/test_password_reset.py"
+        ],
+        "exit": 0,
+        "junit": {
+          "tests": 55,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      }
+    ],
+    "source_changed_during_verification": [],
+    "source_sha256": {
+      "services/api/app/services/federated_auth.py": "fa347d527f28a64bcc67fd15c1561eaf26afd195a3afd3bbb0879dc82b8e6f5d",
+      "services/api/tests/test_federated_auth.py": "38888aa81f2b8bf56b2e8d65a957cd01b062284adb5abbac251e993eaeb40917"
+    },
+    "runner_sha256": "e4f27142309e41a7d5a30fa13c92bb80de4573ca72de577a0294f797f97d3fef",
+    "syntax_and_diff_check": "passed",
+    "live_microsoft_retested": false,
+    "ui_changes": false,
+    "existing_services_changed": false
+  }
+}

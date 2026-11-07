@@ -36,6 +36,7 @@ from app.routers import (  # noqa: E402
     access,
     agent,
     auth,
+    federated,
     departments,
     incident_manager,
     incidents,
@@ -117,6 +118,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(federated.router)
 app.include_router(users.router)
 app.include_router(profiles.router)
 app.include_router(access.router)
