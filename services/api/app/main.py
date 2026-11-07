@@ -49,6 +49,7 @@ from app.routers import (  # noqa: E402
     rfp_intake,
     roles,
     suppliers,
+    supplier_contracts,
     tasks,
     telemetry,
     users,
@@ -134,6 +135,7 @@ app.include_router(tasks.router)
 app.include_router(reporting_router)
 app.include_router(rfp_intake.router)
 app.include_router(suppliers.router)
+app.include_router(supplier_contracts.router)
 app.include_router(knowledge.router)
 app.include_router(agent.router)
 app.include_router(chat.router)

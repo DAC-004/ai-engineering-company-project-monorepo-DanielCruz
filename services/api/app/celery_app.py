@@ -65,9 +65,20 @@ celery_app.conf.update(
         Queue(DEFAULT_QUEUE),
         Queue(DEAD_LETTER_QUEUE),
     ),
-    imports=("app.tasks", "app.onboarding_tasks"),
+    imports=("app.tasks", "app.onboarding_tasks", "app.tasks_supplier_contracts"),
     beat_schedule=celery_beat_schedule(),
 )
+
+
+_alert_interval = int(os.environ.get("SUPPLIER_CONTRACTS_ALERT_INTERVAL_SECONDS", "0") or "0")
+if _alert_interval > 0:
+    # Preserve the approved onboarding sweep while adding Task 4 alerts.
+    celery_app.conf.beat_schedule.update({
+        "supplier-contract-alerts": {
+            "task": "app.tasks_supplier_contracts.tick_supplier_contract_alerts",
+            "schedule": _alert_interval,
+        }
+    })
 
 
 def ensure_broker_connection() -> None:
