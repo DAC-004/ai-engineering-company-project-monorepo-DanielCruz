@@ -98,13 +98,14 @@ async def chat_socket(websocket: WebSocket, session_id: str, token: str | None =
         return
 
     logger.info("Accepted chat socket session_id=%s", session_id)
-    await websocket.send_json(hub.snapshot_event(session))
+    # Subscribe before sending the snapshot: generation may continue during I/O.
     queue = hub.subscribe(session_id)
     disconnected = asyncio.Event()
     receiver = asyncio.create_task(
         _receive_client_events(websocket, session_id, disconnected)
     )
     try:
+        await websocket.send_json(hub.snapshot_event(session))
         while not disconnected.is_set():
             incoming = asyncio.create_task(queue.get())
             stopped = asyncio.create_task(disconnected.wait())
