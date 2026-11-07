@@ -303,9 +303,93 @@
 - 2026-11-06 docs closure: DPA/remaining-role browser is closed in `task4-live-services-91576a3e` (`browser-dpa-marcus-evidence.json`, `browser-dpa-claire-evidence.json`, `browser-dpa-confirmed-claire.jpg`, `browser-employee-evidence.json`). No “in flight” claim remains. Architecture Mermaid now gates DPA before the brief writer and named CAS after the saved draft. Compact HC-S06 brief example records `prices.csv:71/72`, 2436 GBP / 3093.72 USD, CT-HC-03 cap 14.935 GBP, expiry 2027-06-04, notice deadline 2027-03-06, exit 90 days no penalty, missing DPA after fictional proceed, annual 121800 GBP / 154686 USD, Marcus+Claire. Backend 191 source hashes match the 53-pass run. Supervisor UI null guards only; focused ESLint and production-only typecheck exit 0; full tsc still only baseline test line 326. Operations sign-off and Git publication still pending. Docs saved; stop.
 
 ## Task 4 source compliance and publication preparation (2026-11-06)
+
+## Task 3 approved worktree creation (2026-11-06 UTC)
+
+Daniel explicitly authorized the one Task 3 branch/worktree creation, overriding the general agent Git-write restriction only for the required fetch and creation. Fetch confirmed origin/main remained a22864e18b851676799357c00ca2c0219b24b820; target and branch were absent. Created C:\4geeks\Projects\Capstone\healthcore-onboarding-orchestrator on feature/onboarding-orchestrator and verified clean status and exact HEAD. No commit, merge, existing-checkout switch or WIP movement performed. Source-bound preparation is in the Codex task workspace. The original Cursor healthcore-capstone window is minimized; ordinary supported Task View recovery did not establish control. No duplicate Cursor session or implementation prompt was started. Existing services and sessions preserved. Implementation and tests are not yet started.
+
+## Task 3 Cursor handoff correction (2026-11-06 UTC)
+
+Daniel clarified that Cursor was not minimized and that an external monitor is connected. Resetting only the computer-control JavaScript runtime restored access to the existing Cursor window without moving it or opening a duplicate session. Prior minimized-state tool reports were inaccurate. Delivered the source-bound Task 3 implementation prompt to the original HealthCore demo conversation. Cursor accepted and stated it would confirm worktree/HEAD and required source documents, then the graph and bounded file plan before coding. Approved its routine read-only rev-parse/branch/status/log command. Initial model-provider rate-limit notice cleared. Implementation/test completion is not yet established.
+
+## Task 3 onboarding orchestrator implementation (2026-11-06 UTC)
+
+Worktree remained `feature/onboarding-orchestrator` at `a22864e18b851676799357c00ca2c0219b24b820` plus the existing progress note. Implemented one LangGraph onboarding agent under `agents/onboarding_orchestrator/` with SQLite checkpointer, official material in `data/raw/healthcore-onboarding/`, API router/service/Celery tasks, and tracker People/hire pages. Patient-information access stays blocked until Claire approves stage 4. Calendar holidays, timezone, cutoff hour, and whether start date is Day 1 remain injectable fixture settings. Live 3000/8000, Task 2 WIP, and real accounts were not modified. Tests and UI checks are recorded in the following bullets once executed. No Git writes.
+
+Independent review later confirmed pure-agent 31/31 and six-process projection 240/240. API emails now use `@onboarding.example`. API job GET still failed because eager `AsyncResult` used Redis (`task_store_eager_result` off, unused loopback port 1). Eager mode now uses `cache+memory://` plus `task_store_eager_result` and a `memory://` broker so isolated job status does not open Redis. That does not prove a live worker.
+
+Supervisor executed the corrected isolated `-File` runner as `run-20261106T011305250-7540c76b`: T3-graph 31 passed in 10.71s, T3-api 3 passed in 29.87s, both exits 0, child exit 0, `CONTENT_IDENTITY_CHANGED=false`. That is eager evidence only. Distinct-process checkpoint resume (`task3-process-resume-3ack5p38`) and first-start 240/240 store remain separate from Celery worker transport.
+
+Read-only listener check after renaming `$pid` to `$inspectedProcessId`: `127.0.0.1:3000` node 6644 preserved; `127.0.0.1:6379` `healthcore-cruzer-redis` preserved; port 8000 not listening; `3020`/`8020`/`6381` free. Isolated worker/UI/Celery-regression/lint-build commands are saved under `TEMP/task3-onboarding-verify-20261106/` and are not executed. No Git writes. No total PASS.
+
+## Task 3 terminal-job polling UI correction (2026-11-06 UTC)
+
+Hire and People mutations now wait for `GET /onboarding/jobs/{task_id}` terminal `SUCCESS` before refresh. `FAILURE`/`REVOKED`/`REJECTED`, timeout, and abort reject; `ready=true` is not treated as success. Submit controls disable while a job is pending. Official document bodies wrap inside `.onboarding-official-body`. Owned `onb-austin` is already `complete` in the isolated store; it was not reseeded. Isolated 8020/3020/6381 and preserved 3000/6379 were not restarted. Delayed-result client tests cover PENDING-then-SUCCESS, FAILURE, timeout, cancel, and People 202-then-poll. This is not a total Task 3 PASS.
+
+## Task 3 deadline sweep, DST reminder, privacy correction (2026-11-06 UTC)
+
+Generic compact IBAN matching no longer classifies 32-hex generated nonces (`ab12` + 28 hex letters) as bank details. Unlabeled NI, compact/spaced IBAN, and sort-code+account freeform ingress stay blocked. Deadline sweep is an owned configurable Celery beat/worker callable writing `internal_outbox` only; interval env is operational, default off. Reminder hours are subtracted on the UTC instant. Isolated 8020/3020/6381 were not refreshed in that correction step. No Git writes.
+
+## Task 3 final verified handoff (2026-11-06 UTC)
+
+Supervisor recorded source-stable reviewed runner `run-20261106T021003592-a0f15471`: graph 35 passed in 11.50s, API 4 passed in 37.95s, both selection exits 0, runner exit 0, JUnit clean, `CONTENT_IDENTITY_CHANGED=false`. That selection includes DST, NI/bank/nonce, and API privacy cases and supersedes `task3-initial-unit-db1vblv8` (14 passed / 4 failed). Client 6 passed; lint exit 0 with one unused-import warning in test code; final production build exit 0 / source unchanged (`task3-ui-final-20261106T015037480`). Rendered Austin seven-stage UI journey completed, including Claire rejection/comment/retry/approve, manager negative/approve, Diane closure, UK Q&A, and wrapping. Autonomous Celery beat/worker proof `task3-autonomous-deadline-76_8s15z` passed: 0 HTTP, exactly 3 expected internal-outbox notices, no duplicate or compliance bypass, source unchanged. Shared Celery 8 contract checks passed via in-memory fixture-only adapter; original validator and production authorization unchanged (`task3-shared-contract-4p2tugph`).
+
+Guarded owned refresh `refresh-20261106T022029504` completed after identity/tested-source/idle-queue guards. Current owned API starter 10656 (actual listener 46024), worker 5680, beat 46612, UI 3020 unchanged, Redis 6381. Refresh logs confirm scheduled sweep received/succeeded; live NI rejection verified and not persisted. Original 3000/6379 owners unchanged. Austin complete / London stage 2 / Early stage 1 preserved. Local PR draft stored at `agents/onboarding_orchestrator/PR-DRAFT.md`. Detailed findings remain in the Codex task folder.
+
+This is technical verification evidence, not real People-team signoff and not Git review, commit, merge, or publication. No pytest was re-run in this handoff. Implementation, tests, and services were not changed in this handoff. No Git writes. No real communications.
+
+## Task 3 source compliance and publication preparation (2026-11-06)
 Reconciled the task-specific original project_specs sources with recorded passing evidence. No runtime code changed in this audit. Task4 additionally includes byte-identical already-tested CSV/PDF delivery fixtures with provenance manifest. Daniel authorized supervisor commits and pushes for review; Cursor must never commit. Required human task sign-off and Daniel review before any merge remain pending. Existing work and services preserved.
 
 
 ## Auth-test TypeScript closure - 2026-11-06
 
 Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 63/63 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Supervisor owns commit/push; Cursor does not commit. Daniel review and merge approval remain pending.
+
+Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 69/69 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Supervisor owns commit/push; Cursor does not commit. Daniel review and merge approval remain pending.
+
+## Task 2 federated auth Prompt 14 (2026-11-04)
+
+- Worktree `feature/federated-auth`. `uv lock` aligned `pyjwt>=2.10.0` on `healthcore-api`; PyJWT 2.15.1 retained. Callback page executed via mocked signed provider response; last-method warning rendered. Duplicate-effect not demonstrated. 13+5 API results retained. No Git. Actual Entra still NOT EXECUTED. Isolated 3010/8010 scheduled for owned cleanup after identity confirmation.
+
+## Task 2 real Microsoft IdP verification and Task 3 readiness (2026-11-06 UTC)
+
+- Approved isolated live frontend 3011/API 8011 completed password login, account-only Microsoft consent, real identity link, federated login with the same Priya identity/role, unlink, unlinked rejection with audit and unchanged two-user count, password fallback and restored link. This is a fictional staff fixture, not real employee provisioning.
+- Entra credentials remain in a restricted private configuration outside the repository; no credential values belong in this file. Existing services and real data were preserved.
+- Source/evidence reconciliation: saved JUnit 13 federation + 5 login tests passed with no failures/errors/skips; all 15 recorded source files match current content allowing for line endings. Four UI evidence files also match after LF normalization; prior 3 Jest passes, lint and build remain the source-matching evidence. No new code change required a rerun.
+- Sanitized report, Tasks 2–5 checklist and PR draft are under C:\Users\cruzd\Documents\Codex\2026-11-04\task. Task 2 CTO signoff and developer-run Git publication remain pending. No overall submission/merge PASS claimed; no agent Git writes.
+- Task 3 generic onboarding assignment was read. Company-specific onboarding BRIEFING and official material were not found in the searched project evidence. Exact stages, documents, approvers and deadlines must be supplied before implementation. The required feature/onboarding-orchestrator worktree is also absent; agents must not create/switch branches. Tasks 4–5 remain unstarted in the requested sequence.
+
+## Task 3 source correction (2026-11-06 UTC)
+
+The previous missing-company-briefing finding is superseded. The assets exist under C:\Users\cruzd\Downloads\Tasks\Task 3 (the earlier search missed the nested Tasks directory). healthcore-BRIEFING.en.md was read in full; the original Onboarding Agent image was visually inspected and matches the generic assignment. The briefing defines all seven stages, deadlines, approvers, exact comprehension thresholds, routing/escalation, early-access rejection and sensitive-data exclusions. Prior history confirms the same sources were handed to Capstone on 2026-11-04 at 17:25 UTC. No missing-source blocker remains. Official learning documents are implementation deliverables explicitly required by this briefing. See the corrected workspace checklist and healthcore-task3-source-verification.md for paths, SHA-256 hashes and source-bound details. Task-specific worktree/Git restrictions remain; no Git write performed.
+
+## Task 2 source compliance audit and review preparation (2026-11-06)
+Rechecked the specialized Task2 briefing and original assignment. Added reviewer-facing two-flow diagram, runbook and local PR draft under agents/federated_authentication. Existing passing backend evidence still matches (CRLF normalization only); no runtime code changed. Real Microsoft fixture checks remain documented separately; no real staff provisioning. Daniel now authorizes the supervisor to commit and push this branch; Cursor must never commit. CTO sign-off and Daniel approval before merge remain outstanding. Existing work and services preserved.
+
+
+## Auth-test TypeScript closure - 2026-11-06
+
+Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 66/66 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Supervisor owns commit/push; Cursor does not commit. Daniel review and merge approval remain pending.
+
+
+## Task 2 early rejected-login audit closure - 2026-11-07
+
+Early federated-login rejections now emit exactly one sanitized audit event for invalid/expired state, transaction binding/expiry/replay/redirect failures, and rejected provider/nonce/tenant/signature/issuer/audience/token validation. Login authorization-start provider/redirect rejections are also audited. Early events have null user_id and provider_user_id; only microsoft or the fixed unsupported provider category and fixed reason categories are stored. No request code, state, nonce, transaction identifiers, binding secret, redirect, token, email or unverified claims are copied. Signed link-purpose early failures use federated_link_rejected; an invalid state cannot establish purpose and is recorded as an unattributed login rejection. Existing verified-identity rejection events remain unchanged.
+
+Executed isolated regressions: 28 federation + 55 shared auth tests passed, JUnit zero failures/errors/skips, no source drift. All 15 new cases first failed on missing audit events. Syntax and git diff checks pass. UI sources/configuration unchanged, so prior full TypeScript/lint/build evidence remains applicable to the UI. Historical real-Microsoft evidence predates this audit-only service change; no new live-provider result is claimed. Original services, credentials, WIP and copied identities preserved. Supervisor commits/pushes; Cursor cannot commit; CTO/Daniel review and merge approval remain pending.
+
+
+## Task 2 four-source final PR review - 2026-11-07
+
+Reviewed all four original .project_specs/Task 2 files; historical working-checklist statuses reconciled with real Microsoft and publication evidence. Found a reproducible concurrent audit loss (11/40 events); fixed by serializing the full TinyDB audit insert under the existing reentrant identity lock. New direct tests establish password/Microsoft expiration and deactivation parity and reject a new oid even with a matching existing email. Current 32 federation + 55 shared-auth tests and full UI types/lint/66 Jest/build all pass; no source drift. Offline lock, syntax and diff checks pass. SOURCE-COMPLIANCE.md accounts for every requirement and current integration limitations. No other PR, original WIP, service, credential or real identity changed. Supervisor owns commits/push; Cursor cannot commit. Real CTO signoff and Daniel review/merge approval remain pending.
+
+
+## Task 3 source-bound PR review - 2026-11-07
+
+Read all three files in the original .project_specs/Task 3. Integrated approved Task 2 main 677cce9 into the Task 3 feature branch, resolving only shared conftest/progress conflicts and preserving both flows. Closed reproduced duplicate-decision, stale deadline projection, punctuated compliance-routing, unlabeled identifier and unactionable question-handoff gaps. Current 41 agent/five onboarding API tests pass; current-code distinct-process resume and real autonomous worker/beat proof pass; combined UI full types/lint/72 Jest/production build and offline uv lock checks pass. Unchanged Task 2 federation/shared auth integration also passes; counts overlap. SOURCE-COMPLIANCE.md records every implementation/evaluation requirement, supplied source hashes and current-vs-historical evidence. Existing services, original WIP and other PRs preserved; no real communications/provisioning. Supervisor owns commit/push; Cursor cannot commit. Real People signoff and Daniel review/explicit merge approval still pending.
+
+
+## Task 4 source-bound review, 2026-11-07
+
+Integrated approved main 2993531 (Task 2/3) into supplier feature worktree; preserved both Celery schedules and locked dependencies. Closed source-review counterexamples for agreement validation, PDF-bound Compliance proceed, date/calendar refresh, portfolio queries, mandatory answer facts and alert provenance. Current checks and exact results are recorded in agents/supplier_contracts/review-validation.json; all 65 Task 4 tests pass, local GGUF and fresh real worker/beat proofs pass, and UI type/lint/72tests/build pass. Historical browser proof is explicitly distinguished. Operations sign-off and Daniel Task 4 merge approval are pending; do not merge. Original services/WIP preserved; Cursor did not commit.

@@ -22,67 +22,32 @@ alerts. External transports stay off.
 
 This local description supports the authorized supervisor commit/push and draft PR for Daniel review. Real Operations sign-off and Daniel approval remain required before merge. Cursor must never commit.
 
-## How to test
+## Current verification
 
-Isolated non-live pytest uses the reviewed precollection bootstrap (owned
-SECRET_KEY, DATABASE_URL, TINYDB_PATH, supplier-contract stores, eager
-Celery, no live credentials, no real broker). Current result:
+See [SOURCE-COMPLIANCE.md](SOURCE-COMPLIANCE.md) and [review-validation.json](review-validation.json). Current isolated checks: 65 Task 4 tests, local GGUF planner/writer exact-deadline proof, real worker/beat nine expected alerts without duplicate repeated delivery, combined authentication/onboarding compatibility, full TypeScript and ESLint, 72 UI tests and isolated production build. Source manifests show no drift during each execution. Historical browser checks are preserved in README and are not a current browser rerun.
 
-`C:\Users\cruzd\Documents\Codex\2026-11-04\task\task4-api-review-lkz7mnx3\result.json`
+## Detected increase and traceable brief example
 
-53 passed in 44.17s, exit 0, `source_changed[]`, JUnit 0 fail / 0 error / 0
-skip. Runner SHA256
-`9f1075ed4db59c30e816da5db1109f25724d119db0b9f2267fe887cfacfc1193`. Do not
-rerun that selection unless source changes. Do not add earlier overlapping
-pytest counts (46-test run, 30-test affected run, 14-test mocked
-model-boundary run, or the 53-test run that had one fixture failure) to this
-53.
+ClearPath Labs HC-S03: previous USD18.00, current USD19.26, a 7% increase. At monthly volume 2500, deterministic annual incremental impact is (19.26-18.00)*2500*12 = USD37800. Contract CT-HC-02 page1 clause4 allows CPI2.9%, yielding USD18.522, so the proposed increase exceeds the contractual allowance. CSV source row IDs, PDF page/clause/hash, CPI and FX briefing references accompany the returned facts.
 
-Live GGUF is a separate one-question Supervisor proof, not those 53 tests:
-host TEMP `healthcore-task4-reviewed-live-generation/run-20261106T140710Z-074e81ef`,
-plan and write `source=model`, exact HC-S01 notice deadline `2027-03-06`.
+The same-country/category alternative HC-S04 quotes USD17.20; availability is not assumed. The hypothetical annual difference is (19.26-17.20)*2500*12 = USD61800. A renegotiation brief includes both prices, impact, alternative, non-renewal notice, exit/penalty clauses, compliance status and a human-review recommendation. Its two-month penalty remains uncertain because the averaging period is unspecified. Contract annual value USD540000 requires Marcus, Claire and Sandra. Signed BAA presence is evidenced, not inferred from supplier identity. The full generated current brief is in review-example.json.
 
-Owned local runtime (do not start a duplicate): API `127.0.0.1:8030`, UI
-`127.0.0.1:3030`, Redis `healthcore-task4-redis-6382` on `127.0.0.1:6382`.
-Preserve original 3000/8010, Task 2 3011/8011, Task 3 3020/8020, and Redis
-6379/6381.
+## Architecture and specialist contracts
 
-Browser on that runtime (already collected, do not duplicate here):
+```mermaid
+flowchart LR
+  Staff --> Supervisor
+  Supervisor --> Pricing[Pricing specialist: Decimal CSV tools]
+  Supervisor --> Contracts[Contracts specialist: sanitized PDF tools]
+  Pricing --> Supervisor
+  Contracts --> Supervisor
+  Supervisor --> Facts[Source-bound facts and mandatory gates]
+  Facts --> Human[Named human review; internal drafts only]
+  Beat --> Alerts[Idempotent internal alerts]
+```
 
-- HC-S03 alternatives: Lone Star Diagnostics quote 17.20 and hypothetical
-  annual difference 61800.
-- HC-S07 internal communication: Marcus approve pending, logout, Claire
-  retrieves the same persisted draft, Claire approve, state approved,
-  `sent=false`. Evidence
-  `task4-live-services-91576a3e/browser-s07-approved.jpg` and
-  `browser-s07-approval-evidence.json`.
+PricingRequest supplies supplier ID and calculation/question; PricingResult returns Decimal history, changes, impact, same-country/category quote comparisons and CSV row references. ContractsRequest supplies supplier ID/question; ContractsResult returns terms, confidence, permission and agreement status with clause/page/PDF hash. ARCHITECTURE.md defines the complete fields and per-agent tools. Separate specialists keep price arithmetic and document interpretation independently testable; the supervisor plans bounded consultations and selects verified facts instead of performing arithmetic or authoring security outcomes.
 
-Autonomous worker on owned 6382: 211+ ticks, first 9 unique internal alerts,
-then 0 duplicates, no HTTP `/tick`.
+## Review gates
 
-DPA and remaining-role browser on the same runtime is closed:
-
-- `browser-dpa-marcus-evidence.json`: Marcus HC-S06 brief blocked, zero
-  Confirm controls.
-- `browser-dpa-claire-evidence.json` and `browser-dpa-confirmed-claire.jpg`:
-  fictional Claire explicit confirmation; post-confirm brief returned;
-  extracted DPA remains missing; no signed-DPA claim.
-- `browser-employee-evidence.json`: Employee zero Approve/Confirm and no
-  assigned drafts.
-
-Worked HC-S06 brief sources: `prices.csv` data rows 71/72 excluding header,
-`(14.79-14.50)*700*12 = 2436` GBP, FX 1.27 => 3093.72 USD; CT-HC-03 page 1
-clause 4 cap 3 percent allows 14.935 GBP; clauses 2/3 expiry 2027-06-04,
-notice 90 days, deadline 2027-03-06; clause 5 exit 90 days no penalty;
-clause 6 DPA missing despite fictional proceed; clause 8 annual 121800 GBP
-=> 154686 USD, required Marcus and Claire.
-
-Backend hashes for the 191 Task 4 sources still match the 53-pass run. Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 63/63 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged.
-
-## Out of scope for this PR
-
-- Git commit, push, or opening the pull request
-- Real Operations sign-off
-- Copying Task 3 production changes
-- Weakening DPA or Sandra-on-unknown-annual gates
-- Treating model-source flags alone as live acceptance
+Operations leadership sign-off and Daniel’s Task 4 merge approval are pending. No merge is authorized. No supplier communication or financial execution occurred. Cursor does not commit; authorized supervisor publication is separate from merge approval.

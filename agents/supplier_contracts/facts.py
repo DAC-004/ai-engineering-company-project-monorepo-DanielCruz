@@ -8,7 +8,7 @@ from decimal import Decimal
 from agents.supplier_contracts.privacy import is_credible_clause_number
 from agents.supplier_contracts.types import ContractsResult, PricingResult
 
-MANDATORY_CATEGORIES = frozenset({"compliance", "approval", "source"})
+MANDATORY_CATEGORIES = frozenset({"compliance", "approval", "source", "brief_required"})
 # Notice, exit, and evidenced annual-value terms stay in briefs even when the
 # model omits those ids from optional fact selection.
 RETAINED_FACT_IDS = frozenset(
@@ -18,6 +18,10 @@ RETAINED_FACT_IDS = frozenset(
         "exit_penalty_uncertain",
         "estimated_annual_value",
         "estimated_annual_value_uncertain",
+        "expiry_notice_uncertain",
+        "exit_penalty_missing",
+        "no_contract",
+        "pricing_missing",
     }
 )
 
@@ -126,6 +130,15 @@ def _source_blocks(pricing: PricingResult | None, contracts: ContractsResult | N
                 "Price source rows: " + ",".join(pricing.source_row_ids),
             )
         )
+    if pricing is not None:
+        for alternative in pricing.alternatives:
+            if alternative.source_row_ids:
+                blocks.append(FactBlock("source_alternative_" + alternative.supplier_id, "source",
+                    "Alternative " + alternative.supplier_id + " source rows: " + ",".join(alternative.source_row_ids)))
+        if pricing.currency == "GBP":
+            blocks.append(FactBlock("source_fx", "source", "Reference FX: 1 GBP = 1.27 USD, supplied HealthCore Task 4 briefing."))
+    if contracts is not None and any("US Consumer Price Index" in term.value for term in contracts.terms):
+        blocks.append(FactBlock("source_cpi", "source", "Reference US annual CPI: 2.9 percent, supplied HealthCore Task 4 briefing."))
     if not blocks:
         blocks.append(FactBlock("source_none", "source", "No clause or price-row source is attached."))
     return blocks
@@ -238,6 +251,8 @@ def _contract_blocks(contracts: ContractsResult, load_date, schedule_dates) -> l
                 f"Exit clause {exit_term.clause} page {exit_term.page}: {exit_term.value}",
             )
         )
+    if exit_term is None:
+        blocks.append(FactBlock("exit_penalty_missing", "contract", "Exit clause/penalty terms were not extracted; no exit right or amount is assumed."))
     if contracts.exit_penalty_uncertain:
         blocks.append(
             FactBlock(
@@ -263,6 +278,8 @@ def _contract_blocks(contracts: ContractsResult, load_date, schedule_dates) -> l
                 ),
             )
         )
+    else:
+        blocks.append(FactBlock("expiry_notice_uncertain", "contract", "Expiry or notice deadline was not evidenced; no date is assumed."))
     return blocks
 
 

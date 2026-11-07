@@ -46,6 +46,14 @@ def _emit(store: JsonStore, **fields) -> dict:
     return store.append_alert_if_absent(alert)
 
 
+def _contract_sources(result: ContractsResult | None, fields: set[str]) -> list[dict]:
+    if result is None:
+        return []
+    return [{"field": term.field, "clause": term.clause, "page": term.page,
+             "pdf_sha256": term.pdf_sha256, "confidence": term.confidence}
+            for term in result.terms if term.field in fields and term.clause and term.page > 0]
+
+
 def emit_missing_dpa_alert(store: JsonStore, result: ContractsResult) -> dict:
     """Enqueue Claire as soon as extracted terms show a missing or uncertain DPA."""
     if not result.missing_dpa:
@@ -58,6 +66,8 @@ def emit_missing_dpa_alert(store: JsonStore, result: ContractsResult) -> dict:
         template="missing_data_protection_agreement",
         dpa_status=result.dpa_status,
         contract_id=result.contract_id,
+        source_citations=_contract_sources(result, {"data_protection"}),
+        pdf_sha256=result.pdf_sha256,
         idempotency_key=missing_dpa_key(result),
     )
 
@@ -73,6 +83,7 @@ def emit_price_increase_alert(store: JsonStore, pricing: PricingResult) -> dict:
         template="price_increase_above_threshold",
         observation_from=pricing.observation_from,
         observation_to=pricing.observation_to,
+        source_row_ids=list(pricing.source_row_ids),
         idempotency_key=price_increase_key(pricing),
     )
 
@@ -108,6 +119,12 @@ def process_alerts(
             continue
         expiry = calendar["expiry"]
         notice_deadline = calendar["notice_deadline"]
+        extracted = (contracts_by_supplier or {}).get(supplier_id)
+        provenance = {
+            "contract_id": extracted.contract_id if extracted else None,
+            "source_citations": _contract_sources(extracted, {"term", "non-renewal_notice"}),
+            "source_status": "attached" if extracted else "not_attached",
+        }
         for offset in EXPIRY_ALERT_OFFSETS_DAYS:
             window_start = expiry - timedelta(days=offset)
             if today >= window_start:
@@ -118,6 +135,7 @@ def process_alerts(
                     supplier_id=supplier_id,
                     template=f"expiry_{offset}",
                     expiry=expiry.isoformat(),
+                    **provenance,
                     idempotency_key=expiry_key(supplier_id, offset, expiry),
                 )
                 if row:
@@ -131,6 +149,7 @@ def process_alerts(
                 supplier_id=supplier_id,
                 template="notice_deadline",
                 notice_deadline=notice_deadline.isoformat(),
+                **provenance,
                 idempotency_key=notice_key(supplier_id, notice_deadline),
             )
             if row:

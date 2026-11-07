@@ -7,7 +7,8 @@ from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 
-from agents.supplier_contracts.constants import US_CPI
+from agents.supplier_contracts.constants import US_CPI, DIRECTORY_COUNTRY_USA
+from agents.supplier_contracts.country import to_directory_country
 from agents.supplier_contracts.identity import CONTRACTS_ID
 from agents.supplier_contracts.pdf import extract_pages, pdf_sha256
 from agents.supplier_contracts.privacy import iter_numbered_clauses, sanitize_contract_text
@@ -97,17 +98,22 @@ def evaluate_revision_cap(
     return proposed <= cap_price, cap_ratio, cap_price
 
 
-def _dpa_from_text(full_text: str, processes_patient_data: bool) -> tuple[bool, str]:
-    # Signed status is evidenced by clause 6 plus the annex page, never by supplier id.
-    if SIGNED_BAA_CLAUSE.search(full_text) and SIGNED_BAA_ANNEX.search(full_text):
-        return False, "signed_baa"
+def _dpa_from_text(full_text: str, processes_patient_data: bool, country: str) -> tuple[bool, str]:
+    # The supplier registry establishes data processing and jurisdiction. A
+    # contradictory clause or a negated/foreign agreement is not a waiver.
+    if not processes_patient_data:
+        return False, "not_applicable" if NOT_PATIENT.search(full_text) else "uncertain"
     if MISSING_DPA.search(full_text):
         return True, "missing_dpa"
-    if NOT_PATIENT.search(full_text):
-        return False, "not_applicable"
-    if processes_patient_data:
+    negated = re.search(r"\b(?:no|not)\s+(?:a\s+)?signed\s+(?:BAA|DPA)\b", full_text, re.I)
+    if NOT_PATIENT.search(full_text) or negated:
         return True, "uncertain"
-    return False, "uncertain"
+    country = to_directory_country(country)
+    if country == DIRECTORY_COUNTRY_USA and SIGNED_BAA_CLAUSE.search(full_text) and SIGNED_BAA_ANNEX.search(full_text):
+        return False, "signed_baa"
+    if country == "UK" and re.search(r"signed DPA is annexed", full_text, re.I) and re.search(r"Signed Data Protection Agreement", full_text, re.I):
+        return False, "signed_dpa"
+    return True, "uncertain"
 
 
 def run_contracts(
@@ -161,7 +167,7 @@ def run_contracts(
             allowed, cap_ratio_out, cap_price = evaluate_revision_cap(
                 cap_kind, cap_ratio, previous_price, proposed_price
             )
-    missing_dpa, dpa_status = _dpa_from_text(term_text, supplier.processes_patient_data)
+    missing_dpa, dpa_status = _dpa_from_text(term_text, supplier.processes_patient_data, supplier.country)
     expiry_term = _term(terms, "term")
     notice_term = _term(terms, "non-renewal_notice")
     expiry_offset_days = _int_from(EXPIRY_DAYS, expiry_term.value if expiry_term else "")

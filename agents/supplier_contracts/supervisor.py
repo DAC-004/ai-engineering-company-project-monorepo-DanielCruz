@@ -15,7 +15,7 @@ from agents.supplier_contracts.approvals import (
 from agents.supplier_contracts.constants import CONSULTATION_LIMIT
 from agents.supplier_contracts.contracts import run_contracts, schedule_dates
 from agents.supplier_contracts.actor import ActorIdentity
-from agents.supplier_contracts.facts import fact_blocks_from_results, render_fact_blocks
+from agents.supplier_contracts.facts import FactBlock, fact_blocks_from_results, render_fact_blocks
 from agents.supplier_contracts.interpret import interpret_plan_result, write_from_facts_result
 from agents.supplier_contracts.identity import (
     ALERTS_ID,
@@ -182,7 +182,10 @@ class Supervisor:
     def _dpa_blocks(self, contracts_result) -> bool:
         if not contracts_result.missing_dpa:
             return False
-        return not self.runtime.store.dpa_proceed(contracts_result.supplier_id)
+        return not self.runtime.store.dpa_proceed(
+            contracts_result.supplier_id, pdf_sha256=contracts_result.pdf_sha256,
+            contract_id=contracts_result.contract_id,
+        )
 
     def _compose_answer(self, pricing: PricingResult | None, contracts) -> str:
         parts: list[str] = []
@@ -246,6 +249,30 @@ class Supervisor:
             actor_id=SUPERVISOR_ID,
         )
 
+    def _portfolio_missing_agreements(self, question: str) -> SupervisorResponse:
+        self.runtime.ensure_seeded()
+        self.last_plan_kind = "missing_agreements"
+        self.last_plan_source = "canonical"
+        self.last_contracts_consulted = True
+        answers, citations = [], []
+        # The supplied registry has four patient-data processors; the normal
+        # consultation cap still applies, with no recursive supervisor loop.
+        for supplier in SUPPLIERS:
+            if not supplier.processes_patient_data:
+                continue
+            result = self.consult_contracts(supplier.supplier_id, question)
+            if result.missing_dpa:
+                answers.append(f"{supplier.supplier_id} {supplier.display_name}: missing_dpa=True dpa_status={result.dpa_status}; "
+                               + ("no contract on file." if result.missing_contract else f"contract {result.contract_id}."))
+                citations.extend(_citations_from_contracts(result))
+        answer = " ".join(answers) if answers else "No missing patient-data agreement was found in the supplied registry."
+        self.runtime.audit.write(SUPERVISOR_ID, "portfolio_agreement_review", count=len(answers))
+        response = SupervisorResponse(answer=answer, blocked=False, block_reason=None, pricing=None, contracts=None,
+            citations=tuple(citations), consultation_count=self.consultations, required_approvers=(),
+            alerts=tuple(self._immediate_alerts), actor_id=SUPERVISOR_ID)
+        assert_clean_mapping(response_payload(response))
+        return response
+
     def handle(self, request: SupervisorRequest) -> SupervisorResponse:
         self.consultations = 0
         self._immediate_alerts = []
@@ -253,6 +280,11 @@ class Supervisor:
         reject_out_of_scope(request.question)
         if request.kind == "tick_alerts":
             return self._tick_alerts()
+        question_lower = request.question.lower()
+        portfolio_question = ("which suppliers" in question_lower or "all suppliers" in question_lower) and any(
+            marker in question_lower for marker in ("data protection agreement", "dpa", "baa", "missing agreement"))
+        if portfolio_question or (request.kind == "missing_agreements" and not request.supplier_id):
+            return self._portfolio_missing_agreements(request.question)
         if not request.supplier_id:
             raise ValueError("supplier_id_required")
         supplier = require_supplier(request.supplier_id)
@@ -325,6 +357,22 @@ class Supervisor:
             load_date=self.runtime.load_date,
             schedule_dates=schedule_dates,
         )
+        if contracts and self.runtime.load_date is not None:
+            blocks += (FactBlock("source_load_date", "source", f"Data-load date {self.runtime.load_date.isoformat()} from the supplied fixture manifest."),)
+        if kind in {"brief", "draft_communication"}:
+            if pricing and not pricing.alternatives:
+                blocks += (FactBlock("alternative_none", "brief_required", "No alternative quote was evidenced for this calculation; availability is not assumed."),)
+            if contracts and contracts.increase_allowed is False:
+                recommendation = "Recommendation for human review: challenge the increase against the cited revision clause; compare evidenced quotes and review notice/exit leverage before negotiating."
+            elif contracts and contracts.increase_allowed is True:
+                recommendation = "Recommendation for human review: a permitted cap does not require acceptance; compare evidenced quotes and review notice/exit terms before deciding."
+            else:
+                recommendation = "Recommendation for human review: contractual permission is unproven; obtain missing terms before a financial decision."
+            blocks += (FactBlock("recommendation", "brief_required", recommendation),)
+            required = {"price_change", "annual_impact", "pricing_missing", "alternative_none", "no_contract"}
+            blocks = tuple(FactBlock(block.fact_id,
+                "brief_required" if block.fact_id in required or block.category == "alternative" else block.category,
+                block.text) for block in blocks)
         if self.complete is None and self.transport is None:
             answer = render_fact_blocks(blocks)
             self.last_write_source = "canonical"
@@ -387,13 +435,22 @@ class Supervisor:
         return response
 
     def confirm_dpa(self, actor: ActorIdentity, supplier_id: str) -> None:
-        confirm_dpa_proceed(self.runtime.store, actor, supplier_id)
+        self.runtime.ensure_seeded()
+        supplier = require_supplier(supplier_id)
+        extracted = run_contracts(
+            ContractsRequest(supplier_id=supplier_id, question="compliance confirmation", contract_id=supplier.contract_id),
+            pdf_path=self.runtime.pdf_path(supplier.contract_id), load_date=self.runtime.load_date,
+        )
+        confirm_dpa_proceed(self.runtime.store, actor, supplier_id, contracts=extracted)
         self.runtime.audit.write(
             SUPERVISOR_ID,
             "dpa_proceed",
             supplier_id=supplier_id,
             confirmed_by="claire",
             actor_user_id=actor.user_id,
+            contract_id=extracted.contract_id or "none",
+            pdf_sha256=extracted.pdf_sha256 or "missing_contract",
+            missing_dpa=extracted.missing_dpa,
         )
 
     def _tick_alerts(self) -> SupervisorResponse:

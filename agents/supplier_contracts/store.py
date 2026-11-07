@@ -106,14 +106,25 @@ class JsonStore:
 
         return self._update(mutate)
 
-    def set_dpa_proceed(self, supplier_id: str, confirmed: bool) -> None:
+    def set_dpa_proceed(self, supplier_id: str, confirmed: bool, *, pdf_sha256: str | None, contract_id: str | None) -> None:
         def mutate(document: dict[str, Any]) -> None:
-            document.setdefault("dpa_proceed", {})[supplier_id] = confirmed
-
+            document.setdefault("dpa_proceed", {})[supplier_id] = {
+                "confirmed": confirmed, "pdf_sha256": pdf_sha256, "contract_id": contract_id,
+            }
         self._update(mutate)
 
-    def dpa_proceed(self, supplier_id: str) -> bool:
-        return bool(self.read().get("dpa_proceed", {}).get(supplier_id))
+    def dpa_proceed(self, supplier_id: str, *, pdf_sha256: str | None = None, contract_id: str | None = None) -> bool:
+        record = self.read().get("dpa_proceed", {}).get(supplier_id)
+        # Legacy supplier-wide booleans cannot waive a new/current PDF revision.
+        return bool(isinstance(record, dict) and record.get("confirmed") is True
+                    and "pdf_sha256" in record and "contract_id" in record
+                    and record.get("pdf_sha256") == pdf_sha256
+                    and record.get("contract_id") == contract_id)
+
+    def remove_calendar(self, supplier_id: str) -> None:
+        def mutate(document: dict[str, Any]) -> None:
+            document.setdefault("calendars", {}).pop(supplier_id, None)
+        self._update(mutate)
 
     def save_calendar(self, supplier_id: str, payload: dict[str, str]) -> None:
         def mutate(document: dict[str, Any]) -> None:

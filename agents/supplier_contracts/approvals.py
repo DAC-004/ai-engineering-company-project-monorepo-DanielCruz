@@ -164,11 +164,17 @@ def approve_draft(
         raise mapped(str(exc)) from exc
 
 
-def confirm_dpa_proceed(store: JsonStore, actor: ActorIdentity, supplier_id: str) -> None:
+def confirm_dpa_proceed(store: JsonStore, actor: ActorIdentity, supplier_id: str, *, contracts) -> None:
     identity = resolve_authenticated_approver(actor)
     if identity != CLAIRE:
         raise UntrustedApproverError("dpa_proceed_requires_claire")
-    store.set_dpa_proceed(supplier_id, True)
+    if contracts.supplier_id != supplier_id:
+        raise UntrustedApproverError("dpa_proceed_supplier_mismatch")
+    # A quote-only supplier may have no contract. Claire can acknowledge that
+    # explicit absence; a later PDF/id changes the snapshot and requires recheck.
+    if not contracts.missing_contract and (not contracts.pdf_sha256 or not contracts.contract_id):
+        raise UntrustedApproverError("dpa_proceed_requires_evidenced_contract")
+    store.set_dpa_proceed(supplier_id, True, pdf_sha256=contracts.pdf_sha256, contract_id=contracts.contract_id)
 
 
 def as_state(draft: dict, claire_dpa_proceed: bool = False) -> ApprovalState:

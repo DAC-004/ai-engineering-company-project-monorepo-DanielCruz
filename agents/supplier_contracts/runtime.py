@@ -50,12 +50,18 @@ class ContractRuntime:
         self.process = process or process_dir()
         self.load_date = as_of or load_date()
         today_raw = os.environ.get("SUPPLIER_CONTRACTS_TODAY", "").strip()
-        self.today = date.fromisoformat(today_raw) if today_raw else self.load_date
+        self._today_override = date.fromisoformat(today_raw) if today_raw else as_of
         self.process.mkdir(parents=True, exist_ok=True)
         self.store = JsonStore(self.process / "projection.json")
         self.audit = AuditLog(self.process / "audit.jsonl")
         self.csv_path = self.raw / "prices.csv"
         self.pdf_dir = self.raw / "pdfs"
+
+    @property
+    def today(self) -> date:
+        # Explicit snapshots remain deterministic. The normal long-lived service
+        # must observe calendar changes without a process restart.
+        return self._today_override if self._today_override is not None else date.today()
 
     def pdf_path(self, contract_id: str | None) -> Path | None:
         if not contract_id:
@@ -78,6 +84,7 @@ class ContractRuntime:
                 load_date=self.load_date,
             )
             if result.expiry_offset_days is None or result.notice_days is None:
+                self.store.remove_calendar(supplier.supplier_id)
                 continue
             dates = schedule_dates(result.expiry_offset_days, result.notice_days, self.load_date)
             self.store.save_calendar(

@@ -198,6 +198,24 @@ export const AppShell = ({ children }: AppShellProps) => {
           >
             Internal reports
           </Link>
+          <Link
+            href="/onboarding"
+            className={
+              pathname === "/onboarding" ? "app-nav__link is-active" : "app-nav__link"
+            }
+          >
+            Onboarding board
+          </Link>
+          <Link
+            href="/onboarding/me"
+            className={
+              pathname.startsWith("/onboarding/me")
+                ? "app-nav__link is-active"
+                : "app-nav__link"
+            }
+          >
+            My onboarding
+          </Link>
           {isAccessAdmin ? (
           <Link
             href="/backoffice/access"

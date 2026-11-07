@@ -80,6 +80,20 @@ class Settings(BaseSettings):
         alias="INCIDENT_DATA_DIR",
     )
 
+    # Task 2 federated auth. Live Microsoft values stay optional so isolated
+    # synthetic tests run without an Entra app. Do not log these fields.
+    microsoft_client_id: str | None = Field(default=None, alias="MICROSOFT_CLIENT_ID")
+    microsoft_client_secret: str | None = Field(
+        default=None, alias="MICROSOFT_CLIENT_SECRET"
+    )
+    microsoft_tenant_id: str | None = Field(default=None, alias="MICROSOFT_TENANT_ID")
+    oauth_redirect_uri: str = Field(
+        default="http://localhost:3000/auth/callback/microsoft",
+        alias="OAUTH_REDIRECT_URI",
+        min_length=1,
+    )
+    federated_oidc_mode: str = Field(default="live", alias="FEDERATED_OIDC_MODE")
+
     @field_validator("password_reset_token_expire_minutes")
     @classmethod
     def validate_reset_token_lifetime(cls, value: int) -> int:
@@ -93,6 +107,19 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_frontend_base_url(cls, value: str) -> str:
         return value.rstrip("/")
+
+    @field_validator("oauth_redirect_uri")
+    @classmethod
+    def normalize_oauth_redirect_uri(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("federated_oidc_mode")
+    @classmethod
+    def normalize_federated_oidc_mode(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"live", "synthetic"}:
+            raise ValueError("FEDERATED_OIDC_MODE must be live or synthetic")
+        return normalized
 
 
 @lru_cache

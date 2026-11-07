@@ -6,8 +6,7 @@ specialists with typed I/O. The consultation cap of four is an implementation
 limit, not HealthCore policy. There is no send-to-supplier tool.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the graph and specialist contracts.
-A scoped publication draft is in [PR-DRAFT.md](PR-DRAFT.md). It is not a GitHub
-pull request.
+The published draft is PR #42. Its review description is maintained in [PR-DRAFT.md](PR-DRAFT.md).
 
 ## Identities and tools
 
@@ -54,7 +53,11 @@ Owned local Task 4 runtime (not original/Task 2/Task 3 listeners) used
 `healthcore-task4-redis-6382` on `127.0.0.1:6382`. That store is separate from
 isolated pytest destinations.
 
-## Evidence (do not sum overlapping suites)
+## Current review (2026-11-07)
+
+[SOURCE-COMPLIANCE.md](SOURCE-COMPLIANCE.md) maps all 23 implementation items and ten evaluation criteria to code and evidence. [review-validation.json](review-validation.json) records current source-bound executions. The corrected Task 4 suite passes 65 tests; separate actual local GGUF and real worker/beat checks pass. Combined UI verification passes full TypeScript, full ESLint, all 72 Jest tests and isolated production build. Compatibility results are recorded separately. Existing services remain untouched. Historical browser results below are not current-code browser evidence. Operations sign-off and Daniel Task 4 merge approval remain pending.
+
+## Historical evidence (2026-11-06; superseded for current source)
 
 Current full non-live pytest, isolated bootstrap, no live model, no real
 broker: `C:\Users\cruzd\Documents\Codex\2026-11-04\task\task4-api-review-lkz7mnx3\result.json`,
