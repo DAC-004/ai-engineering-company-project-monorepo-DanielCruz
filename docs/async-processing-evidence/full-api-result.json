@@ -1,0 +1,11 @@
+{
+  "exit": 1,
+  "seconds": 171.4,
+  "junit": {
+    "tests": 165,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "case": "C:\\Users\\cruzd\\Documents\\Codex\\2026-11-04\\task\\healthcore-async-processing-verification\\full-api-01"
+}

@@ -452,3 +452,20 @@ Final Audit API rerun after tokenizer-fixture correction and short owned Windows
 ## Audit Log integration with approved WebSocket main,2026-11-07
 
 Reconciled only append-only progress history, preserving both branches. Integrated main e3a2f83 (approved PR48). Combined fullAPI181, separate root chat/streaming/SSE105, UI80Jest/types/lint/build pass. The first attempted mixed API/root collection had a conftest-name collision; rerunning in the established separate processes passed without changing app code. Current results are in docs/audit-log-evidence/integrated-*-result.json. Preparing the approved PR45 merge; branches/WIP/services preserved. PR44 remains held for final integration checks. Cross-branch preview identified a later PR47 audit/rate-limit/auth behavior conflict for review; no security conflict resolution was performed here.
+
+## Enhance Task 4, 2026-11-07 (in progress)
+
+Isolated branch/worktree created from main b93a51c under Daniel's instruction to complete Enhance3/4/5 before submission links. Original WIP/services and PR44 preserved. No merge or PR closure authorized. Password-reset email migrated to UUID-only Celery messages with encrypted durable outbox, independent worker, bounded backoff, idempotency and metadata-only Admin status/DLQ. First eight focused tests pass. Actual independent worker proof, full regression and source compliance documentation remain pending.
+
+Task4 verification: independent real worker/beat proof passes, including uncertain-success idempotency,3-attempt durable DLQ and unpublished-job reconciliation. Fixed a reproduced dispatcher queue-routing error. Request durations0.116/0.014s. Focused9pass; expanded Admin-status/invalidated-reset checks executing. FullAPI163pass/2unchanged baselineRFPfail. docs/async-processing.md maps every source requirement and includes runbook/privacy/retention limitations. Preparing supervisor-owned review commit; no merge, no external email, no PR44 change.
+
+Final Task4 focused-review11pass, including Admin/Employee status boundaries and invalidated-token rejection. Required worker/retry/idempotency/observability evidence is complete; known baselineRFPfailures disclosed. Supervisor-owned review commit/push being prepared; no signoff/merge implied.
+
+RFP baseline investigation: both failures come from LookupError in readability scoring because test_rfp_intake_api.py overwrote the configured NLTK_DATA with a missing worktree directory. Updated only the fixture to honor configured offline assets; no evaluator/threshold/assertion changes. All three full API suites are being rerun. Held PR44 remains unchanged.
+
+Final Task4 API168pass,0failures/errors/skips. Resolved NLTKfixture override and isolated the outbox fixture SQL engine/seed flags after reproducing stale owner-binding cross-test pollution. Combined8outbox+approval regression9pass. Production owner binding/security logic and all assertions unchanged. PR46 follow-up contains only fixtures/progress/evidence; PR44 held, no merge.
+
+
+## Async Processing integration with Audit/WebSocket main,2026-11-07
+
+Preserved all append-only history and retained both audit_log/email_jobs router imports; no business behavior was selected or discarded. Integrated approved main c525e59. Full combinedAPI189 and separate root chat/streaming/SSE105 pass with zero failures/errors/skips. UI source is byte-identical in Git to tested main, whose80Jest/types/lint/build passed; no needless UI rerun claimed. Evidence is in docs/async-processing-evidence/integrated-*. Preparing approved PR46 merge. PR47's behavioral audit/rate-limit/auth conflict remains stopped for review; PR44 remains held pending complete integration and end-to-end checks. Original WIP/services preserved.

@@ -35,6 +35,7 @@ from app.storage import ensure_runtime_dirs  # noqa: E402
 from app.routers import (  # noqa: E402
     access,
     audit_log,
+    email_jobs,
     agent,
     auth,
     federated,
@@ -134,6 +135,7 @@ app.include_router(incidents.router)
 app.include_router(incident_manager.router)
 app.include_router(inventory.router)
 app.include_router(telemetry.router)
+app.include_router(email_jobs.router)
 app.include_router(tasks.router)
 app.include_router(reporting_router)
 app.include_router(rfp_intake.router)
