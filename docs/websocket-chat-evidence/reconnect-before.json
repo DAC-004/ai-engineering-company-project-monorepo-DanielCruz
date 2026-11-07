@@ -1,0 +1,8 @@
+{
+  "case": "redirect immediately after reconnect while generation remains active",
+  "expected": "interrupt_requested",
+  "actual": "user_message",
+  "passed": false,
+  "same_session": true,
+  "partial_visible": "YOU\n\nWhat does the compliance policy require?\n\nASSISTANT\n\nThe policy requires "
+}
