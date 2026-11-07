@@ -113,7 +113,7 @@ def _complete(
     max_tokens: int = 320,
 ) -> str:
     if complete_fn is None:
-        return complete_local(messages, max_tokens=max_tokens)
+        return complete_local(messages, max_tokens=max_tokens, json_output=True)
     return complete_fn(messages)
 
 

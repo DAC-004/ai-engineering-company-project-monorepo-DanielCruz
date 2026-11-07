@@ -1,0 +1,89 @@
+{
+  "status": "analyzing",
+  "error_code": "model_output_invalid",
+  "calls": [
+    {
+      "role": "You are the HealthCore RFP classifier agent",
+      "max_tokens": 320,
+      "context": 2048,
+      "usage": {
+        "prompt_tokens": 166,
+        "completion_tokens": 24,
+        "total_tokens": 190
+      },
+      "finish_reason": "stop",
+      "chars": 73,
+      "json_keys": [
+        "decision",
+        "reason_code"
+      ]
+    },
+    {
+      "role": "You are the HealthCore RFP orchestrator agent",
+      "max_tokens": 320,
+      "context": 2048,
+      "usage": {
+        "prompt_tokens": 344,
+        "completion_tokens": 117,
+        "total_tokens": 461
+      },
+      "finish_reason": "stop",
+      "chars": 409,
+      "json_keys": [
+        "client_name",
+        "client_country",
+        "program_type",
+        "covered_population",
+        "deadline",
+        "budget_range",
+        "unknown_departments",
+        "extracts"
+      ]
+    },
+    {
+      "role": "You are the HealthCore clinical worker agent for Dr",
+      "max_tokens": 320,
+      "context": 2048,
+      "usage": {
+        "prompt_tokens": 214,
+        "completion_tokens": 61,
+        "total_tokens": 275
+      },
+      "finish_reason": "stop",
+      "chars": 259,
+      "json_keys": [
+        "aspects",
+        "open_questions"
+      ]
+    },
+    {
+      "role": "You are the HealthCore compliance worker agent for Claire Whitfield",
+      "max_tokens": 320,
+      "context": 2048,
+      "usage": {
+        "prompt_tokens": 182,
+        "completion_tokens": 88,
+        "total_tokens": 270
+      },
+      "finish_reason": "stop",
+      "chars": 353,
+      "json_keys": [
+        "aspects",
+        "open_questions"
+      ]
+    },
+    {
+      "role": "You are the HealthCore revenue worker agent for Tom Callahan in Revenue Cycle",
+      "max_tokens": 320,
+      "context": 2048,
+      "usage": {
+        "prompt_tokens": 230,
+        "completion_tokens": 48,
+        "total_tokens": 278
+      },
+      "finish_reason": "stop",
+      "chars": 152,
+      "json_error": "JSONDecodeError"
+    }
+  ]
+}

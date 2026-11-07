@@ -21,6 +21,11 @@ def security_client(tmp_path, monkeypatch):
     monkeypatch.setenv("CELERY_TASK_ALWAYS_EAGER", "1")
     get_settings.cache_clear()
     reset_db_for_tests()
+    # Keep HTTP budget assertions within one fixed window even under a slow
+    # full audit run; exercise the real counter/storage with its explicit clock.
+    from app.core import sensitive_rate_limit as limiter
+    original_take = limiter.take
+    monkeypatch.setattr(limiter, "take", lambda client, group, maximum, now=None: original_take(client, group, maximum, now=1200.0 if now is None else now))
     from app.main import app
 
     with TestClient(app) as client:

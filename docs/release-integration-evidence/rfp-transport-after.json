@@ -1,0 +1,114 @@
+{
+  "status": "intake_complete",
+  "error_code": null,
+  "calls": [
+    {
+      "role": "You are the HealthCore RFP classifier agent",
+      "max_tokens": 320,
+      "context": 2048,
+      "json_mode": true,
+      "usage": {
+        "prompt_tokens": 166,
+        "completion_tokens": 20,
+        "total_tokens": 186
+      },
+      "finish_reason": "stop",
+      "chars": 61,
+      "json_keys": [
+        "decision",
+        "reason_code"
+      ]
+    },
+    {
+      "role": "You are the HealthCore RFP orchestrator agent",
+      "max_tokens": 320,
+      "context": 2048,
+      "json_mode": true,
+      "usage": {
+        "prompt_tokens": 344,
+        "completion_tokens": 113,
+        "total_tokens": 457
+      },
+      "finish_reason": "stop",
+      "chars": 397,
+      "json_keys": [
+        "client_name",
+        "client_country",
+        "program_type",
+        "covered_population",
+        "deadline",
+        "budget_range",
+        "unknown_departments",
+        "extracts"
+      ]
+    },
+    {
+      "role": "You are the HealthCore clinical worker agent for Dr",
+      "max_tokens": 320,
+      "context": 2048,
+      "json_mode": true,
+      "usage": {
+        "prompt_tokens": 214,
+        "completion_tokens": 57,
+        "total_tokens": 271
+      },
+      "finish_reason": "stop",
+      "chars": 247,
+      "json_keys": [
+        "aspects",
+        "open_questions"
+      ]
+    },
+    {
+      "role": "You are the HealthCore compliance worker agent for Claire Whitfield",
+      "max_tokens": 320,
+      "context": 2048,
+      "json_mode": true,
+      "usage": {
+        "prompt_tokens": 182,
+        "completion_tokens": 94,
+        "total_tokens": 276
+      },
+      "finish_reason": "stop",
+      "chars": 444,
+      "json_keys": [
+        "aspects",
+        "open_questions"
+      ]
+    },
+    {
+      "role": "You are the HealthCore revenue worker agent for Tom Callahan in Revenue Cycle",
+      "max_tokens": 320,
+      "context": 2048,
+      "json_mode": true,
+      "usage": {
+        "prompt_tokens": 230,
+        "completion_tokens": 59,
+        "total_tokens": 289
+      },
+      "finish_reason": "stop",
+      "chars": 195,
+      "json_keys": [
+        "aspects",
+        "open_questions"
+      ]
+    },
+    {
+      "role": "You are the HealthCore synthesizer agent",
+      "max_tokens": 1024,
+      "context": 2048,
+      "json_mode": true,
+      "usage": {
+        "prompt_tokens": 588,
+        "completion_tokens": 84,
+        "total_tokens": 672
+      },
+      "finish_reason": "stop",
+      "chars": 418,
+      "json_keys": [
+        "summary",
+        "unresolved_disagreements"
+      ]
+    }
+  ]
+}

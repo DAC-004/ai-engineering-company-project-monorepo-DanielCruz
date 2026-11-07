@@ -83,9 +83,11 @@ Password reset emails are sent with **Resend**. Set these in `.env` (see `.env.e
 
 Reset credentials are opaque random tokens. Only a SHA-256 hash is stored in TinyDB (`password_reset_tokens`) with an expiry and `used_at` so a token cannot be reused after a successful reset.
 
+`scripts/validate_auth03.py` uses a disposable Admin and authenticated provisioning; Resend is mocked. A real inbox/reset-link check requires separate explicit send approval and isolated test credentials.
+
 ### Manual reset flow
 
-1. Register a user, then `POST /auth/forgot-password` with `{ "email": "…" }`
+1. Have an authenticated Admin provision an isolated test user, then `POST /auth/forgot-password` with `{ "email": "…" }`
 2. Open the link from the Resend email (`/reset-password?token=…`)
 3. `POST /auth/reset-password` with `{ "token": "…", "new_password": "…" }`
 4. While logged in, `POST /auth/change-password` with `{ "current_password": "…", "new_password": "…" }` and `Authorization: Bearer <token>`

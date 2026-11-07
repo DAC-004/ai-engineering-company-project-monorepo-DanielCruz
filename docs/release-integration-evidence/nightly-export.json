@@ -1,0 +1,51 @@
+{
+  "status": "PASS",
+  "target_date": "2026-11-07",
+  "ui_capture_events": [
+    [
+      "api_request_completed",
+      5
+    ],
+    [
+      "inbound_order_created",
+      1
+    ],
+    [
+      "outbound_order_created",
+      1
+    ],
+    [
+      "page_load_completed",
+      6
+    ],
+    [
+      "page_viewed",
+      9
+    ],
+    [
+      "stock_threshold_triggered",
+      1
+    ],
+    [
+      "user_login_succeeded",
+      2
+    ],
+    [
+      "user_logout_completed",
+      1
+    ]
+  ],
+  "commands": [
+    {
+      "name": "first",
+      "exit": 0
+    },
+    {
+      "name": "idempotent",
+      "exit": 0
+    }
+  ],
+  "backup_sha256": "3fb0c6e242e3440fd918d65f422fdb94a477e818517a780e1cf278cf62a7ef64",
+  "backup_rows": 26,
+  "actual_production_pipeline": true
+}

@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "checks": [
+    "supplied_incomplete_rows_remain_flagged_without_invented_values",
+    "unapproved_hidden_from_claire",
+    "tom_rejects_and_receives_distinct_revision",
+    "stale_revision_replay_rejected",
+    "claire_receives_only_approved_revision"
+  ],
+  "job_id": "9a952adaa86e4245b417bb73e407244d",
+  "first_draft": {
+    "id": "0d165eca11b84c4eb292b4aaa0aa29ea",
+    "version": 1,
+    "state": "awaiting_tom"
+  },
+  "stale_status": 409,
+  "approval_requested_for": "48100857c8084f15bd0bb7a07ad925a8",
+  "approved_draft": {
+    "id": "48100857c8084f15bd0bb7a07ad925a8",
+    "version": 2,
+    "state": "approved"
+  },
+  "outbox_records": 10
+}

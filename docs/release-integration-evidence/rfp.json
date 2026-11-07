@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "real_model_intake_and_response",
+      "pass": true
+    },
+    {
+      "name": "revenue_bound_approval",
+      "pass": true
+    },
+    {
+      "name": "clinical_bound_approval",
+      "pass": true
+    },
+    {
+      "name": "compliance_bound_approval",
+      "pass": true
+    },
+    {
+      "name": "three_nonempty_final_sections",
+      "pass": true
+    }
+  ],
+  "ticket_id": "5b20fadf-8b76-4f51-9e06-21b0cd298380",
+  "response_requested": true,
+  "response_start_status": 202,
+  "section_hashes": {
+    "revenue": "6e10b41d594a6676a88b82c68ca4e07d878ee05bcb8c278039ead71a9cf4c613",
+    "clinical": "e7aa6a1b8f25fe3bae35f1187baf11c135a4c50e29e980b4a8a00bcf34c47776",
+    "compliance": "1dd145202183aacac5d798e4560f23824a841b43c2eb47599cb0eec44a5caba4"
+  }
+}

@@ -437,6 +437,8 @@ def test_inactive_login_is_durable_and_omits_the_account(
     monkeypatch.setattr("app.routers.auth.verify_password", lambda _plain, _hashed: True)
 
     class _Inactive:
+        id = "00000000-0000-4000-8000-000000000001"
+        department_id = "technology"
         hashed_password = "stored-hash"
         is_active = False
 

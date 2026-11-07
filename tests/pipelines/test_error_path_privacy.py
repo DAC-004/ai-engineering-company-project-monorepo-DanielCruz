@@ -66,8 +66,14 @@ def api_client(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> TestClient:
     get_settings.cache_clear()
     reset_db_for_tests()
     reset_engine_for_tests()
-    with TestClient(app, raise_server_exceptions=False) as client:
-        yield client
+    previous_overrides = dict(app.dependency_overrides)
+    try:
+        with TestClient(app, raise_server_exceptions=False) as client:
+            yield client
+    finally:
+        # Authentication mocks belong to this fixture, not later modules.
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(previous_overrides)
     reset_engine_for_tests()
     reset_db_for_tests()
     get_settings.cache_clear()

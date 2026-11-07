@@ -1,0 +1,17 @@
+{
+  "exit": 0,
+  "seconds": 63.27,
+  "junit": {
+    "tests": 23,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "selection": [
+    "tests\\pipelines\\test_chronological_split.py",
+    "tests\\pipelines\\test_metrics.py",
+    "tests\\pipelines\\test_temporal_cv_chronological_order.py",
+    "tests\\pipelines\\test_variability.py"
+  ]
+}

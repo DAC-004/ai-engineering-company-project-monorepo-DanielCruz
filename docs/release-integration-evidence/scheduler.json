@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "actual_celery_beat": true,
+  "independent_worker": true,
+  "schedules": {
+    "app.email_tasks.dispatch_pending_email": {
+      "received": true,
+      "succeeded": true
+    },
+    "app.onboarding_tasks.sweep_onboarding_deadlines": {
+      "received": true,
+      "succeeded": true
+    },
+    "app.tasks_financial_close.tick_financial_close": {
+      "received": true,
+      "succeeded": true
+    },
+    "app.tasks_supplier_contracts.tick_supplier_contract_alerts": {
+      "received": true,
+      "succeeded": true
+    }
+  },
+  "bounded_beat_stopped": true,
+  "existing_services_unchanged": true
+}

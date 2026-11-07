@@ -1,0 +1,67 @@
+{
+  "status": "PASS",
+  "integration_main": "931e7a04abc65bfc23817f3aa0462b367b38dfc3",
+  "pr44_original_head": "3c37e54c102a7ba730fceb1697b3fe9f75cdfd92",
+  "api": {
+    "tests": 208,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "pipelines": {
+    "tests": 624,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 8
+  },
+  "live_opt_ins_passed_separately": 8,
+  "forecast": {
+    "tests": 23,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "mcp": {
+    "tests": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "ui_jest_tests": 82,
+  "ui_jest_suites": 12,
+  "types_lint_build_passed": true,
+  "source_files_sha256": {
+    "TESTING.md": "182befb0800bdf39921becf08dc10530a84128039c0b4d5540e87aeeaed40a05",
+    "agents/financial_close/identity.py": "59a9e4c7b4c430cf80bc99b70d65df7a6a450ee32d91e3fc6acf800e43a4701c",
+    "data/pipelines/rfp_intake/agents.py": "8d7698ae9ee41b22f5c46e8498751cf0080ccb9cd592b038d846d8f38a8be8d1",
+    "data/pipelines/rfp_intake/generation.py": "23c83f5d96e1f33f81d61c373bcf50ad7550aa9440927821ecc3b4b8f4dc5028",
+    "data/pipelines/rfp_intake/response_loop.py": "3217e49230e81a75bea6c08afa9042134c4d9028e54aec4acfbd2b352b3680d8",
+    "mcps/healthcore-tools/tests/test_mcp_acceptance.py": "dc67d3b82cfb6a7ecee27d24f1e1313208759e4a6c446044372a5bd78577f786",
+    "services/api/README.md": "63528d26317bd71fc4c238589b79d93d8958c0904666d60426e8f462b8841b41",
+    "services/api/app/email_tasks.py": "c8228014a96f3dbd713499b1a8dea47a88efb88d6f518564bb3a878575339513",
+    "services/api/app/services/email_outbox.py": "fe7b0d3623f87c647adced76ff6e5ecf61298fc3ffc93991fe653041f7024557",
+    "services/api/app/services/rfp_service.py": "f80d786331132aea85666d77dbff7842bf9ef46362c258c47262dd508997e0c4",
+    "services/api/scripts/validate_auth03.py": "8776b61a5ad8b127468290f8f483d4ac55dcbfcef2197b03ee143535dcf4f1b7",
+    "services/api/tests/conftest.py": "aa6586e3c7caa0c15b3ef7ab34db16167a0276770500d216737630c090fa97d6",
+    "services/api/tests/test_email_outbox.py": "016ba675146d97c7fba8445ba31a9826cd5a0c26c6f6cfeb2272abc42ecf79c5",
+    "services/api/tests/test_rfp_intake_api.py": "7024a3d4db1c7e3c6a99e8084597b9035888d3ce9d17d00ccda528d7dff646db",
+    "services/api/tests/test_rfp_response_recovery.py": "a980b05fd382b249ec8606b5e8a738422c7055f0490f811f41c4f8d937bbb04f",
+    "services/api/tests/test_security_hardening.py": "d4037099aa88cd0d5dac3e7fd7587b37fd906e51971f91f6e66444e82e0e386f",
+    "shared/healthcore_audit/store.py": "d71ec63c67e9a52aa88c1a1c20fff115981d6f3ce6de4b3c63c88817bcf68ecd",
+    "tests/pipelines/test_agent_phase4_evals.py": "dc32314e1cf843ffc7ab8ff907d031bdf5efc23071dd9b419c0590e0f5b86d1e",
+    "tests/pipelines/test_cross_task_compliance_identity.py": "0e383be2d0b9eed7c80d60288d4f7f75b8a0c80a1ddf55b4e321195c8524357e",
+    "tests/pipelines/test_error_path_privacy.py": "ecbaf664239faae5a976bf6711d1d0fedd3c9cb8b631490e277e1e2cad4c10b6",
+    "tests/pipelines/test_financial_close_live_generation.py": "99bb4ead56f83a58fde8fbc53f1fca2cde792da7e1ec839a41ebf5163cf37995",
+    "tests/pipelines/test_live_gated_generation.py": "3f3d5a27be27139b8ba0c09e0be4b4958d44cd77aaa63a0915c97d222af55bf7",
+    "tests/pipelines/test_nist_protections.py": "d28572ecfebafac708051060106dc8f8cf68ed03296823196820724f5cb780b2",
+    "tests/pipelines/test_rfp_grounding.py": "e86cdbe96a3bd8e1b79c7fddb0be89c4cb924fe7a7e37501cffed66678bc1741",
+    "tests/services/test_chat_finalization_consistency.py": "4b1020d621bd9fa0433b20f9621fab80e0d28957912d4fe61cc811988206cb9c",
+    "uis/talent-pipeline-tracker/__tests__/rfp/responseRecovery.test.ts": "b3e820a3847cef8d8a183365887a427540a77cd9ff3cfa03d90e114c4b38a257",
+    "uis/talent-pipeline-tracker/components/rfp/RfpTicketPanel.tsx": "4866520cd3e242da812ac3e4a7c5da89dd103fcce640a1c51e5cac5518e3b1b3",
+    "uis/talent-pipeline-tracker/lib/rfp.ts": "a489a5caa724af58aea2f7e9cefca2789ac75b4bc4380048eb4ed7742c6fd2d6",
+    "tests/pipelines/test_rfp_json_transport.py": "5c9467a651fb538ef9c11c0b5f247ae034046683c96f56916ae8390a279d0271"
+  },
+  "isolation": "Fictional staff, owned SQL/TinyDB/Redis and local model. No new external email or real identity change. Original services and WIP preserved.",
+  "startup_harness": "Two API/MCP fixture startup errors reproduced under the full suite; bounded monotonic 120s startup allowance fixes them without changing application latency or functional assertions.",
+  "limitations": "This is local integration verification, not production deployment or uptime certification. Earlier approved live Microsoft and Resend/reset evidence is retained in the progress history; those external actions were not repeated."
+}

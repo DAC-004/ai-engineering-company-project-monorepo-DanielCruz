@@ -12,6 +12,7 @@ from app.db.tinydb import reset_db_for_tests
 @pytest.fixture
 def isolated_email(tmp_path, monkeypatch):
     monkeypatch.setenv("TINYDB_PATH", str(tmp_path / "auth.json"))
+    monkeypatch.setenv("AUDIT_DB_PATH", str(tmp_path / "audit.sqlite3"))
     monkeypatch.setenv("DATABASE_URL", "sqlite:///" + (tmp_path / "inventory.db").as_posix())
     monkeypatch.delenv("RFP_DEMONSTRATION_PASSWORD", raising=False)
     monkeypatch.delenv("PLATFORM_SEED_PASSWORD", raising=False)
@@ -209,3 +210,53 @@ def test_invalidated_reset_is_not_sent(isolated_email, monkeypatch):
     deliver_reset_email.run(job)
     assert isolated_email.public_status(job)["error_code"]=="reset_invalidated"
     assert isolated_email.public_status(job)["state"]=="failed"
+
+
+def test_reset_delivery_has_distinct_process_audit_identity(isolated_email, monkeypatch):
+    from app.email_tasks import deliver_reset_email
+    from app.services import email_service
+    from app.audit.capture import configured_store
+    job, _raw = fixture_job(isolated_email)
+    monkeypatch.setattr(email_service, "send_password_reset_email", lambda **_kwargs: "fictional-provider-id")
+    deliver_reset_email.run(job)
+    assert isolated_email.public_status(job)["state"] == "completed"
+    rows = configured_store().query(action="task.execute", limit=100)["items"]
+    assert {r["outcome"] for r in rows if r["actor_ref"] == "process:password-reset-email"} == {"attempted", "success"}
+
+
+def test_pending_delivery_survives_configured_key_rotation_overlap(isolated_email, monkeypatch):
+    from app.email_tasks import deliver_reset_email
+    from app.services import email_service
+    old_key = get_settings().secret_key
+    job, _raw = fixture_job(isolated_email)
+    sent = []
+    monkeypatch.setattr(email_service, "send_password_reset_email", lambda **_kwargs: sent.append(True) or "fictional-provider-id")
+    monkeypatch.setenv("SECRET_KEY", "fictional-new-active-outbox-key-only")
+    monkeypatch.setenv("JWT_PREVIOUS_SECRET_KEYS", old_key)
+    get_settings.cache_clear()
+    deliver_reset_email.run(job)
+    assert sent == [True]
+    assert isolated_email.public_status(job)["state"] == "completed"
+    # New payloads must use the active key, not a retired verification key.
+    from app.services import user_service, password_reset_service
+    user = user_service.get_user_by_email("fictional@audit.example")
+    raw = password_reset_service.create_reset_token_for_user(user)
+    new_job = isolated_email.create_job(user_id=user.id, to_email=user.email, reset_url=password_reset_service.build_reset_url(raw))
+    monkeypatch.setenv("JWT_PREVIOUS_SECRET_KEYS", "")
+    get_settings.cache_clear()
+    deliver_reset_email.run(new_job)
+    assert sent == [True, True]
+    assert isolated_email.public_status(new_job)["state"] == "completed"
+
+
+
+def test_retired_key_without_overlap_does_not_decrypt_pending_delivery(isolated_email, monkeypatch):
+    from app.email_tasks import deliver_reset_email
+    from app.services import email_service
+    job, _raw = fixture_job(isolated_email)
+    monkeypatch.setattr(email_service, "send_password_reset_email", lambda **_kwargs: pytest.fail("retired key delivered a message"))
+    monkeypatch.setenv("SECRET_KEY", "fictional-new-active-outbox-key-only")
+    monkeypatch.setenv("JWT_PREVIOUS_SECRET_KEYS", "")
+    get_settings.cache_clear()
+    deliver_reset_email.run(job)
+    assert isolated_email.public_status(job)["state"] == "failed"

@@ -201,9 +201,14 @@ class IncidentManagerStack:
         )
         self._start_api()
         self.http = httpx.Client(base_url=self.api_base_url, timeout=30.0)
+        assert self.http.post("/users", json={"email": self.username, "password": self.password}).status_code == 401
+        admin_login = self.http.post("/auth/login", data={"username": "james.admin@healthcore.example", "password": "Phase4AdminFixture1!"})
+        assert admin_login.status_code == 200
         created = self.http.post(
             "/users",
-            json={"email": self.username, "password": self.password},
+            headers={"Authorization": "Bearer " + admin_login.json()["access_token"]},
+            json={"email": self.username, "password": self.password,
+                  "role_id": "supervisor", "department_id": "clinical_operations"},
         )
         if created.status_code not in (200, 201):
             raise RuntimeError(f"Could not register API user: {created.status_code} {created.text}")
@@ -279,6 +284,7 @@ class IncidentManagerStack:
         env = os.environ.copy()
         env["SECRET_KEY"] = "phase4-mcp-secret-key-32b"
         env["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
+        env["PLATFORM_SEED_PASSWORD"] = "Phase4AdminFixture1!"
         env["JWT_ALGORITHM"] = "HS256"
         env["TINYDB_PATH"] = str(self.temp_dir / "incidents.json")
         env["DATABASE_URL"] = f"sqlite:///{(self.temp_dir / 'inventory.db').as_posix()}"
@@ -349,9 +355,12 @@ class IncidentManagerStack:
         log_path: Path,
         label: str,
     ) -> None:
-        deadline = time.time() + 40
+        # Cold Windows API/MCP imports can exceed 40s after the complete
+        # graph suite. This bounds fixture startup only; HTTP assertions and
+        # application latency requirements remain unchanged.
+        deadline = time.monotonic() + 120
         last_error = "no response"
-        while time.time() < deadline:
+        while time.monotonic() < deadline:
             if process is not None and process.poll() is not None:
                 break
             try:
@@ -495,6 +504,20 @@ def test_knowledge_routing_eval_patches_retrieval_and_generation(monkeypatch) ->
     assert stored["error"] == ""
 
 
+@pytest.fixture
+def release_live_rag_after_case():
+    """Close native resources before interpreter module teardown."""
+    try:
+        yield
+    finally:
+        if _live_rag_requested():
+            from data.pipelines.rag import release_local_llm
+            from shared.healthcore_rag.qdrant import close_qdrant_client
+            release_local_llm()
+            close_qdrant_client()
+
+
+@pytest.mark.usefixtures("release_live_rag_after_case")
 def test_knowledge_eval_uses_real_retrieval_and_local_generation() -> None:
     """Live retrieval and local GGUF generation. Opt in with PART2_LIVE_RAG_EVAL.
 

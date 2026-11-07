@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, MultiFernet
 from app.core.config import get_settings
 
 MAX_ATTEMPTS = 3
@@ -24,11 +24,15 @@ def outbox_path():
 
 
 def cipher():
-    # Purpose-separated derivation: encryption key never enters a broker payload.
-    key = hmac.new(
-        get_settings().secret_key.encode(), b"healthcore/email-outbox/v1", hashlib.sha256
-    ).digest()
-    return Fernet(base64.urlsafe_b64encode(key))
+    # Encrypt only with the active key; decrypt with the same bounded overlap
+    # used by JWT verification so queued resets survive planned key rotation.
+    settings = get_settings()
+    secrets = [settings.secret_key] + [key.strip() for key in settings.jwt_previous_secret_keys.split(",") if key.strip()]
+    keys = [
+        Fernet(base64.urlsafe_b64encode(hmac.new(secret.encode(), b"healthcore/email-outbox/v1", hashlib.sha256).digest()))
+        for secret in secrets[:4]
+    ]
+    return MultiFernet(keys)
 
 
 @contextmanager

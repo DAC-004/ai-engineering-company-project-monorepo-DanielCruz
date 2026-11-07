@@ -197,8 +197,9 @@ def run_response_generation(
     on_progress: ProgressCallback | None = None,
     on_department_done: Callable[[dict[str, Any]], None] | None = None,
     on_node: ProgressCallback | None = None,
+    completed_outcomes: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Run the three department loops together, then build the Part 3 handoff."""
+    """Run unfinished departments; reuse durable completed outcomes on recovery."""
     metadata = handoff.get("metadata") if isinstance(handoff.get("metadata"), dict) else {}
     sections = {
         section["department_id"]: section
@@ -207,6 +208,8 @@ def run_response_generation(
     }
 
     def run_one(department_id: str) -> dict[str, Any]:
+        if completed_outcomes and department_id in completed_outcomes:
+            return completed_outcomes[department_id]
         outcome = run_department(
             department_id,
             metadata,

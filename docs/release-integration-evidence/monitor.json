@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "flower_port": 5557,
+  "loopback_only": true,
+  "basic_auth_required": true,
+  "owned_worker_visible": true
+}

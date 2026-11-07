@@ -1,0 +1,16 @@
+{
+  "exit": 0,
+  "seconds": 199.23,
+  "junit": {
+    "tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "selection": [
+    "tests\\pipelines\\test_agent_phase4_evals.py::test_knowledge_eval_uses_real_retrieval_and_local_generation",
+    "tests\\pipelines\\test_live_chat_websocket.py",
+    "tests\\pipelines\\test_live_gated_generation.py"
+  ]
+}

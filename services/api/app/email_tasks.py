@@ -3,6 +3,7 @@
 from __future__ import annotations
 import logging
 from app.celery_app import celery_app
+from app.audit.process import audited_process
 from app.services import email_outbox, email_service
 from app.services import user_service
 from app.services.password_reset_service import _load_valid_token_row, InvalidResetTokenError
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
     acks_late=True,
     reject_on_worker_lost=True,
 )
+@audited_process("process:password-reset-email", "technology")
 def deliver_reset_email(self, operation_id):
     payload = email_outbox.claim(operation_id)
     if payload is None:
@@ -59,6 +61,7 @@ def deliver_reset_email(self, operation_id):
 
 
 @celery_app.task(name="app.email_tasks.dispatch_pending_email")
+@audited_process("process:email-outbox-dispatch", "technology")
 def dispatch_pending_email():
     ids = email_outbox.pending_jobs()
     for operation_id in ids:

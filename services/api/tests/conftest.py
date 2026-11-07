@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from collections.abc import Generator
 from pathlib import Path
@@ -66,7 +67,7 @@ def isolate_embedded_qdrant(
         and Path(module_file).name == "test_federated_auth.py"
         and iso_root
     ):
-        isolated = Path(iso_root) / "cases" / request.node.name / "qdrant"
+        isolated = Path(iso_root) / "cases" / hashlib.sha256(request.node.nodeid.encode("utf-8")).hexdigest()[:16] / "qdrant"
         isolated.mkdir(parents=True, exist_ok=True)
     else:
         isolated = tmp_path_factory.mktemp("qdrant")
@@ -98,7 +99,7 @@ def isolated_identity_store(
     module_name = Path(module_file).name
     iso_root = os.environ.get("FEDERATED_ISO_ROOT", "").strip()
     if module_name == "test_federated_auth.py" and iso_root:
-        case_root = Path(iso_root) / "cases" / request.node.name
+        case_root = Path(iso_root) / "cases" / hashlib.sha256(request.node.nodeid.encode("utf-8")).hexdigest()[:16]
         case_root.mkdir(parents=True, exist_ok=True)
         db_path = case_root / "auth.json"
         inventory_db = case_root / "inventory.db"

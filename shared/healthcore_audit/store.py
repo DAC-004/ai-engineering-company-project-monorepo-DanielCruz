@@ -86,6 +86,8 @@ PROCESSES = frozenset(
         "process:supplier-contracts",
         "process:financial-close",
         "process:synthetic-seed",
+        "process:password-reset-email",
+        "process:email-outbox-dispatch",
     }
 )
 FIELDS = frozenset(
