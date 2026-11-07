@@ -41,3 +41,8 @@ The flows do not share a path that could onboard by presenting a Microsoft accou
 - Unlink lives on the same profile. Last remaining access method: UI warns, API refuses.
 - OAuth validates signed `state`, hashed `tx_binding`, allowlisted `redirect_uri`, and explicit tenant.
 - Microsoft access/refresh tokens are not persisted.
+
+
+## Early rejection audit
+
+Early federated-login rejections now emit exactly one sanitized audit event for invalid/expired state, transaction binding/expiry/replay/redirect failures, and rejected provider/nonce/tenant/signature/issuer/audience/token validation. Login authorization-start provider/redirect rejections are also audited. Early events have null user_id and provider_user_id; only microsoft or the fixed unsupported provider category and fixed reason categories are stored. No request code, state, nonce, transaction identifiers, binding secret, redirect, token, email or unverified claims are copied. Signed link-purpose early failures use federated_link_rejected; an invalid state cannot establish purpose and is recorded as an unattributed login rejection. Existing verified-identity rejection events remain unchanged.

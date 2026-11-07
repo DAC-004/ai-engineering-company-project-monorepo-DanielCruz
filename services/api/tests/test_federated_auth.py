@@ -744,3 +744,103 @@ def test_audit_records_required_fields_and_omits_secrets(client: TestClient) -> 
         assert "code" not in row
         assert "tx_binding" not in row
         assert "state" not in row
+
+
+@pytest.mark.parametrize(
+    "case, reason",
+    [
+        ("invalid_state", "invalid_state"),
+        ("expired_state", "invalid_state"),
+        ("foreign_binding", "invalid_transaction"),
+        ("expired_transaction", "invalid_transaction"),
+        ("replayed_transaction", "invalid_transaction"),
+        ("redirect_mismatch", "invalid_transaction"),
+        ("nonce_mismatch", "identity_rejected"),
+        ("tenant_mismatch", "identity_rejected"),
+        ("signature_mismatch", "identity_rejected"),
+        ("audience_mismatch", "identity_rejected"),
+        ("issuer_mismatch", "identity_rejected"),
+        ("expired_identity", "identity_rejected"),
+        ("unsupported_provider", "identity_rejected"),
+        ("start_provider", "authorization_start_rejected"),
+        ("start_redirect", "authorization_start_rejected"),
+    ],
+)
+def test_early_login_rejections_are_sanitized_and_audited_once(
+    client: TestClient, case: str, reason: str,
+) -> None:
+    _install_briefing_fixtures()
+    started = _start(client, provider="microsoft", purpose="login")
+    body = started.json()
+    claims = _state_claims(body["state"])
+    kwargs = {}
+    if case == "nonce_mismatch":
+        kwargs["nonce"] = "untrusted-nonce-sentinel"
+    if case == "tenant_mismatch":
+        kwargs["tenant"] = "untrusted-tenant-sentinel"
+    if case == "signature_mismatch":
+        kwargs["private_key"] = _OTHER_KEY
+    if case == "audience_mismatch":
+        kwargs["audience"] = "untrusted-audience-sentinel"
+    if case == "issuer_mismatch":
+        kwargs["issuer"] = "https://untrusted-issuer-sentinel.example"
+    if case == "expired_identity":
+        kwargs["exp_delta"] = -60
+    code = _signed_id_token(
+        "untrusted-oid-sentinel", "untrusted-email-sentinel@example.test",
+        **({"nonce": _nonce(started)} | kwargs),
+    )
+    state = body["state"]
+    binding = body["tx_binding"]
+    redirect = REDIRECT
+    provider = "microsoft"
+    if case == "invalid_state":
+        state = "untrusted-state-sentinel"
+    if case == "expired_state":
+        claims["exp"] = datetime.now(UTC) - timedelta(seconds=60)
+        state = jwt.encode(claims, STATE_SECRET, algorithm="HS256")
+    if case == "foreign_binding":
+        binding = "untrusted-binding-sentinel"
+    if case == "expired_transaction":
+        federated_oauth_tx_table().update(
+            {"exp": (datetime.now(UTC) - timedelta(seconds=60)).isoformat()},
+            Query().jti == claims["jti"],
+        )
+    if case == "replayed_transaction":
+        first = _complete_started(client, started, oid=MARCUS_OID, email=MARCUS_EMAIL)
+        assert first.status_code == 200
+    if case == "redirect_mismatch":
+        redirect = "https://untrusted-redirect-sentinel.example/callback"
+    if case == "unsupported_provider":
+        provider = "untrusted-provider-sentinel"
+    before = len(federated_auth.list_audit_events())
+    users_before = federated_auth.user_count()
+    links_before = [dict(row) for row in federated_links_table().all()]
+    if case.startswith("start_"):
+        response = _start(
+            client,
+            provider="untrusted-provider-sentinel" if case == "start_provider" else "microsoft",
+            purpose="login",
+            redirect_uri="https://untrusted-redirect-sentinel.example" if case == "start_redirect" else REDIRECT,
+        )
+    else:
+        response = _callback(client, provider=provider, code=code, state=state,
+                             tx_binding=binding, redirect_uri=redirect)
+    assert response.status_code == 400
+    assert "access_token" not in response.json()
+    events = federated_auth.list_audit_events()[before:]
+    assert len(events) == 1
+    event = events[0]
+    assert event["event"] == "federated_login_rejected"
+    assert event["reason"] == reason
+    assert event["provider"] == ("unsupported" if case in {"unsupported_provider", "start_provider"} else "microsoft")
+    assert event["provider_user_id"] is None
+    assert event["user_id"] is None
+    assert set(event) == {"id", "timestamp", "event", "provider", "provider_user_id", "user_id", "reason"}
+    assert datetime.fromisoformat(event["timestamp"])
+    serialized = json.dumps(event)
+    for value in [code, state, binding, claims["oidc_nonce"], claims["jti"], STATE_SECRET, CLIENT_ID, TENANT_ID, REDIRECT]:
+        assert value not in serialized
+    assert "untrusted-" not in serialized
+    assert federated_auth.user_count() == users_before
+    assert [dict(row) for row in federated_links_table().all()] == links_before

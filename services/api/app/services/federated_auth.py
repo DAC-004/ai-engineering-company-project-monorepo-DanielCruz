@@ -116,6 +116,10 @@ def start_authorization(
             oidc_nonce=oidc_nonce,
         )
     except FederatedOidcError as exc:
+        if purpose == "login":
+            _record_early_rejection(
+                provider=provider, purpose=purpose, reason="authorization_start_rejected"
+            )
         raise FederatedAuthError(exc.detail, exc.status_code) from exc
     _store_oauth_transaction(
         jti=jti,
@@ -146,16 +150,24 @@ def complete_callback(
     try:
         payload = decode_oauth_state(state)
     except FederatedOidcError as exc:
+        # An invalid state cannot establish a purpose or caller identity.
+        _record_early_rejection(provider=provider, purpose=None, reason="invalid_state")
         raise FederatedAuthError(exc.detail, exc.status_code) from exc
 
     purpose = payload.get("purpose")
     current_user_id = current_user.id if current_user is not None else None
-    _consume_oauth_transaction(
-        payload=payload,
-        tx_binding=tx_binding,
-        redirect_uri=redirect_uri,
-        current_user_id=current_user_id,
-    )
+    try:
+        _consume_oauth_transaction(
+            payload=payload,
+            tx_binding=tx_binding,
+            redirect_uri=redirect_uri,
+            current_user_id=current_user_id,
+        )
+    except FederatedAuthError:
+        _record_early_rejection(
+            provider=provider, purpose=purpose, reason="invalid_transaction"
+        )
+        raise
     try:
         identity = exchange_code_for_identity(
             provider=provider,
@@ -164,6 +176,9 @@ def complete_callback(
             expected_nonce=str(payload["oidc_nonce"]),
         )
     except FederatedOidcError as exc:
+        _record_early_rejection(
+            provider=provider, purpose=purpose, reason="identity_rejected"
+        )
         raise FederatedAuthError(exc.detail, exc.status_code) from exc
 
     if purpose == "link":
@@ -176,6 +191,9 @@ def complete_callback(
         )
     if purpose == "login":
         return _complete_login(provider=provider, identity=identity)
+    _record_early_rejection(
+        provider=provider, purpose=purpose, reason="unsupported_purpose"
+    )
     raise FederatedAuthError(UNSUPPORTED_PURPOSE_DETAIL, 400)
 
 
@@ -449,12 +467,25 @@ def _consume_oauth_transaction(
         federated_oauth_tx_table().update({"consumed": True}, Query().jti == jti)
 
 
+def _record_early_rejection(*, provider: str, purpose: object, reason: str) -> None:
+    # Never attribute pre-validation failures to an unverified oid, user, or
+    # caller-supplied provider. Only fixed categories reach the audit store.
+    _record_audit(
+        event="federated_link_rejected" if purpose == "link" else "federated_login_rejected",
+        user_id=None,
+        provider=MICROSOFT_PROVIDER if provider == MICROSOFT_PROVIDER else "unsupported",
+        provider_user_id=None,
+        reason=reason,
+    )
+
+
 def _record_audit(
     *,
     event: str,
     user_id: str | None,
     provider: str,
-    provider_user_id: str,
+    provider_user_id: str | None,
+    reason: str | None = None,
 ) -> None:
     record = {
         "id": str(uuid4()),
@@ -464,6 +495,8 @@ def _record_audit(
         "provider": provider,
         "provider_user_id": provider_user_id,
     }
+    if reason is not None:
+        record["reason"] = reason
     for forbidden in SECRET_FIELD_NAMES:
         record.pop(forbidden, None)
     federated_audit_table().insert(record)

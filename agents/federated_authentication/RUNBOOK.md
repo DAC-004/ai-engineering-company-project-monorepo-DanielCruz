@@ -17,7 +17,7 @@ Isolation helper: `services/api/tests/federated_isolation.py` (no `app.*` import
 
 Set disposable `FEDERATED_ISO_ROOT` / TinyDB / sqlite paths **before** collection. Clear live seed and provider credentials from the child environment. `FEDERATED_OIDC_MODE=synthetic` is tests only.
 
-Recorded isolated API evidence: 13 federation tests and 5 login tests, zero failures/errors/skips. UI: 3 Jest tests; affected lint, full lint, and production build exited 0. Last-method warning copy is asserted in source; rendering was verified separately.
+Current isolated API evidence: 28 federation tests plus 55 login/me/token/roles/password-reset tests, zero failures/errors/skips. The 15 added early-rejection cases each failed for a missing event before the fix and pass afterward. See [rejection-audit-validation.json](rejection-audit-validation.json). UI: 3 Jest tests; affected lint, full lint, and production build exited 0. Last-method warning copy is asserted in source; rendering was verified separately.
 
 Do not treat synthetic JWKS as actual Microsoft integration.
 

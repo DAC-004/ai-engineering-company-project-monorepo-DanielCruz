@@ -313,3 +313,10 @@ Rechecked the specialized Task2 briefing and original assignment. Added reviewer
 ## Auth-test TypeScript closure - 2026-11-06
 
 Full UI TypeScript (including tests), scoped ESLint and isolated production build pass (exit 0); the complete UI Jest suite passes 66/66 tests. The shared TS2352 auth fixture is corrected with a real plain-text 503 Response, preserving the non-JSON safe-error assertions. Production sources and configuration are unchanged. Supervisor owns commit/push; Cursor does not commit. Daniel review and merge approval remain pending.
+
+
+## Task 2 early rejected-login audit closure - 2026-11-07
+
+Early federated-login rejections now emit exactly one sanitized audit event for invalid/expired state, transaction binding/expiry/replay/redirect failures, and rejected provider/nonce/tenant/signature/issuer/audience/token validation. Login authorization-start provider/redirect rejections are also audited. Early events have null user_id and provider_user_id; only microsoft or the fixed unsupported provider category and fixed reason categories are stored. No request code, state, nonce, transaction identifiers, binding secret, redirect, token, email or unverified claims are copied. Signed link-purpose early failures use federated_link_rejected; an invalid state cannot establish purpose and is recorded as an unattributed login rejection. Existing verified-identity rejection events remain unchanged.
+
+Executed isolated regressions: 28 federation + 55 shared auth tests passed, JUnit zero failures/errors/skips, no source drift. All 15 new cases first failed on missing audit events. Syntax and git diff checks pass. UI sources/configuration unchanged, so prior full TypeScript/lint/build evidence remains applicable to the UI. Historical real-Microsoft evidence predates this audit-only service change; no new live-provider result is claimed. Original services, credentials, WIP and copied identities preserved. Supervisor commits/pushes; Cursor cannot commit; CTO/Daniel review and merge approval remain pending.

@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-07",
+  "assignment_requirement": "Log every linking, unlinking, and rejected federated login attempt in the audit system.",
+  "sources": [
+    "Downloads/Tasks/Task 2/Task 2-Platform - Federated Authentication.png",
+    "Downloads/Tasks/Task 2/healthcore-BRIEFING-FederatedAuthentication.md"
+  ],
+  "scope": "Early federated-login rejections now emit exactly one sanitized audit event for invalid/expired state, transaction binding/expiry/replay/redirect failures, and rejected provider/nonce/tenant/signature/issuer/audience/token validation. Login authorization-start provider/redirect rejections are also audited. Early events have null user_id and provider_user_id; only microsoft or the fixed unsupported provider category and fixed reason categories are stored. No request code, state, nonce, transaction identifiers, binding secret, redirect, token, email or unverified claims are copied. Signed link-purpose early failures use federated_link_rejected; an invalid state cannot establish purpose and is recorded as an unattributed login rejection. Existing verified-identity rejection events remain unchanged.",
+  "regression_before_fix": [
+    {
+      "selection": [
+        "tests/test_federated_auth.py",
+        "-k",
+        "early_login_rejections"
+      ],
+      "exit": 1,
+      "junit": {
+        "tests": 15,
+        "failures": 15,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "verification_after_fix": [
+    {
+      "selection": [
+        "tests/test_federated_auth.py"
+      ],
+      "exit": 0,
+      "junit": {
+        "tests": 28,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "selection": [
+        "tests/test_login.py",
+        "tests/test_me.py",
+        "tests/test_token.py",
+        "tests/test_roles_permissions.py",
+        "tests/test_password_reset.py"
+      ],
+      "exit": 0,
+      "junit": {
+        "tests": 55,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "source_changed_during_verification": [],
+  "source_sha256": {
+    "services/api/app/services/federated_auth.py": "fa347d527f28a64bcc67fd15c1561eaf26afd195a3afd3bbb0879dc82b8e6f5d",
+    "services/api/tests/test_federated_auth.py": "38888aa81f2b8bf56b2e8d65a957cd01b062284adb5abbac251e993eaeb40917"
+  },
+  "runner_sha256": "e4f27142309e41a7d5a30fa13c92bb80de4573ca72de577a0294f797f97d3fef",
+  "syntax_and_diff_check": "passed",
+  "live_microsoft_retested": false,
+  "ui_changes": false,
+  "existing_services_changed": false
+}
